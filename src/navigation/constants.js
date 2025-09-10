@@ -8,6 +8,7 @@ export const SCREEN_NAMES = {
   FORGOT_PASSWORD: 'ForgotPassword',
   RESET_PASSWORD: 'ResetPassword',
   VERIFY_OTP: 'VerifyOTP',
+  ONBOARDING: 'Onboarding',
 
   // Main navigation
   DRAWER_STACK: 'DrawerStack',

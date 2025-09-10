@@ -15,6 +15,9 @@ import AddRoom from '../screens/AddRoom';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
 import RecordPayment from '../screens/RecordPayment';
+import OnboardingScreen, {
+  ONBOARDING_STORAGE_KEY,
+} from '../screens/OnboardingScreen';
 import Notices from '../screens/Notices';
 import FAQ from '../screens/FAQ';
 import ContactSupport from '../screens/ContactSupport';
@@ -37,6 +40,7 @@ const Stack = createNativeStackNavigator();
 
 const RootStack = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { credentials, setCredentials, isAuthenticated } =
     useContext(CredentialsContext);
 
@@ -80,6 +84,18 @@ const RootStack = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Check if user has seen onboarding
+        const hasSeenOnboarding = await AsyncStorage.getItem(
+          ONBOARDING_STORAGE_KEY,
+        );
+
+        if (!hasSeenOnboarding) {
+          setShowOnboarding(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check for stored credentials
         const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
 
         if (storedToken) {
@@ -135,10 +151,15 @@ const RootStack = () => {
     return <SplashScreen />;
   }
 
-  // Determine initial route based on authentication status from CredentialsContext
-  const initialRouteName = isAuthenticated
-    ? SCREEN_NAMES.DRAWER_STACK
-    : SCREEN_NAMES.LOGIN;
+  // Determine initial route based on onboarding and authentication status
+  let initialRouteName;
+  if (showOnboarding) {
+    initialRouteName = SCREEN_NAMES.ONBOARDING;
+  } else if (isAuthenticated) {
+    initialRouteName = SCREEN_NAMES.DRAWER_STACK;
+  } else {
+    initialRouteName = SCREEN_NAMES.LOGIN;
+  }
 
   return (
     <NavigationContainer
@@ -146,6 +167,14 @@ const RootStack = () => {
         // Optional: Log navigation state changes in development
         if (__DEV__) {
           console.log('Navigation state changed:', state);
+        }
+
+        // Reset onboarding state when user navigates away from onboarding
+        if (
+          showOnboarding &&
+          state?.routes?.[state.index]?.name !== SCREEN_NAMES.ONBOARDING
+        ) {
+          setShowOnboarding(false);
         }
       }}
       onReady={() => {
@@ -159,6 +188,37 @@ const RootStack = () => {
         screenOptions={defaultScreenOptions}
         initialRouteName={initialRouteName}
       >
+        {/* Onboarding Screen */}
+        <Stack.Screen
+          name={SCREEN_NAMES.ONBOARDING}
+          component={OnboardingScreen}
+          options={{
+            ...defaultScreenOptions,
+            gestureEnabled: false,
+          }}
+        />
+
+        {/* Auth screens - always available */}
+        <Stack.Screen
+          name={SCREEN_NAMES.LOGIN}
+          component={Login}
+          options={{
+            ...defaultScreenOptions,
+            gestureEnabled: false,
+            animation: 'fade',
+            animationTypeForReplace: credentials ? 'pop' : 'push',
+          }}
+        />
+        <Stack.Screen
+          name={SCREEN_NAMES.SIGNUP}
+          component={SignUp}
+          options={{
+            ...defaultScreenOptions,
+            gestureEnabled: false,
+            animation: 'slide_from_right',
+          }}
+        />
+
         {isAuthenticated ? (
           // Authenticated user screens
           <>
@@ -279,29 +339,7 @@ const RootStack = () => {
             </Stack.Group>
           </>
         ) : (
-          // Unauthenticated user screens
-          <Stack.Group
-            screenOptions={{
-              ...defaultScreenOptions,
-              gestureEnabled: false, // Prevent swipe back on auth screens
-              animation: 'fade',
-            }}
-          >
-            <Stack.Screen
-              name={SCREEN_NAMES.LOGIN}
-              component={Login}
-              options={{
-                animationTypeForReplace: credentials ? 'pop' : 'push',
-              }}
-            />
-            <Stack.Screen
-              name={SCREEN_NAMES.SIGNUP}
-              component={SignUp}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-          </Stack.Group>
+          <></>
         )}
       </Stack.Navigator>
     </NavigationContainer>
