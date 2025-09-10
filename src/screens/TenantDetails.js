@@ -349,7 +349,7 @@ const TenantDetails = ({ navigation, route }) => {
               ]}
               labelStyle={[styles.buttonLabel, { color: colors.white }]}
               onPress={() =>
-                navigation.navigate('RecordPayment', { tenantId: tenant.id })
+                navigation.navigate('RecordPayment', { tenant: tenant })
               }
             >
               Record Payment

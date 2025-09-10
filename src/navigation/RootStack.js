@@ -14,6 +14,7 @@ import TenantDetails from '../screens/TenantDetails';
 import AddRoom from '../screens/AddRoom';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
+import RecordPayment from '../screens/RecordPayment';
 import Notices from '../screens/Notices';
 import FAQ from '../screens/FAQ';
 import ContactSupport from '../screens/ContactSupport';
@@ -227,6 +228,18 @@ const RootStack = () => {
                 ...authenticatedScreenOptions,
                 headerTitle: 'App Tutorial',
                 headerTintColor: colors.black,
+              }}
+            />
+
+            <Stack.Screen
+              name={SCREEN_NAMES.RECORD_PAYMENT}
+              component={RecordPayment}
+              options={{
+                ...authenticatedScreenOptions,
+                headerTitle: 'Record Payment',
+                headerTintColor: colors.black,
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
               }}
             />
 

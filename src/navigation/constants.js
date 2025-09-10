@@ -45,6 +45,7 @@ export const SCREEN_NAMES = {
   REVENUE_OVERVIEW: 'RevenueOverview',
   EXPENSE_TRACKING: 'ExpenseTracking',
   PAYMENT_HISTORY: 'PaymentHistory',
+  RECORD_PAYMENT: 'RecordPayment',
   NOTICES: 'Notices',
   PAYMENTS: 'Payments',
   KYC: 'KYC',
