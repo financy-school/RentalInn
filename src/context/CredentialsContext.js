@@ -208,7 +208,6 @@ export const CredentialsProvider = ({ children }) => {
         STORAGE_KEYS.ACCESS_TOKEN,
         STORAGE_KEYS.REFRESH_TOKEN,
         STORAGE_KEYS.USER_DATA,
-        'pgOwnerCredentials',
         'savedEmail',
         'rememberMe',
         'userData',
