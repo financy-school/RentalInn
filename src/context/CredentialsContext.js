@@ -6,10 +6,11 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { getOwnerDetails } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
 import { STORAGE_KEYS } from '../navigation/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { AuthHelper, StorageHelper, ErrorHelper } = helpers;
 
@@ -150,13 +151,18 @@ export const CredentialsProvider = ({ children }) => {
 
         // Allow null/undefined for clearing credentials during logout
         if (newCredentials === null || newCredentials === undefined) {
-          setCredentialsState(null);
-          setUserProfile(null);
+          await Promise.all([
+            StorageHelper.clearUserData(),
+            new Promise(resolve => setCredentialsState(null)),
+            new Promise(resolve => setUserProfile(null)),
+          ]);
           setAuthState(AUTH_STATES.UNAUTHENTICATED);
+          setLoading(false);
           return { success: true };
         }
 
         if (typeof newCredentials !== 'object') {
+          setLoading(false);
           throw new Error('Invalid credentials format');
         }
 
@@ -186,27 +192,17 @@ export const CredentialsProvider = ({ children }) => {
         );
 
         if (storageResult.success) {
-          // Set state in the correct order
-          await Promise.all([
-            new Promise(resolve => setCredentialsState(credentialsWithTokens)),
-            new Promise(resolve => setUserProfile(credentialsWithTokens)),
-          ]);
+          // Set credentials state first
+          setCredentialsState(credentialsWithTokens);
 
-          // Set auth state last to trigger navigation updates
+          // Set user profile
+          setUserProfile(credentialsWithTokens);
+
+          // Set auth state to trigger navigation
           setAuthState(AUTH_STATES.AUTHENTICATED);
 
-          // Set up session timeout if token expires
-          if (credentialsWithTokens.tokenExpiry) {
-            const timeout = setTimeout(() => {
-              handleAuthError('TOKEN_EXPIRED');
-            }, new Date(credentialsWithTokens.tokenExpiry).getTime() - Date.now());
-
-            setSessionTimeout(timeout);
-          }
-
-          if (__DEV__) {
-            console.log('Credentials saved successfully');
-          }
+          // Return success only after all states are set
+          return { success: true };
         } else {
           throw new Error('Failed to store credentials');
         }

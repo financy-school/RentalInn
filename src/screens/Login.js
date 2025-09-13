@@ -22,8 +22,9 @@ import StandardText from '../components/StandardText/StandardText';
 // Services and utilities
 import { handleUserLogin } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
+import AuthHelpers from '../services/AuthHelper';
 
-const { StorageHelper, PerformanceHelper } = helpers;
+const { PerformanceHelper } = helpers;
 
 import {
   STORAGE_KEYS,
@@ -116,82 +117,54 @@ const Login = ({ navigation }) => {
 
   // Handle login process
   const handleLogin = useCallback(async () => {
-    if (!validateForm()) return;
-
-    setLoading(true);
-    setErrorMessage('');
-
     try {
-      const response = await handleUserLogin({ email, password });
+      // Validate form first
+      const isValid = validateForm();
+      if (!isValid) return;
 
-      if (!response.success) {
-        throw new Error(response.error || 'Login failed');
-      }
-
-      const { user, accessToken, refreshToken } = response.data || {};
-
-      if (!user || !accessToken) {
-        throw new Error('Invalid login response: missing user data or token');
-      }
-
-      const storageResult = await StorageHelper.storeUserData(
-        user,
-        accessToken,
-        refreshToken,
-      );
-
-      if (!storageResult.success) {
-        throw new Error(storageResult.error || 'Failed to store user data');
-      }
-
-      if (refreshToken) {
-        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-      }
-
-      // Handle remember me
-      if (rememberMe) {
-        await AsyncStorage.multiSet([
-          ['savedEmail', email],
-          ['rememberMe', 'true'],
-        ]);
-      } else {
-        await AsyncStorage.multiRemove(['savedEmail', 'rememberMe']);
-      }
-
-      await setCredentials({
-        ...user,
-        email: user.email || email,
-        token: accessToken,
-        accessToken,
-      });
-
+      setLoading(true);
       setErrorMessage('');
+
+      // Call authentication API
+      const response = await AuthHelpers.login(email, password);
+      console.log('Login response:', response);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Login failed');
+      }
+
+      // Store remember me preference
+      if (rememberMe) {
+        await AsyncStorage.setItem('savedEmail', email);
+        await AsyncStorage.setItem('rememberMe', 'true');
+      } else {
+        await AsyncStorage.removeItem('savedEmail');
+        await AsyncStorage.removeItem('rememberMe');
+      }
+
+      // Store credentials
+      const credentials = {
+        ...response.data.data.user,
+        token: response.data.data.token, // Make sure token is included
+        accessToken: response.data.data.token, // Include both token formats
+        rememberMe,
+      };
+
+      console.log('Storing credentials:', credentials);
+
+      // Set credentials and wait for it to complete
+      const credentialResult = await setCredentials(credentials);
+
+      if (!credentialResult || !credentialResult.success) {
+        throw new Error('Failed to store credentials');
+      }
+
+      // Clear loading state immediately after successful credential storage
+      setLoading(false);
     } catch (error) {
-      console.error('Login Error:', error);
-
-      let errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
-
-      if (
-        error.message?.includes('network') ||
-        error.message?.includes('Network')
-      ) {
-        errorMsg = ERROR_MESSAGES.NETWORK_ERROR;
-      } else if (error.message?.includes('server') || error.status >= 500) {
-        errorMsg = ERROR_MESSAGES.SERVER_ERROR;
-      } else if (error.status === 401) {
-        errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
-      }
-
-      setErrorMessage(errorMsg);
+      console.error('Login error:', error);
+      setErrorMessage(error.message || 'An error occurred during login');
       clearErrorMessage();
-
-      if (error.message?.includes('server')) {
-        Alert.alert(
-          'Login Failed',
-          'Server error occurred. Please try again later.',
-          [{ text: 'OK' }],
-        );
-      }
     } finally {
       setLoading(false);
     }
@@ -202,9 +175,7 @@ const Login = ({ navigation }) => {
     validateForm,
     setCredentials,
     clearErrorMessage,
-  ]);
-
-  // Handle navigation to SignUp
+  ]); // Handle navigation to SignUp
   const handleSignUpNavigation = useCallback(() => {
     navigation.navigate('SignUp');
   }, [navigation]);
