@@ -24,7 +24,11 @@ import { handleUserSignup } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
 const { StorageHelper, PerformanceHelper } = helpers;
 
-import { ERROR_MESSAGES, STORAGE_KEYS } from '../navigation/constants';
+import {
+  ERROR_MESSAGES,
+  STORAGE_KEYS,
+  SCREEN_NAMES,
+} from '../navigation/constants';
 
 // Theme
 import colors from '../theme/color';
@@ -184,16 +188,13 @@ const SignUp = ({ navigation }) => {
         throw new Error(storageResult.error || 'Failed to store user data');
       }
 
-      // Store refresh token if available (Note: already handled in storeUserData, but keeping for extra security)
-      if (refreshToken) {
-        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-      }
+      // Store refresh token if available
+      // if (refreshToken) {
+      //   await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+      // }
       await setCredentials(credentialsToSet);
 
-      // Optional: Show success message briefly
       setErrorMessage('');
-
-      // Navigation will be handled automatically by RootStack
     } catch (error) {
       console.error('Signup Error:', error);
 

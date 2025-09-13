@@ -110,14 +110,30 @@ const RootStack = () => {
     initApp();
   }, []);
 
-  // Monitor authentication state changes
   useEffect(() => {
-    if (!isLoading && !showOnboarding) {
-      if (!isAuthenticated) {
-        console.log('User is not authenticated, resetting to login screen');
+    const handleNavigation = async () => {
+      if (isLoading) {
+        return;
+      }
+
+      try {
+        if (showOnboarding) {
+          NavigationService.resetRoot(SCREEN_NAMES.ONBOARDING);
+          return;
+        }
+
+        if (isAuthenticated) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+          NavigationService.resetRoot(SCREEN_NAMES.DRAWER_STACK);
+        } else {
+          NavigationService.resetRoot(SCREEN_NAMES.LOGIN);
+        }
+      } catch (error) {
         NavigationService.resetRoot(SCREEN_NAMES.LOGIN);
       }
-    }
+    };
+
+    handleNavigation();
   }, [isAuthenticated, isLoading, showOnboarding]);
 
   // Show splash screen while loading

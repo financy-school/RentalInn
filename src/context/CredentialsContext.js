@@ -6,8 +6,10 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getOwnerDetails } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
+import { STORAGE_KEYS } from '../navigation/constants';
 
 const { AuthHelper, StorageHelper, ErrorHelper } = helpers;
 
@@ -184,8 +186,13 @@ export const CredentialsProvider = ({ children }) => {
         );
 
         if (storageResult.success) {
-          setCredentialsState(credentialsWithTokens);
-          setUserProfile(credentialsWithTokens);
+          // Set state in the correct order
+          await Promise.all([
+            new Promise(resolve => setCredentialsState(credentialsWithTokens)),
+            new Promise(resolve => setUserProfile(credentialsWithTokens)),
+          ]);
+
+          // Set auth state last to trigger navigation updates
           setAuthState(AUTH_STATES.AUTHENTICATED);
 
           // Set up session timeout if token expires
@@ -227,20 +234,24 @@ export const CredentialsProvider = ({ children }) => {
       // Save the token before clearing state
       const token = credentials?.token;
 
-      // Set local state to null first to prevent UI errors
-      setCredentialsState(null);
-      setUserProfile(null);
-      setError(null);
-
+      // First clear all storage
       try {
-        // First clear storage
-        await StorageHelper.clearUserData();
+        console.log('Clearing storage...');
+        await Promise.all([
+          StorageHelper.clearUserData(),
+          AsyncStorage.multiRemove([
+            STORAGE_KEYS.ACCESS_TOKEN,
+            STORAGE_KEYS.REFRESH_TOKEN,
+            STORAGE_KEYS.USER_DATA,
+            'savedEmail',
+            'rememberMe',
+          ]),
+        ]);
       } catch (storageError) {
         console.warn('Failed to clear storage:', storageError);
       }
 
       try {
-        // Then attempt to logout from server
         if (token) {
           await AuthHelper.logout(token);
         }
@@ -248,7 +259,11 @@ export const CredentialsProvider = ({ children }) => {
         console.warn('Logout API call failed:', apiError);
       }
 
-      // Finally, set auth state to trigger navigation
+      setCredentialsState(null);
+      setUserProfile(null);
+      setError(null);
+
+      // Set auth state last to trigger navigation
       setAuthState(AUTH_STATES.UNAUTHENTICATED);
 
       if (__DEV__) {

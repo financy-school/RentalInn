@@ -32,7 +32,16 @@ import StandardText from '../components/StandardText/StandardText';
 
 const Rooms = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
-  const { credentials } = useContext(CredentialsContext);
+  const { credentials, isAuthenticated } = useContext(CredentialsContext);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
+  }, [isAuthenticated, navigation]);
 
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('ALL');

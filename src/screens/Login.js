@@ -158,8 +158,6 @@ const Login = ({ navigation }) => {
         await AsyncStorage.multiRemove(['savedEmail', 'rememberMe']);
       }
 
-      console.log('Setting credentials after successful login');
-      // Set credentials first
       await setCredentials({
         ...user,
         email: user.email || email,
@@ -168,12 +166,6 @@ const Login = ({ navigation }) => {
       });
 
       setErrorMessage('');
-
-      // Force navigation reset to drawer stack
-      navigation.reset({
-        index: 0,
-        routes: [{ name: SCREEN_NAMES.DRAWER_STACK }],
-      });
     } catch (error) {
       console.error('Login Error:', error);
 
@@ -210,7 +202,6 @@ const Login = ({ navigation }) => {
     validateForm,
     setCredentials,
     clearErrorMessage,
-    navigation,
   ]);
 
   // Handle navigation to SignUp
