@@ -1,6 +1,11 @@
-import {MD3LightTheme, MD3DarkTheme, configureFonts} from 'react-native-paper';
+import {
+  MD3LightTheme,
+  MD3DarkTheme,
+  configureFonts,
+} from 'react-native-paper';
 import colors from './color';
 
+// Light Theme
 const lightTheme = {
   ...MD3LightTheme,
   colors: {
@@ -28,52 +33,39 @@ const lightTheme = {
   },
   fonts: configureFonts({
     default: {
-      regular: {
-        fontFamily: 'Poppins-Regular',
-        fontWeight: 'normal',
-      },
-      medium: {
-        fontFamily: 'Poppins-Medium',
-        fontWeight: 'normal',
-      },
-      light: {
-        fontFamily: 'Poppins-Light',
-        fontWeight: 'normal',
-      },
-      thin: {
-        fontFamily: 'Poppins-Thin',
-        fontWeight: 'normal',
-      },
+      regular: { fontFamily: 'Poppins-Regular', fontWeight: 'normal' },
+      medium: { fontFamily: 'Poppins-Medium', fontWeight: 'normal' },
+      light: { fontFamily: 'Poppins-Light', fontWeight: 'normal' },
+      thin: { fontFamily: 'Poppins-Thin', fontWeight: 'normal' },
     },
   }),
-  roundness: 2,
-  animation: {
-    scale: 1.0,
-  },
+  roundness: 6,
+  animation: { scale: 1.0 },
   dark: false,
   mode: 'adaptive',
 };
 
+// Dark Theme
 const darkTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: '#BB86FC', // Adjusted Brand Color for Dark Mode
-    onPrimary: '#000000',
-    secondary: colors.secondary,
-    onSecondary: '#000000',
+    primary: colors.primary,
+    onPrimary: '#FFFFFF',
+    secondary: '#3352A0', // softened version of brand navy for contrast
+    onSecondary: '#FFFFFF',
     accent: colors.accent,
     background: colors.backgroundDark,
     onBackground: '#FFFFFF',
-    surface: '#121212',
+    surface: '#1A1F2B',
     onSurface: '#FFFFFF',
     error: colors.error,
-    onError: '#000000',
+    onError: '#FFFFFF',
     success: colors.success,
     warning: colors.warning,
     info: colors.info,
     textPrimary: '#FFFFFF',
-    textSecondary: colors.textSecondary,
+    textSecondary: '#B0B6C2',
     white: colors.white,
     black: colors.black,
     light_black: colors.light_black,
@@ -81,30 +73,16 @@ const darkTheme = {
   },
   fonts: configureFonts({
     default: {
-      regular: {
-        fontFamily: 'Poppins-Regular',
-        fontWeight: 'normal',
-      },
-      medium: {
-        fontFamily: 'Poppins-Medium',
-        fontWeight: 'normal',
-      },
-      light: {
-        fontFamily: 'Poppins-Light',
-        fontWeight: 'normal',
-      },
-      thin: {
-        fontFamily: 'Poppins-Thin',
-        fontWeight: 'normal',
-      },
+      regular: { fontFamily: 'Poppins-Regular', fontWeight: 'normal' },
+      medium: { fontFamily: 'Poppins-Medium', fontWeight: 'normal' },
+      light: { fontFamily: 'Poppins-Light', fontWeight: 'normal' },
+      thin: { fontFamily: 'Poppins-Thin', fontWeight: 'normal' },
     },
   }),
-  roundness: 2,
-  animation: {
-    scale: 1.0,
-  },
+  roundness: 6,
+  animation: { scale: 1.0 },
   dark: true,
   mode: 'adaptive',
 };
 
-export {lightTheme, darkTheme};
+export { lightTheme, darkTheme };

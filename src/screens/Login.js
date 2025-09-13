@@ -27,8 +27,8 @@ const { StorageHelper, PerformanceHelper } = helpers;
 
 import {
   STORAGE_KEYS,
-  SUCCESS_MESSAGES,
   ERROR_MESSAGES,
+  SCREEN_NAMES,
 } from '../navigation/constants';
 
 // Theme
@@ -58,7 +58,6 @@ const Login = ({ navigation }) => {
   const onPrimary = colors.white;
   const primary = colors.primary;
 
-  // Load saved credentials on component mount
   useEffect(() => {
     const loadSavedCredentials = async () => {
       try {
@@ -78,9 +77,9 @@ const Login = ({ navigation }) => {
   }, []);
 
   // Validate email format
-  const validateEmail = useCallback(email => {
+  const validateEmail = useCallback(emailToValidate => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(emailToValidate);
   }, []);
 
   // Debounced error clearing
@@ -123,25 +122,18 @@ const Login = ({ navigation }) => {
     setErrorMessage('');
 
     try {
-      // Track login attempt
-
-      // Call login API
       const response = await handleUserLogin({ email, password });
 
-      // Check if login was successful
       if (!response.success) {
         throw new Error(response.error || 'Login failed');
       }
 
-      // Extract data from API response
       const { user, accessToken, refreshToken } = response.data || {};
 
-      // Validate required fields
       if (!user || !accessToken) {
         throw new Error('Invalid login response: missing user data or token');
       }
 
-      // Store user data securely
       const storageResult = await StorageHelper.storeUserData(
         user,
         accessToken,
@@ -152,12 +144,11 @@ const Login = ({ navigation }) => {
         throw new Error(storageResult.error || 'Failed to store user data');
       }
 
-      // Store refresh token if available (Note: already handled in storeUserData, but keeping for extra security)
       if (refreshToken) {
         await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
       }
 
-      // Handle remember me functionality
+      // Handle remember me
       if (rememberMe) {
         await AsyncStorage.multiSet([
           ['savedEmail', email],
@@ -167,24 +158,25 @@ const Login = ({ navigation }) => {
         await AsyncStorage.multiRemove(['savedEmail', 'rememberMe']);
       }
 
-      // Update credentials context with required email field and both token formats for compatibility
-      const credentialsToSet = {
+      console.log('Setting credentials after successful login');
+      // Set credentials first
+      await setCredentials({
         ...user,
-        email: user.email || email, // Ensure email is present for CredentialsContext
-        token: accessToken, // For internal storage/helpers
-        accessToken: accessToken, // For API calls that expect accessToken
-      };
+        email: user.email || email,
+        token: accessToken,
+        accessToken,
+      });
 
-      await setCredentials(credentialsToSet);
-
-      // Optional: Show success message briefly
       setErrorMessage('');
 
-      // Navigation will be handled automatically by RootStack
+      // Force navigation reset to drawer stack
+      navigation.reset({
+        index: 0,
+        routes: [{ name: SCREEN_NAMES.DRAWER_STACK }],
+      });
     } catch (error) {
       console.error('Login Error:', error);
 
-      // Handle different error types
       let errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
 
       if (
@@ -201,7 +193,6 @@ const Login = ({ navigation }) => {
       setErrorMessage(errorMsg);
       clearErrorMessage();
 
-      // Optional: Show alert for critical errors
       if (error.message?.includes('server')) {
         Alert.alert(
           'Login Failed',
@@ -219,6 +210,7 @@ const Login = ({ navigation }) => {
     validateForm,
     setCredentials,
     clearErrorMessage,
+    navigation,
   ]);
 
   // Handle navigation to SignUp
@@ -261,7 +253,7 @@ const Login = ({ navigation }) => {
           style={[
             styles.headerSection,
             {
-              backgroundColor: primary,
+              backgroundColor: backgroundColor,
               height: Dimensions.get('window').height * 0.4,
             },
           ]}

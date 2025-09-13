@@ -41,7 +41,8 @@ const Stack = createNativeStackNavigator();
 const RootStack = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { isAuthenticated } = useContext(CredentialsContext);
+  const { credentials, setCredentials, isAuthenticated } =
+    useContext(CredentialsContext);
 
   // Default screen options for better consistency
   const defaultScreenOptions = {
@@ -90,30 +91,56 @@ const RootStack = () => {
 
         // Set onboarding status first
         setShowOnboarding(!hasSeenOnboarding);
+
+        if (!hasSeenOnboarding) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Check for stored credentials
+        const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+
+        if (storedToken) {
+          // Parse and set the stored credentials
+          const storedCredentials = JSON.parse(storedToken);
+          // Validate the stored credentials before setting
+          if (
+            storedCredentials &&
+            typeof storedCredentials === 'object' &&
+            storedCredentials.email
+          ) {
+            setCredentials(storedCredentials);
+          } else {
+            console.warn('Invalid stored credentials format, clearing...');
+            await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+          }
+        }
       } catch (error) {
         console.error('App initialization error:', error);
+        // Clear potentially corrupted storage
+        try {
+          await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+        } catch (clearError) {
+          console.error('Failed to clear corrupted storage:', clearError);
+        }
+
+        // Optional: Show error alert in development
+        if (__DEV__) {
+          Alert.alert(
+            'Initialization Error',
+            'Failed to initialize app. Please restart.',
+          );
+        }
+      } finally {
+        // Ensure minimum splash screen duration for better UX
+        setTimeout(() => {
+          setIsLoading(false);
+        }, SPLASH_SCREEN_DURATION);
       }
     };
 
-    const initApp = async () => {
-      await initializeApp();
-      // Ensure minimum splash screen duration for better UX
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, SPLASH_SCREEN_DURATION);
-
-      return () => clearTimeout(timer);
-    };
-
-    initApp();
-  }, []);
-
-  // Monitor authentication state for initial route
-  useEffect(() => {
-    if (isAuthenticated && !isLoading && !showOnboarding) {
-      console.log('User is authenticated, ready for drawer stack');
-    }
-  }, [isAuthenticated, isLoading, showOnboarding]);
+    initializeApp();
+  }, [setCredentials]);
 
   // Show splash screen while loading
   if (isLoading) {
@@ -169,7 +196,7 @@ const RootStack = () => {
             ...defaultScreenOptions,
             gestureEnabled: false,
             animation: 'fade',
-            animationTypeForReplace: isAuthenticated ? 'pop' : 'push',
+            animationTypeForReplace: credentials ? 'pop' : 'push',
           }}
         />
         <Stack.Screen
@@ -182,7 +209,7 @@ const RootStack = () => {
           }}
         />
 
-        {/* Protected screens */}
+        {/* Main Navigation */}
         <Stack.Screen
           name={SCREEN_NAMES.DRAWER_STACK}
           component={DrawerStack}
@@ -191,7 +218,8 @@ const RootStack = () => {
             gestureEnabled: false,
           }}
           listeners={{
-            beforeRemove: e => {
+            beforeRemove: (e) => {
+              // Prevent going back if authenticated
               if (isAuthenticated) {
                 e.preventDefault();
               }
@@ -199,7 +227,7 @@ const RootStack = () => {
           }}
         />
 
-        {/* Details Screens */}
+        {/* Protected Detail Screens */}
         <Stack.Screen
           name={SCREEN_NAMES.ROOM_DETAILS}
           component={RoomDetails}
@@ -272,6 +300,7 @@ const RootStack = () => {
           }}
         />
 
+        {/* Modal Screens */}
         <Stack.Group
           screenOptions={{
             ...authenticatedScreenOptions,
