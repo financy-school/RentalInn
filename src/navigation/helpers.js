@@ -272,6 +272,26 @@ export class StorageHelper {
       return { success: false, error: error.message };
     }
   }
+
+  static async clearUserData() {
+    try {
+      const keysToRemove = [
+        STORAGE_KEYS.USER_TOKEN,
+        STORAGE_KEYS.REFRESH_TOKEN,
+        STORAGE_KEYS.USER_DATA,
+        STORAGE_KEYS.USER_CREDENTIALS,
+        STORAGE_KEYS.LAST_LOGIN,
+        STORAGE_KEYS.USER_PREFERENCES,
+      ];
+
+      await AsyncStorage.multiRemove(keysToRemove);
+      await StorageHelper.clearCache(); // Also clear the cache
+      return { success: true, error: null };
+    } catch (error) {
+      console.error('Failed to clear user data:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 /**

@@ -76,8 +76,13 @@ const Home = ({ navigation }) => {
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        const response = await analyticsDashBoard(credentials.accessToken);
-        setAnalyticsData(response.data);
+        if (credentials?.accessToken) {
+          const response = await analyticsDashBoard(credentials.accessToken);
+          setAnalyticsData(response.data);
+        } else {
+          // If no credentials, clear analytics data
+          setAnalyticsData(null);
+        }
       } catch (error) {
         // Fallback to mock if API not ready
         setAnalyticsData(null);
@@ -85,7 +90,7 @@ const Home = ({ navigation }) => {
       }
     };
     fetchAnalyticsData();
-  }, [credentials.accessToken]);
+  }, [credentials]);
 
   // ---------- MOCKS (replace with API responses) ----------
   const paid = analyticsData?.incomeStats?.actualIncome ?? 72000;

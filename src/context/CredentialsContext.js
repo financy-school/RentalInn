@@ -224,24 +224,39 @@ export const CredentialsProvider = ({ children }) => {
         setSessionTimeout(null);
       }
 
-      // Perform logout API call with current token
-      const currentToken = credentials?.token;
-      if (currentToken) {
-        await AuthHelper.logout(currentToken);
-      }
+      // Save the token before clearing state
+      const token = credentials?.token;
 
-      // Clear local state directly (no validation needed)
+      // Set local state to null first to prevent UI errors
       setCredentialsState(null);
       setUserProfile(null);
-      setAuthState(AUTH_STATES.UNAUTHENTICATED);
       setError(null);
+
+      try {
+        // First clear storage
+        await StorageHelper.clearUserData();
+      } catch (storageError) {
+        console.warn('Failed to clear storage:', storageError);
+      }
+
+      try {
+        // Then attempt to logout from server
+        if (token) {
+          await AuthHelper.logout(token);
+        }
+      } catch (apiError) {
+        console.warn('Logout API call failed:', apiError);
+      }
+
+      // Finally, set auth state to trigger navigation
+      setAuthState(AUTH_STATES.UNAUTHENTICATED);
 
       if (__DEV__) {
         console.log('Credentials cleared successfully');
       }
     } catch (logoutError) {
       console.error('Clear credentials error:', logoutError);
-      // Still update local state even if logout API fails
+      // Ensure state is cleared even if there's an error
       setCredentialsState(null);
       setUserProfile(null);
       setAuthState(AUTH_STATES.UNAUTHENTICATED);

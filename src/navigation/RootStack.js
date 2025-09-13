@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import NavigationService from './NavigationService';
 
 // Screens
 import Login from '../screens/Login';
@@ -42,6 +43,7 @@ const RootStack = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { isAuthenticated } = useContext(CredentialsContext);
+  const navigationRef = React.useRef(null);
 
   // Default screen options for better consistency
   const defaultScreenOptions = {
@@ -108,10 +110,13 @@ const RootStack = () => {
     initApp();
   }, []);
 
-  // Monitor authentication state for initial route
+  // Monitor authentication state changes
   useEffect(() => {
-    if (isAuthenticated && !isLoading && !showOnboarding) {
-      console.log('User is authenticated, ready for drawer stack');
+    if (!isLoading && !showOnboarding) {
+      if (!isAuthenticated) {
+        console.log('User is not authenticated, resetting to login screen');
+        NavigationService.resetRoot(SCREEN_NAMES.LOGIN);
+      }
     }
   }, [isAuthenticated, isLoading, showOnboarding]);
 
@@ -123,6 +128,10 @@ const RootStack = () => {
   // Return the navigation structure
   return (
     <NavigationContainer
+      ref={navigatorRef => {
+        navigationRef.current = navigatorRef;
+        NavigationService.setNavigator(navigatorRef);
+      }}
       onStateChange={state => {
         if (__DEV__) {
           console.log('Navigation state changed:', state);
