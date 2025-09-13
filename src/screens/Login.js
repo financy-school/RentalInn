@@ -145,8 +145,8 @@ const Login = ({ navigation }) => {
       // Store credentials
       const credentials = {
         ...response.data.data.user,
-        token: response.data.data.token, // Make sure token is included
-        accessToken: response.data.data.token, // Include both token formats
+        token: response.data.data.accessToken, // Make sure token is included
+        accessToken: response.data.data.accessToken, // Include both token formats
         rememberMe,
       };
 

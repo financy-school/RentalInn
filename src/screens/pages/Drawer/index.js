@@ -77,46 +77,39 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
 
   // Handle logout with confirmation
   const handleLogout = useCallback(async () => {
-    try {
-      setIsLoggingOut(true);
+    if (isLoggingOut) return; // Prevent multiple logout attempts
 
-      // Show confirmation dialog
-      Alert.alert(
-        'Logout',
-        'Are you sure you want to logout?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => setIsLoggingOut(false),
-          },
-          {
-            text: 'Logout',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                // Clear credentials and logout
-                await clearCredentials();
-              } catch (error) {
-                console.error('Logout error:', error);
-                // Show error alert but still allow logout
-                Alert.alert(
-                  'Logout Error',
-                  'There was an issue logging out, but you have been signed out locally.',
-                );
-              } finally {
-                setIsLoggingOut(false);
-              }
-            },
-          },
-        ],
-        { cancelable: false },
-      );
+    try {
+      try {
+        setIsLoggingOut(true);
+
+        // Clear credentials and logout
+        const result = await clearCredentials();
+
+        if (!result || !result.success) {
+          throw new Error('Logout failed');
+        }
+
+        // Navigate to login screen after successful logout
+        navigation.reset({
+          index: 0,
+          routes: [{ name: SCREEN_NAMES.LOGIN }],
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+        Alert.alert(
+          'Logout Error',
+          'There was an issue logging out. Please try again.',
+        );
+      } finally {
+        setIsLoggingOut(false);
+      }
     } catch (error) {
       console.error('Logout error:', error);
       setIsLoggingOut(false);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     }
-  }, [clearCredentials]);
+  }, [clearCredentials, isLoggingOut, navigation]);
 
   // Handle menu expansion toggle
   const toggleExpand = useCallback(label => {

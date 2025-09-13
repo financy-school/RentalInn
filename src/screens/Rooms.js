@@ -33,6 +33,7 @@ import StandardText from '../components/StandardText/StandardText';
 const Rooms = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials, isAuthenticated } = useContext(CredentialsContext);
+  console.log('Rooms credentials:', credentials);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -69,6 +70,13 @@ const Rooms = ({ navigation }) => {
 
   // 🔹 Fetch rooms
   const fetchRooms = useCallback(async () => {
+    // Skip if no credentials available
+    if (!credentials?.accessToken) {
+      console.log('No access token available, skipping room fetch');
+      setRooms([]);
+      setLoading(false);
+      return;
+    }
     if (!accessToken || !propertyId) {
       setError('Missing access token or property ID');
       setLoading(false);
@@ -125,7 +133,7 @@ const Rooms = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, propertyId]);
+  }, [accessToken, credentials?.accessToken, propertyId]);
 
   useEffect(() => {
     fetchRooms();
@@ -522,4 +530,6 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Rooms;
+import withAuthProtection from '../components/withAuthProtection';
+
+export default withAuthProtection(Rooms);

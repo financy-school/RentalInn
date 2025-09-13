@@ -232,46 +232,67 @@ export const CredentialsProvider = ({ children }) => {
 
       // First clear all storage
       try {
-        console.log('Clearing storage...');
-        await Promise.all([
-          StorageHelper.clearUserData(),
-          AsyncStorage.multiRemove([
-            STORAGE_KEYS.ACCESS_TOKEN,
-            STORAGE_KEYS.REFRESH_TOKEN,
-            STORAGE_KEYS.USER_DATA,
-            'savedEmail',
-            'rememberMe',
-          ]),
+        await StorageHelper.clearUserData();
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.ACCESS_TOKEN,
+          STORAGE_KEYS.REFRESH_TOKEN,
+          STORAGE_KEYS.USER_DATA,
+          'pgOwnerCredentials',
+          'savedEmail',
+          'rememberMe',
+          'userData',
+          'userToken',
         ]);
+        console.log('Storage cleared successfully');
       } catch (storageError) {
-        console.warn('Failed to clear storage:', storageError);
+        console.error('Error clearing storage:', storageError);
+        throw new Error('Failed to clear storage');
       }
 
       try {
         if (token) {
+          // Make API call to invalidate token on server
           await AuthHelper.logout(token);
         }
       } catch (apiError) {
-        console.warn('Logout API call failed:', apiError);
+        console.error('Error logging out from server:', apiError);
+        // Continue with local logout even if server logout fails
       }
 
-      setCredentialsState(null);
-      setUserProfile(null);
-      setError(null);
-
-      // Set auth state last to trigger navigation
+      // Clear all state in a synchronized manner
+      // First set auth state to trigger navigation guards
       setAuthState(AUTH_STATES.UNAUTHENTICATED);
+
+      // Then clear the rest of the state
+      await Promise.all([
+        new Promise(resolve => {
+          setCredentialsState(null);
+          resolve();
+        }),
+        new Promise(resolve => {
+          setUserProfile(null);
+          resolve();
+        }),
+        new Promise(resolve => {
+          setError(null);
+          resolve();
+        }),
+      ]);
 
       if (__DEV__) {
-        console.log('Credentials cleared successfully');
+        console.log('Logout completed successfully');
       }
+
+      return { success: true };
     } catch (logoutError) {
       console.error('Clear credentials error:', logoutError);
-      // Ensure state is cleared even if there's an error
+      // Force clear state even if there's an error
       setCredentialsState(null);
       setUserProfile(null);
       setAuthState(AUTH_STATES.UNAUTHENTICATED);
       setError(null);
+
+      throw logoutError;
     } finally {
       setLoading(false);
     }
