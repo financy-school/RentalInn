@@ -495,4 +495,6 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Tenants;
+import withAuthProtection from '../components/withAuthProtection';
+
+export default withAuthProtection(Tenants);

@@ -5,6 +5,8 @@ import React, {
   useContext,
   useCallback,
   useMemo,
+  useReducer,
+  useRef,
 } from 'react';
 
 import { getOwnerDetails } from '../services/NetworkUtils';
@@ -20,6 +22,91 @@ export const AUTH_STATES = {
   AUTHENTICATED: 'authenticated',
   UNAUTHENTICATED: 'unauthenticated',
   ERROR: 'error',
+  REFRESHING: 'refreshing',
+};
+
+// Action types for reducer
+const ACTION_TYPES = {
+  SET_LOADING: 'SET_LOADING',
+  SET_AUTHENTICATED: 'SET_AUTHENTICATED',
+  SET_UNAUTHENTICATED: 'SET_UNAUTHENTICATED',
+  SET_ERROR: 'SET_ERROR',
+  SET_REFRESHING: 'SET_REFRESHING',
+  UPDATE_PROFILE: 'UPDATE_PROFILE',
+  CLEAR_ERROR: 'CLEAR_ERROR',
+  RESET_STATE: 'RESET_STATE',
+};
+
+// Initial state
+const initialState = {
+  credentials: null,
+  authState: AUTH_STATES.LOADING,
+  loading: true,
+  error: null,
+  userProfile: null,
+};
+
+// Auth reducer for better state management
+const authReducer = (state, action) => {
+  switch (action.type) {
+    case ACTION_TYPES.SET_LOADING:
+      return {
+        ...state,
+        loading: action.payload,
+        error: action.clearError ? null : state.error,
+      };
+
+    case ACTION_TYPES.SET_AUTHENTICATED:
+      return {
+        ...state,
+        credentials: action.payload.credentials,
+        userProfile: action.payload.userProfile || action.payload.credentials,
+        authState: AUTH_STATES.AUTHENTICATED,
+        loading: false,
+        error: null,
+      };
+
+    case ACTION_TYPES.SET_UNAUTHENTICATED:
+      return {
+        ...initialState,
+        authState: AUTH_STATES.UNAUTHENTICATED,
+        loading: false,
+      };
+
+    case ACTION_TYPES.SET_ERROR:
+      return {
+        ...state,
+        error: action.payload,
+        authState: AUTH_STATES.ERROR,
+        loading: false,
+      };
+
+    case ACTION_TYPES.SET_REFRESHING:
+      return {
+        ...state,
+        authState: AUTH_STATES.REFRESHING,
+        loading: action.payload,
+      };
+
+    case ACTION_TYPES.UPDATE_PROFILE:
+      return {
+        ...state,
+        userProfile: { ...state.userProfile, ...action.payload },
+        credentials: { ...state.credentials, ...action.payload },
+      };
+
+    case ACTION_TYPES.CLEAR_ERROR:
+      return {
+        ...state,
+        error: null,
+      };
+
+    case ACTION_TYPES.RESET_STATE:
+      return initialState;
+
+    default:
+      return state;
+  }
 };
 
 // Create credentials context with default values
@@ -36,137 +123,241 @@ const CredentialsContext = createContext({
   validateSession: () => {},
   isAuthenticated: false,
   hasPermission: () => false,
+  clearError: () => {},
 });
 
 export const CredentialsProvider = ({ children }) => {
-  const [credentials, setCredentialsState] = useState(null);
-  const [authState, setAuthState] = useState(AUTH_STATES.LOADING);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [sessionTimeout, setSessionTimeout] = useState(null);
+  const [state, dispatch] = useReducer(authReducer, initialState);
+  const timeoutRef = useRef(null);
+  const errorTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   // Computed values
   const isAuthenticated = useMemo(() => {
-    return authState === AUTH_STATES.AUTHENTICATED && credentials !== null;
-  }, [authState, credentials]);
+    return (
+      state.authState === AUTH_STATES.AUTHENTICATED &&
+      state.credentials !== null
+    );
+  }, [state.authState, state.credentials]);
 
   // Clear error after timeout
   const clearError = useCallback(() => {
-    if (error) {
-      setTimeout(() => setError(null), 5000);
+    dispatch({ type: ACTION_TYPES.CLEAR_ERROR });
+
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = null;
     }
-  }, [error]);
+  }, []);
+
+  // Auto-clear error after delay
+  useEffect(() => {
+    if (state.error && !errorTimeoutRef.current) {
+      errorTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          clearError();
+        }
+      }, 5000);
+    }
+  }, [state.error, clearError]);
 
   // Handle authentication error
   const handleAuthError = useCallback(
-    (errorType, customMessage = null) => {
+    async (errorType, customMessage = null) => {
+      if (!isMountedRef.current) return;
+
       const errorMessage = ErrorHelper.getErrorMessage(
         errorType,
         customMessage,
       );
-      setError(errorMessage);
-      setAuthState(AUTH_STATES.ERROR);
 
+      dispatch({
+        type: ACTION_TYPES.SET_ERROR,
+        payload: errorMessage,
+      });
+
+      // Auto-logout on token expiration
       if (errorType === 'TOKEN_EXPIRED') {
-        clearCredentials();
+        try {
+          await clearCredentialsInternal();
+        } catch (error) {
+          console.error('Error during auto-logout:', error);
+        }
+      }
+    },
+    [],
+  );
+
+  // Internal function to clear credentials without circular dependency
+  const clearCredentialsInternal = useCallback(async () => {
+    if (!isMountedRef.current) return { success: false };
+
+    try {
+      // Clear timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
 
-      clearError();
-    },
-    [clearError, clearCredentials],
-  );
+      // Save token for server logout
+      const token = state.credentials?.token;
+
+      // Clear storage first
+      await StorageHelper.clearUserData();
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.ACCESS_TOKEN,
+        STORAGE_KEYS.REFRESH_TOKEN,
+        STORAGE_KEYS.USER_DATA,
+        'pgOwnerCredentials',
+        'savedEmail',
+        'rememberMe',
+        'userData',
+        'userToken',
+      ]);
+
+      // Server logout (don't wait for it)
+      if (token) {
+        AuthHelper.logout(token).catch(error => {
+          console.warn('Server logout failed:', error);
+        });
+      }
+
+      // Update state
+      dispatch({ type: ACTION_TYPES.SET_UNAUTHENTICATED });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Clear credentials error:', error);
+      // Force clear state even on error
+      dispatch({ type: ACTION_TYPES.SET_UNAUTHENTICATED });
+      throw error;
+    }
+  }, [state.credentials?.token]);
 
   // Validate user session
   const validateSession = useCallback(async () => {
+    if (!isMountedRef.current) return false;
+
     try {
-      if (!credentials?.token) {
-        setAuthState(AUTH_STATES.UNAUTHENTICATED);
+      if (!state.credentials?.token) {
+        dispatch({ type: ACTION_TYPES.SET_UNAUTHENTICATED });
         return false;
       }
 
       const { isValid, userData, validationError } =
-        await AuthHelper.validateToken(credentials.token);
+        await AuthHelper.validateToken(state.credentials.token);
+
+      if (!isMountedRef.current) return false;
 
       if (isValid && userData) {
-        setUserProfile(userData);
-        setAuthState(AUTH_STATES.AUTHENTICATED);
+        dispatch({
+          type: ACTION_TYPES.SET_AUTHENTICATED,
+          payload: {
+            credentials: state.credentials,
+            userProfile: userData,
+          },
+        });
         return true;
       } else {
-        handleAuthError(validationError || 'TOKEN_EXPIRED');
+        await handleAuthError(validationError || 'TOKEN_EXPIRED');
         return false;
       }
     } catch (sessionError) {
       console.error('Session validation error:', sessionError);
-      handleAuthError('NETWORK_ERROR');
+      if (isMountedRef.current) {
+        await handleAuthError('NETWORK_ERROR');
+      }
       return false;
     }
-  }, [credentials, handleAuthError]);
+  }, [state.credentials, handleAuthError]);
 
   // Load stored credentials
   const checkLoginCredentials = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
     try {
-      setLoading(true);
-      setError(null);
+      dispatch({
+        type: ACTION_TYPES.SET_LOADING,
+        payload: true,
+        clearError: true,
+      });
 
       const { token, userData } = await StorageHelper.getUserData();
+
+      if (!isMountedRef.current) return;
 
       if (token && userData) {
         const credentialsData = {
           ...userData,
           token,
-          accessToken: token, // For compatibility with API calls
+          accessToken: token,
         };
-        setCredentialsState(credentialsData);
-        setAuthState(AUTH_STATES.AUTHENTICATED);
 
         // Fetch fresh user details
         try {
           const ownerDetails = await getOwnerDetails(credentialsData);
+
+          if (!isMountedRef.current) return;
+
           if (ownerDetails) {
-            setUserProfile(ownerDetails);
+            dispatch({
+              type: ACTION_TYPES.SET_AUTHENTICATED,
+              payload: {
+                credentials: credentialsData,
+                userProfile: ownerDetails,
+              },
+            });
+          } else {
+            throw new Error('Failed to fetch user details');
           }
         } catch (detailsError) {
           console.warn('Failed to fetch owner details:', detailsError);
-          //temp : fail authentication if details fetch fails
-          setAuthState(AUTH_STATES.UNAUTHENTICATED);
+
+          if (isMountedRef.current) {
+            // Use stored data as fallback
+            dispatch({
+              type: ACTION_TYPES.SET_AUTHENTICATED,
+              payload: {
+                credentials: credentialsData,
+                userProfile: credentialsData,
+              },
+            });
+          }
         }
       } else {
-        setAuthState(AUTH_STATES.UNAUTHENTICATED);
+        dispatch({ type: ACTION_TYPES.SET_UNAUTHENTICATED });
       }
     } catch (credentialsError) {
       console.error('Credentials check error:', credentialsError);
-      handleAuthError('SERVER_ERROR');
-    } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        await handleAuthError('SERVER_ERROR');
+      }
     }
   }, [handleAuthError]);
 
   // Save credentials securely
   const setCredentials = useCallback(
     async newCredentials => {
-      try {
-        setLoading(true);
-        setError(null);
+      if (!isMountedRef.current) return { success: false };
 
-        // Allow null/undefined for clearing credentials during logout
+      try {
+        dispatch({
+          type: ACTION_TYPES.SET_LOADING,
+          payload: true,
+          clearError: true,
+        });
+
+        // Handle null/undefined for logout
         if (newCredentials === null || newCredentials === undefined) {
-          await Promise.all([
-            StorageHelper.clearUserData(),
-            new Promise(resolve => setCredentialsState(null)),
-            new Promise(resolve => setUserProfile(null)),
-          ]);
-          setAuthState(AUTH_STATES.UNAUTHENTICATED);
-          setLoading(false);
+          await clearCredentialsInternal();
           return { success: true };
         }
 
+        // Validate input
         if (typeof newCredentials !== 'object') {
-          setLoading(false);
           throw new Error('Invalid credentials format');
         }
 
-        // Validate required fields
         const requiredFields = ['email'];
         const missingFields = requiredFields.filter(
           field => !newCredentials[field],
@@ -178,7 +369,7 @@ export const CredentialsProvider = ({ children }) => {
           );
         }
 
-        // Ensure both token formats are available for compatibility
+        // Prepare credentials with token compatibility
         const credentialsWithTokens = {
           ...newCredentials,
           token: newCredentials.token || newCredentials.accessToken,
@@ -191,213 +382,158 @@ export const CredentialsProvider = ({ children }) => {
           credentialsWithTokens.token || '',
         );
 
+        if (!isMountedRef.current) return { success: false };
+
         if (storageResult.success) {
-          // Set credentials state first
-          setCredentialsState(credentialsWithTokens);
+          dispatch({
+            type: ACTION_TYPES.SET_AUTHENTICATED,
+            payload: {
+              credentials: credentialsWithTokens,
+              userProfile: credentialsWithTokens,
+            },
+          });
 
-          // Set user profile
-          setUserProfile(credentialsWithTokens);
-
-          // Set auth state to trigger navigation
-          setAuthState(AUTH_STATES.AUTHENTICATED);
-
-          // Return success only after all states are set
           return { success: true };
         } else {
           throw new Error('Failed to store credentials');
         }
       } catch (saveError) {
         console.error('Save credentials error:', saveError);
-        handleAuthError('SERVER_ERROR', saveError.message);
-      } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          await handleAuthError('SERVER_ERROR', saveError.message);
+        }
+        return { success: false, error: saveError.message };
       }
     },
-    [handleAuthError],
+    [clearCredentialsInternal, handleAuthError],
   );
 
-  // Clear credentials and logout
+  // Public clear credentials function
   const clearCredentials = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      // Clear session timeout
-      if (sessionTimeout) {
-        clearTimeout(sessionTimeout);
-        setSessionTimeout(null);
-      }
-
-      // Save the token before clearing state
-      const token = credentials?.token;
-
-      // First clear all storage
-      try {
-        await StorageHelper.clearUserData();
-        await AsyncStorage.multiRemove([
-          STORAGE_KEYS.ACCESS_TOKEN,
-          STORAGE_KEYS.REFRESH_TOKEN,
-          STORAGE_KEYS.USER_DATA,
-          'pgOwnerCredentials',
-          'savedEmail',
-          'rememberMe',
-          'userData',
-          'userToken',
-        ]);
-        console.log('Storage cleared successfully');
-      } catch (storageError) {
-        console.error('Error clearing storage:', storageError);
-        throw new Error('Failed to clear storage');
-      }
-
-      try {
-        if (token) {
-          // Make API call to invalidate token on server
-          await AuthHelper.logout(token);
-        }
-      } catch (apiError) {
-        console.error('Error logging out from server:', apiError);
-        // Continue with local logout even if server logout fails
-      }
-
-      // Clear all state in a synchronized manner
-      // First set auth state to trigger navigation guards
-      setAuthState(AUTH_STATES.UNAUTHENTICATED);
-
-      // Then clear the rest of the state
-      await Promise.all([
-        new Promise(resolve => {
-          setCredentialsState(null);
-          resolve();
-        }),
-        new Promise(resolve => {
-          setUserProfile(null);
-          resolve();
-        }),
-        new Promise(resolve => {
-          setError(null);
-          resolve();
-        }),
-      ]);
-
-      if (__DEV__) {
-        console.log('Logout completed successfully');
-      }
-
-      return { success: true };
-    } catch (logoutError) {
-      console.error('Clear credentials error:', logoutError);
-      // Force clear state even if there's an error
-      setCredentialsState(null);
-      setUserProfile(null);
-      setAuthState(AUTH_STATES.UNAUTHENTICATED);
-      setError(null);
-
-      throw logoutError;
-    } finally {
-      setLoading(false);
-    }
-  }, [credentials, sessionTimeout]);
+    return await clearCredentialsInternal();
+  }, [clearCredentialsInternal]);
 
   // Update user profile
   const updateProfile = useCallback(
     async profileData => {
+      if (!isMountedRef.current) return { success: false };
+
       try {
-        if (!credentials?.token) {
+        if (!state.credentials?.token) {
           throw new Error('User not authenticated');
         }
 
         // Optimistic update
-        const updatedProfile = { ...userProfile, ...profileData };
-        setUserProfile(updatedProfile);
+        dispatch({
+          type: ACTION_TYPES.UPDATE_PROFILE,
+          payload: profileData,
+        });
 
         // Update stored credentials
-        const updatedCredentials = { ...credentials, ...profileData };
+        const updatedCredentials = { ...state.credentials, ...profileData };
         await StorageHelper.storeUserData(
           updatedCredentials,
-          credentials.token,
+          state.credentials.token,
         );
-        setCredentialsState(updatedCredentials);
 
         return { success: true, message: 'Profile updated successfully' };
       } catch (profileError) {
         console.error('Profile update error:', profileError);
-        // Revert optimistic update
-        setUserProfile(userProfile);
+        // Revert optimistic update by re-fetching
+        await checkLoginCredentials();
         return { success: false, message: profileError.message };
       }
     },
-    [credentials, userProfile],
+    [state.credentials, checkLoginCredentials],
   );
 
   // Refresh credentials
   const refreshCredentials = useCallback(async () => {
-    if (credentials?.token) {
+    if (state.credentials?.token && isMountedRef.current) {
+      dispatch({ type: ACTION_TYPES.SET_REFRESHING, payload: true });
       await checkLoginCredentials();
     }
-  }, [credentials, checkLoginCredentials]);
+  }, [state.credentials, checkLoginCredentials]);
 
   // Check user permissions
   const hasPermission = useCallback(
     permission => {
-      if (!userProfile?.permissions) {
+      if (!state.userProfile?.permissions) {
         return false;
       }
 
       return (
-        userProfile.permissions.includes(permission) ||
-        userProfile.permissions.includes('admin')
+        state.userProfile.permissions.includes(permission) ||
+        state.userProfile.permissions.includes('admin')
       );
     },
-    [userProfile],
+    [state.userProfile],
   );
 
   // Auto-refresh token before expiry
   useEffect(() => {
-    if (credentials?.tokenExpiry) {
+    if (state.credentials?.tokenExpiry && isAuthenticated) {
       const timeUntilExpiry =
-        new Date(credentials.tokenExpiry).getTime() - Date.now();
-      const refreshTime = timeUntilExpiry - 5 * 60 * 1000; // Refresh 5 minutes before expiry
+        new Date(state.credentials.tokenExpiry).getTime() - Date.now();
+      const refreshTime = timeUntilExpiry - 5 * 60 * 1000; // 5 minutes before
 
       if (refreshTime > 0) {
-        const timeout = setTimeout(async () => {
+        timeoutRef.current = setTimeout(async () => {
+          if (!isMountedRef.current) return;
+
           try {
             const { success, tokens } = await AuthHelper.refreshToken(
-              credentials.refreshToken,
+              state.credentials.refreshToken,
             );
-            if (success && tokens) {
-              await setCredentials({ ...credentials, ...tokens });
-            } else {
-              handleAuthError('TOKEN_EXPIRED');
+
+            if (success && tokens && isMountedRef.current) {
+              await setCredentials({ ...state.credentials, ...tokens });
+            } else if (isMountedRef.current) {
+              await handleAuthError('TOKEN_EXPIRED');
             }
           } catch (refreshError) {
-            handleAuthError('TOKEN_EXPIRED');
+            if (isMountedRef.current) {
+              await handleAuthError('TOKEN_EXPIRED');
+            }
           }
         }, refreshTime);
-
-        setSessionTimeout(timeout);
       }
     }
 
     return () => {
-      if (sessionTimeout) {
-        clearTimeout(sessionTimeout);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
-  }, [credentials, handleAuthError, setCredentials, sessionTimeout]);
+  }, [state.credentials, isAuthenticated, setCredentials, handleAuthError]);
 
   // Initialize credentials on mount
   useEffect(() => {
     checkLoginCredentials();
   }, [checkLoginCredentials]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Context value with memoization for performance
   const contextValue = useMemo(
     () => ({
-      credentials,
-      authState,
-      loading,
-      error,
-      userProfile,
+      credentials: state.credentials,
+      authState: state.authState,
+      loading: state.loading,
+      error: state.error,
+      userProfile: state.userProfile,
       isAuthenticated,
       setCredentials,
       clearCredentials,
@@ -405,17 +541,15 @@ export const CredentialsProvider = ({ children }) => {
       refreshCredentials,
       validateSession,
       hasPermission,
+      clearError,
       // Additional utilities
-      isLoading: loading,
-      isError: authState === AUTH_STATES.ERROR,
-      errorMessage: error,
+      isLoading: state.loading,
+      isError: state.authState === AUTH_STATES.ERROR,
+      isRefreshing: state.authState === AUTH_STATES.REFRESHING,
+      errorMessage: state.error,
     }),
     [
-      credentials,
-      authState,
-      loading,
-      error,
-      userProfile,
+      state,
       isAuthenticated,
       setCredentials,
       clearCredentials,
@@ -423,6 +557,7 @@ export const CredentialsProvider = ({ children }) => {
       refreshCredentials,
       validateSession,
       hasPermission,
+      clearError,
     ],
   );
 
@@ -444,13 +579,37 @@ export const useAuth = () => {
   return context;
 };
 
-// HOC for protected components
-export const withAuth = Component => {
+// Enhanced HOC for protected components
+export const withAuth = (Component, options = {}) => {
+  const {
+    requiredPermissions = [],
+    redirectOnFail = true,
+    fallbackComponent = null,
+  } = options;
+
   const AuthenticatedComponent = props => {
     const auth = useAuth();
 
+    // Check authentication
     if (!auth.isAuthenticated) {
-      return null; // or redirect to login
+      if (fallbackComponent) {
+        return fallbackComponent;
+      }
+      return redirectOnFail ? null : <Component {...props} auth={auth} />;
+    }
+
+    // Check permissions if required
+    if (requiredPermissions.length > 0) {
+      const hasAllPermissions = requiredPermissions.every(permission =>
+        auth.hasPermission(permission),
+      );
+
+      if (!hasAllPermissions) {
+        if (fallbackComponent) {
+          return fallbackComponent;
+        }
+        return null;
+      }
     }
 
     return <Component {...props} auth={auth} />;
@@ -459,6 +618,7 @@ export const withAuth = Component => {
   AuthenticatedComponent.displayName = `withAuth(${
     Component.displayName || Component.name
   })`;
+
   return AuthenticatedComponent;
 };
 

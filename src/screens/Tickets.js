@@ -569,4 +569,6 @@ const styles = StyleSheet.create({
   chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
 });
 
-export default Tickets;
+import withAuthProtection from '../components/withAuthProtection';
+
+export default withAuthProtection(Tickets);

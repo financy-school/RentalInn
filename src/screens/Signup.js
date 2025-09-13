@@ -22,7 +22,7 @@ import StandardText from '../components/StandardText/StandardText';
 // Services and utilities
 import { handleUserSignup } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
-import { AuthHelpers } from '../services/AuthHelper';
+
 const { StorageHelper, PerformanceHelper } = helpers;
 
 import {
@@ -34,6 +34,7 @@ import {
 // Theme
 import colors from '../theme/color';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AuthHelpers from '../services/AuthHelper';
 
 const SignUp = ({ navigation }) => {
   // State management
