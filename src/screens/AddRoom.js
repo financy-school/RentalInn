@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { TextInput, useTheme } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useFocusEffect } from '@react-navigation/native';
 
 import GradientCard from '../components/GradientCard/GradientCard';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
@@ -31,19 +32,29 @@ import { CredentialsContext } from '../context/CredentialsContext';
 
 const { width } = Dimensions.get('window');
 
-const AddRoom = ({ navigation }) => {
+const AddRoom = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
   const theme = useTheme();
-  const route =
-    navigation && navigation.getState
-      ? navigation.getState().routes.find(r => r.name === 'AddRoom')
-      : null;
 
   // Check if in edit mode
   const params = route?.params;
   const isEdit = params && params.isEdit;
   const editRoom = params && params.room;
+
+  // Set navigation header title based on mode
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({
+        title: isEdit ? 'Edit Room' : 'Add Room',
+        headerTitleStyle: {
+          fontFamily: 'Metropolis-Medium',
+          fontSize: 18,
+          fontWeight: '600',
+        },
+      });
+    }, [navigation, isEdit]),
+  );
 
   // Form state
   const [formData, setFormData] = useState({
@@ -102,7 +113,9 @@ const AddRoom = ({ navigation }) => {
         bedCount:
           editRoom.bedCount?.toString() || editRoom.totalBeds?.toString() || '',
         bathroomCount: editRoom.bathroomCount?.toString() || '',
-        amenities: editRoom.amenities?.join(', ') || '',
+        amenities: Array.isArray(editRoom.amenities)
+          ? editRoom.amenities.join(', ')
+          : editRoom.amenities || '',
         furnished: !!editRoom.furnished,
         available: !!editRoom.available || !!editRoom.isAvailable,
         lastElectricityReading:

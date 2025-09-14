@@ -283,6 +283,16 @@ export const addTenant = async (accessToken, propertyId, tenantData) => {
   );
 };
 
+export const updateTenant = async (accessToken, tenantId, tenantData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.put(`/tenants/${tenantId}`, tenantData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_TENANT',
+  );
+};
+
 export const fetchTenants = async (accessToken, propertyId) => {
   return handleApiResponse(
     () =>

@@ -308,7 +308,6 @@ const RootStack = () => {
             name={SCREEN_NAMES.ADD_ROOM}
             component={AddRoom}
             options={{
-              headerTitle: 'Add Room',
               headerLeft: () => null,
             }}
           />
@@ -317,7 +316,6 @@ const RootStack = () => {
             name={SCREEN_NAMES.ADD_TENANT}
             component={AddTenant}
             options={{
-              headerTitle: 'Add Tenant',
               headerLeft: () => null,
             }}
           />

@@ -1,6 +1,7 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInput as PaperInput, useTheme } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { ThemeContext } from '../context/ThemeContext';
 import Gap from '../components/Gap/Gap';
 import StandardText from '../components/StandardText/StandardText';
@@ -8,16 +9,36 @@ import GradientCard from '../components/GradientCard/GradientCard';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
-import { addTenant } from '../services/NetworkUtils';
+import { addTenant, updateTenant } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 
-const AddTenant = ({ navigation }) => {
+const AddTenant = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const theme = useTheme();
   const { credentials } = useContext(CredentialsContext);
+
+  // Check if in edit mode
+  const params = route?.params;
+  const isEdit = params && params.isEdit;
+  const editTenant = params && params.tenant;
+  console.log('Edit Tenant:', isEdit, editTenant);
+
+  // Set navigation header title based on mode
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({
+        title: isEdit ? 'Edit Tenant' : 'Add Tenant',
+        headerTitleStyle: {
+          fontFamily: 'Metropolis-Medium',
+          fontSize: 18,
+          fontWeight: '600',
+        },
+      });
+    }, [navigation, isEdit]),
+  );
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [formErrors, setFormErrors] = useState({});
@@ -67,6 +88,25 @@ const AddTenant = ({ navigation }) => {
     tenantType: '',
     addRentOn: '',
   });
+
+  // Populate form when in edit mode
+  useEffect(() => {
+    if (isEdit && editTenant) {
+      setTenant({
+        name: editTenant.name || '',
+        phone: editTenant.phone || '',
+        alternatePhone: editTenant.alternate_phone || '',
+        email: editTenant.email || '',
+        roomId: editTenant.room_id || editTenant.room?.id || '',
+        checkInDate: editTenant.check_in_date || '',
+        checkOutDate: editTenant.check_out_date || '',
+        lockInPeriod: editTenant.lock_in_period?.toString() || '',
+        agreementPeriod: editTenant.agreement_period?.toString() || '',
+        tenantType: editTenant.tenant_type || '',
+        addRentOn: editTenant.add_rent_on || '',
+      });
+    }
+  }, [isEdit, editTenant]);
 
   // Validation function
   const validateForm = () => {
@@ -124,14 +164,24 @@ const AddTenant = ({ navigation }) => {
     setLoading(true);
     setErrorMsg('');
     try {
-      await addTenant(credentials.accessToken, credentials.property_id, tenant);
+      if (isEdit) {
+        await updateTenant(credentials.accessToken, editTenant.id, tenant);
+      } else {
+        await addTenant(
+          credentials.accessToken,
+          credentials.property_id,
+          tenant,
+        );
+      }
       navigation.goBack({ refresh: true });
     } catch (error) {
       setErrorMsg(
         error?.message ||
           (typeof error === 'string'
             ? error
-            : 'Failed to add tenant. Please try again.'),
+            : `Failed to ${
+                isEdit ? 'update' : 'add'
+              } tenant. Please try again.`),
       );
     } finally {
       setLoading(false);
@@ -460,8 +510,18 @@ const AddTenant = ({ navigation }) => {
         {/* Submit Buttons */}
         <View style={styles.submitContainer}>
           <StyledButton
-            title={loading ? 'Adding Tenant...' : 'Add Tenant'}
-            icon={loading ? 'loading' : 'account-plus'}
+            title={
+              loading
+                ? isEdit
+                  ? 'Updating Tenant...'
+                  : 'Adding Tenant...'
+                : isEdit
+                ? 'Update Tenant'
+                : 'Add Tenant'
+            }
+            icon={
+              loading ? 'loading' : isEdit ? 'account-edit' : 'account-plus'
+            }
             variant="primary"
             size="large"
             onPress={handleSubmit}

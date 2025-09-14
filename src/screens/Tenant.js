@@ -15,6 +15,7 @@ import {
 import { Avatar, FAB, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TextInput as PaperInput } from 'react-native-paper';
+import Share from 'react-native-share';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
@@ -125,6 +126,41 @@ const Tenants = ({ navigation }) => {
   const closeMenu = () => {
     setActiveMenuTenantId(null);
     setMenuPosition(null);
+  };
+
+  // 🔹 Share tenant details
+  const handleShareTenant = async tenant => {
+    try {
+      const message =
+        `👤 Tenant Details\n` +
+        `Name: ${tenant.name || 'N/A'}\n` +
+        `Phone: ${tenant.phone || 'N/A'}\n` +
+        (tenant.alternate_phone
+          ? `Alternate Phone: ${tenant.alternate_phone}\n`
+          : '') +
+        `Email: ${tenant.email || 'N/A'}\n` +
+        `Room: ${tenant?.room?.name || 'No room assigned'}\n` +
+        `Rent: ₹${tenant?.room?.rentAmount || 'N/A'}\n` +
+        `Check-in Date: ${tenant.check_in_date || 'N/A'}\n` +
+        `Check-out Date: ${tenant.check_out_date || 'N/A'}\n` +
+        (tenant.lock_in_period
+          ? `Lock-in Period: ${tenant.lock_in_period} months\n`
+          : '') +
+        (tenant.agreement_period
+          ? `Agreement Period: ${tenant.agreement_period} months\n`
+          : '') +
+        (tenant.tenant_type ? `Tenant Type: ${tenant.tenant_type}\n` : '') +
+        (tenant.has_dues ? `⚠️ Has outstanding dues\n` : '✅ No dues\n') +
+        (tenant.is_on_notice ? `⚠️ On notice period\n` : '');
+
+      await Share.open({
+        title: 'Share Tenant Details',
+        message,
+      });
+    } catch (err) {
+      // User cancelled or error occurred
+      console.log('Share cancelled or failed:', err);
+    }
   };
 
   return (
@@ -341,8 +377,12 @@ const Tenants = ({ navigation }) => {
                   style={styles.menuItem}
                   onPress={() => {
                     closeMenu();
-                    navigation.navigate('EditTenant', {
-                      tenantId: activeMenuTenantId,
+                    const selectedTenant = tenants.find(
+                      t => t.id === activeMenuTenantId,
+                    );
+                    navigation.navigate('AddTenant', {
+                      tenant: selectedTenant,
+                      isEdit: true,
                     });
                   }}
                 >
@@ -360,7 +400,12 @@ const Tenants = ({ navigation }) => {
                   style={styles.menuItem}
                   onPress={() => {
                     closeMenu();
-                    // put your share logic here (e.g., Share API)
+                    const selectedTenant = tenants.find(
+                      t => t.id === activeMenuTenantId,
+                    );
+                    if (selectedTenant) {
+                      handleShareTenant(selectedTenant);
+                    }
                   }}
                 >
                   <MaterialCommunityIcons
