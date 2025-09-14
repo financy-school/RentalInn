@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     bottom: 120,
     right: 30,
     borderRadius: 30,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
   },
   chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
   menuContainer: {

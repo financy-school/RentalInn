@@ -149,7 +149,7 @@ const RecordPayment = ({ navigation, route }) => {
       />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: cardBackground }]}>
+      {/* <View style={[styles.header, { backgroundColor: cardBackground }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.closeButton}
@@ -167,7 +167,7 @@ const RecordPayment = ({ navigation, route }) => {
           Record Payment
         </StandardText>
         <View style={styles.placeholder} />
-      </View>
+      </View> */}
 
       <ScrollView
         style={styles.scrollContainer}

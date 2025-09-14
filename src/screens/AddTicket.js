@@ -157,8 +157,8 @@ const AddTicket = ({ navigation }) => {
 
   const styles = StyleSheet.create({
     container: {
-      flexGrow: 1,
-      padding: 16,
+      flex: 1,
+      paddingTop: 10,
       backgroundColor: theme.colors.surface,
     },
     headerContainer: {
@@ -237,7 +237,7 @@ const AddTicket = ({ navigation }) => {
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-      <View style={styles.headerContainer}>
+      {/* <View style={styles.headerContainer}>
         <LinearGradient
           colors={[theme.colors.primary, theme.colors.secondary]}
           style={styles.gradientTitle}
@@ -252,7 +252,7 @@ const AddTicket = ({ navigation }) => {
             🎫 Create Support Ticket
           </StandardText>
         </LinearGradient>
-      </View>
+      </View> */}
 
       <GradientCard
         gradient={true}

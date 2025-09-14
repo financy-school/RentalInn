@@ -152,10 +152,7 @@ const AddTenant = ({ navigation }) => {
     container: {
       flex: 1,
       backgroundColor: theme.colors.surface,
-    },
-    scrollContainer: {
-      padding: 16,
-      backgroundColor: theme.colors.surface,
+      paddingTop: 10,
     },
 
     headerContainer: {
@@ -193,6 +190,28 @@ const AddTenant = ({ navigation }) => {
       gap: 8,
       marginVertical: 8,
     },
+    chip: {
+      backgroundColor: mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
+      borderWidth: 1,
+      borderColor: mode === 'dark' ? '#404040' : '#e0e0e0',
+      borderRadius: 6,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    chipSelected: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    chipText: {
+      color: mode === 'dark' ? '#ffffff' : '#333333',
+      fontFamily: 'Metropolis-Medium',
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    chipTextSelected: {
+      color: '#ffffff',
+      fontWeight: '600',
+    },
     errorText: {
       color: '#D32F2F',
       marginTop: 4,
@@ -214,12 +233,9 @@ const AddTenant = ({ navigation }) => {
   });
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContainer}
-      showsVerticalScrollIndicator={false}
-    >
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
-      <View style={styles.headerContainer}>
+      {/* <View style={styles.headerContainer}>
         <LinearGradient
           colors={[theme.colors.primary, theme.colors.secondary]}
           style={styles.gradientTitle}
@@ -234,7 +250,7 @@ const AddTenant = ({ navigation }) => {
             👤 Add New Tenant
           </StandardText>
         </LinearGradient>
-      </View>
+      </View> */}
 
       <GradientCard
         gradient={true}
@@ -378,6 +394,14 @@ const AddTenant = ({ navigation }) => {
                 onPress={() => handleChange('tenantType', 'family')}
                 size="medium"
                 icon="home-heart"
+                style={[
+                  styles.chip,
+                  tenant.tenantType === 'family' && styles.chipSelected,
+                ]}
+                textStyle={[
+                  styles.chipText,
+                  tenant.tenantType === 'family' && styles.chipTextSelected,
+                ]}
               />
               <AnimatedChip
                 label="Bachelors"
@@ -385,6 +409,14 @@ const AddTenant = ({ navigation }) => {
                 onPress={() => handleChange('tenantType', 'bachelors')}
                 size="medium"
                 icon="account-group"
+                style={[
+                  styles.chip,
+                  tenant.tenantType === 'bachelors' && styles.chipSelected,
+                ]}
+                textStyle={[
+                  styles.chipText,
+                  tenant.tenantType === 'bachelors' && styles.chipTextSelected,
+                ]}
               />
             </View>
             {formErrors.tenantType && (

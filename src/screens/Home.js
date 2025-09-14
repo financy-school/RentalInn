@@ -490,7 +490,7 @@ const Home = ({ navigation }) => {
           <Gap size="md" />
 
           {/* Auto-Reconciliation (Payment Inbox Preview) */}
-          <StandardCard
+          {/* <StandardCard
             style={[styles.kpiCard, { height: 400, width: '100%' }]}
           >
             <View style={styles.rowBetween}>
@@ -543,6 +543,116 @@ const Home = ({ navigation }) => {
             >
               Sync Now
             </Button>
+          </StandardCard> */}
+
+          <StandardCard
+            style={[
+              styles.kpiCard,
+              { height: 400, width: '100%', position: 'relative' },
+            ]}
+          >
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <MaterialCommunityIcons
+                  name="sync"
+                  size={20}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={{ marginLeft: 6 }}
+                >
+                  Auto Reconciliation
+                </StandardText>
+              </View>
+              <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
+            </View>
+            <StandardText size="sm" style={{ marginTop: 6 }}>
+              Securely reads payment messages and updates records instantly.
+            </StandardText>
+
+            <Gap size="sm" />
+            {reconInbox.map(msg => (
+              <List.Item
+                key={msg.id}
+                title={`${msg.from} • ${msg.preview}`}
+                left={() => (
+                  <MaterialCommunityIcons
+                    name="message-text-outline"
+                    size={22}
+                    color={colors.primary}
+                  />
+                )}
+                right={() => (
+                  <Chip
+                    mode={msg.matched ? 'flat' : 'outlined'}
+                    icon={msg.matched ? 'check' : 'alert'}
+                  >
+                    {msg.matched ? 'Matched' : 'Review'}
+                  </Chip>
+                )}
+              />
+            ))}
+            <Button
+              mode="contained"
+              buttonColor={colors.primary}
+              style={{ marginTop: 6 }}
+              disabled
+            >
+              Sync Now
+            </Button>
+
+            {/* Premium Feature Lock Overlay */}
+            <View style={styles.premiumOverlay}>
+              <View style={styles.premiumContent}>
+                <View style={styles.lockIconContainer}>
+                  <MaterialCommunityIcons
+                    name="lock"
+                    size={40}
+                    color="#FFD700"
+                  />
+                  <View style={styles.crownIcon}>
+                    <MaterialCommunityIcons
+                      name="crown"
+                      size={24}
+                      color="#FFD700"
+                    />
+                  </View>
+                </View>
+
+                <StandardText
+                  fontWeight="bold"
+                  size="lg"
+                  style={styles.premiumTitle}
+                >
+                  Premium Feature
+                </StandardText>
+
+                <StandardText
+                  size="sm"
+                  style={styles.premiumDescription}
+                  textAlign="center"
+                >
+                  Please contact your sales manager to unlock this feature
+                </StandardText>
+
+                <TouchableOpacity style={styles.contactButton}>
+                  <MaterialCommunityIcons
+                    name="phone"
+                    size={16}
+                    color="#fff"
+                    style={{ marginRight: 6 }}
+                  />
+                  <StandardText
+                    fontWeight="semibold"
+                    style={styles.contactButtonText}
+                  >
+                    Contact Sales
+                  </StandardText>
+                </TouchableOpacity>
+              </View>
+            </View>
           </StandardCard>
 
           <Gap size="md" />
@@ -1019,6 +1129,73 @@ const styles = StyleSheet.create({
   },
   kycText: {
     color: '#fff',
+  },
+  // Add these to your styles object
+  premiumOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)', // Reduced opacity to show content
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  premiumContent: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.3)', // Golden border
+  },
+  lockIconContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  crownIcon: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 2,
+  },
+  premiumTitle: {
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  premiumDescription: {
+    color: '#666',
+    marginBottom: 20,
+    lineHeight: 20,
+    maxWidth: 250,
+  },
+  contactButton: {
+    backgroundColor: '#FFD700',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  contactButtonText: {
+    color: '#333',
+    fontSize: 14,
   },
 });
 

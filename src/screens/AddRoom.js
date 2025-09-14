@@ -321,21 +321,12 @@ const AddRoom = ({ navigation }) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      paddingHorizontal: 20,
       paddingTop: 10,
       backgroundColor: theme.colors.surface,
     },
     headerContainer: {
       position: 'relative',
       alignItems: 'center',
-    },
-    closeButton: {
-      position: 'absolute',
-      top: -10,
-      right: -10,
-      zIndex: 999,
-      backgroundColor: theme.colors.errorContainer,
-      borderRadius: 20,
     },
     titleContainer: {
       alignItems: 'center',
@@ -364,6 +355,28 @@ const AddRoom = ({ navigation }) => {
       flexWrap: 'wrap',
       gap: 8,
       marginVertical: 12,
+    },
+    chip: {
+      backgroundColor: mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
+      borderWidth: 1,
+      borderColor: mode === 'dark' ? '#404040' : '#e0e0e0',
+      borderRadius: 6,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    chipSelected: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    chipText: {
+      color: mode === 'dark' ? '#ffffff' : '#333333',
+      fontFamily: 'Metropolis-Medium',
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    chipTextSelected: {
+      color: '#ffffff',
+      fontWeight: '600',
     },
     amenitiesContainer: {
       flexDirection: 'row',
@@ -443,7 +456,7 @@ const AddRoom = ({ navigation }) => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
-      <View style={styles.headerContainer}>
+      {/* <View style={styles.headerContainer}>
         <View style={styles.titleContainer}>
           <LinearGradient
             colors={[theme.colors.primary, theme.colors.secondary]}
@@ -460,7 +473,7 @@ const AddRoom = ({ navigation }) => {
             </StandardText>
           </LinearGradient>
         </View>
-      </View>
+      </View> */}
 
       <GradientCard
         gradient={true}
@@ -499,6 +512,14 @@ const AddRoom = ({ navigation }) => {
                   selected={formData.areaType === type}
                   onPress={() => handleInputChange('areaType', type)}
                   size="medium"
+                  style={[
+                    styles.chip,
+                    formData.areaType === type && styles.chipSelected,
+                  ]}
+                  textStyle={[
+                    styles.chipText,
+                    formData.areaType === type && styles.chipTextSelected,
+                  ]}
                 />
               ))}
             </View>
@@ -609,12 +630,28 @@ const AddRoom = ({ navigation }) => {
                 selected={formData.furnished === true}
                 onPress={() => handleInputChange('furnished', true)}
                 size="medium"
+                style={[
+                  styles.chip,
+                  formData.furnished === true && styles.chipSelected,
+                ]}
+                textStyle={[
+                  styles.chipText,
+                  formData.furnished === true && styles.chipTextSelected,
+                ]}
               />
               <AnimatedChip
                 label="No"
                 selected={formData.furnished === false}
                 onPress={() => handleInputChange('furnished', false)}
                 size="medium"
+                style={[
+                  styles.chip,
+                  formData.furnished === false && styles.chipSelected,
+                ]}
+                textStyle={[
+                  styles.chipText,
+                  formData.furnished === false && styles.chipTextSelected,
+                ]}
               />
             </View>
           </View>
@@ -629,12 +666,28 @@ const AddRoom = ({ navigation }) => {
                 selected={formData.available === true}
                 onPress={() => handleInputChange('available', true)}
                 size="medium"
+                style={[
+                  styles.chip,
+                  formData.available === true && styles.chipSelected,
+                ]}
+                textStyle={[
+                  styles.chipText,
+                  formData.available === true && styles.chipTextSelected,
+                ]}
               />
               <AnimatedChip
                 label="No"
                 selected={formData.available === false}
                 onPress={() => handleInputChange('available', false)}
                 size="medium"
+                style={[
+                  styles.chip,
+                  formData.available === false && styles.chipSelected,
+                ]}
+                textStyle={[
+                  styles.chipText,
+                  formData.available === false && styles.chipTextSelected,
+                ]}
               />
             </View>
           </View>

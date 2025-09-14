@@ -22,7 +22,7 @@ import colors from '../theme/color';
 import { SCREEN_NAMES } from './constants';
 
 const Tab = createBottomTabNavigator();
-const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get('window');
 
 // Tab configuration for better maintainability
 const TAB_CONFIG = [
@@ -95,11 +95,11 @@ const CustomTabButton = props => (
 const BottomNavigation = () => {
   // Memoize tab bar height for different screen sizes
   const tabBarHeight = useMemo(() => {
-    const baseHeight = Platform.OS === 'ios' ? 90 : 70;
+    const baseHeight = Platform.OS === 'ios' ? 85 : 65;
 
     // Adjust for different screen sizes
     if (screenHeight < 700) {
-      return baseHeight - 15;
+      return baseHeight - 10;
     } else if (screenHeight > 900) {
       return baseHeight + 5;
     }
@@ -112,10 +112,8 @@ const BottomNavigation = () => {
     () => ({
       ...styles.tabBar,
       height: tabBarHeight,
-      bottom: Platform.OS === 'ios' ? 34 : 25,
-      left: screenWidth * 0.05,
-      right: screenWidth * 0.05,
-      paddingBottom: Platform.OS === 'ios' ? 25 : 15,
+      paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+      paddingTop: 10,
     }),
     [tabBarHeight],
   );
@@ -194,34 +192,22 @@ const BottomNavigation = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 28,
-    paddingTop: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
     paddingHorizontal: 8,
 
-    // Enhanced shadow for iOS
+    // Professional shadow for iOS
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: -2,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
 
-    // Enhanced elevation for Android
-    elevation: 15,
-
-    // Remove default border
-    borderWidth: 0,
-    borderColor: 'transparent',
-
-    // Backdrop blur effect simulation
-    backdropFilter: 'blur(20px)',
-
-    // Subtle border for premium look
-    borderTopColor: 'rgba(0, 0, 0, 0.05)',
-    borderTopWidth: 0.5,
+    // Moderate elevation for Android
+    elevation: 4,
   },
 
   tabButton: {
@@ -229,16 +215,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 12,
     marginHorizontal: 2,
-
-    // Smooth transition
-    transform: [{ scale: 1 }],
   },
 
   tabButtonFocused: {
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-    transform: [{ scale: 1.05 }],
+    backgroundColor: 'rgba(102, 126, 234, 0.08)',
   },
 
   tabLabel: {
@@ -249,30 +231,29 @@ const styles = StyleSheet.create({
     }),
     fontSize: 11,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 2,
     textAlign: 'center',
   },
 
   tabIconContainer: {
-    marginBottom: -2,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   tabIcon: {
-    marginBottom: Platform.OS === 'ios' ? -1 : 1,
+    marginBottom: Platform.OS === 'ios' ? 2 : 1,
   },
 
   tabIconFocused: {
-    // Add shadow to focused icon
+    // Subtle shadow for focused icon
     shadowColor: colors.secondary,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
 
   tabBadge: {
@@ -288,8 +269,8 @@ const styles = StyleSheet.create({
   },
 
   tabItem: {
-    paddingVertical: 6,
-    marginHorizontal: 4,
+    paddingVertical: 4,
+    marginHorizontal: 2,
   },
 });
 
