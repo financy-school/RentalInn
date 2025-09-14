@@ -214,6 +214,7 @@ const Rooms = ({ navigation }) => {
           <Gap size="md" />
 
           {/* Filters */}
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -223,16 +224,21 @@ const Rooms = ({ navigation }) => {
               <Chip
                 key={option.key}
                 selected={selectedFilter === option.key}
+                selectedColor="#fff"
                 onPress={() => setSelectedFilter(option.key)}
                 style={[
                   styles.chip,
-                  selectedFilter === option.key && {
-                    backgroundColor: colors.primary,
+                  {
+                    backgroundColor:
+                      selectedFilter === option.key
+                        ? colors.secondary
+                        : '#f5f5f5',
                   },
                 ]}
                 textStyle={{
                   color: selectedFilter === option.key ? '#fff' : '#000',
                   fontFamily: 'Metropolis-Medium',
+                  fontWeight: selectedFilter === option.key ? '600' : '400',
                 }}
               >
                 {option.label} ({option.value})
@@ -294,20 +300,23 @@ const Rooms = ({ navigation }) => {
                       <StandardText fontWeight="bold" style={styles.roomTitle}>
                         {room.name || `Room ${room.id}`}
                       </StandardText>
-
                       <View
                         style={[
                           styles.statusBadge,
                           {
                             backgroundColor:
-                              room.status === 'VACANT' ? '#DFF5E1' : '#FFE2E2',
+                              room.status === 'VACANT'
+                                ? 'rgba(62, 219, 26, 0.1)' // #3EDB1A with 0.1 opacity
+                                : 'rgba(255, 226, 226, 0.1)', // #FFE2E2 with 0.1 opacity
                           },
                         ]}
                       >
                         <StandardText
                           style={{
                             color:
-                              room.status === 'VACANT' ? '#219653' : '#D9534F',
+                              room.status === 'VACANT'
+                                ? '#3EDB1A' // Full opacity for text
+                                : '#D9534F',
                           }}
                         >
                           {room.status}
@@ -494,7 +503,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   roomTitle: { fontSize: 16, color: '#333' },
-  statusBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 },
+  statusBadge: { borderRadius: 5, paddingHorizontal: 10, paddingVertical: 3 },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

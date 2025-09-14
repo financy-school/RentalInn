@@ -220,16 +220,21 @@ const Tickets = ({ navigation }) => {
               <Chip
                 key={option.key}
                 selected={selectedFilter === option.key}
+                selectedColor="#fff"
                 onPress={() => setSelectedFilter(option.key)}
                 style={[
                   styles.chip,
-                  selectedFilter === option.key && {
-                    backgroundColor: colors.primary,
+                  {
+                    backgroundColor:
+                      selectedFilter === option.key
+                        ? colors.secondary
+                        : '#f5f5f5',
                   },
                 ]}
                 textStyle={{
                   color: selectedFilter === option.key ? '#fff' : '#000',
                   fontFamily: 'Metropolis-Medium',
+                  fontWeight: selectedFilter === option.key ? '600' : '400',
                 }}
               >
                 {option.label} ({option.value})
@@ -268,17 +273,17 @@ const Tickets = ({ navigation }) => {
                         {
                           backgroundColor:
                             ticket.status === 'PENDING'
-                              ? '#ff9800'
+                              ? 'rgba(255, 152, 0, 0.2)'
                               : ticket.status === 'ACTIVE'
-                              ? '#4caf50'
-                              : '#9e9e9e',
+                              ? 'rgba(76, 175, 80, 0.2)'
+                              : 'rgba(158, 158, 158, 0.2)',
                         },
                       ]}
                     >
                       <StandardText
                         fontWeight="semibold"
                         size="sm"
-                        style={{ color: '#fff' }}
+                        style={{ color: colors.primary }}
                       >
                         {ticket.status}
                       </StandardText>
@@ -360,7 +365,10 @@ const Tickets = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={() => handleCloseTicket(ticket.id)}
                       >
-                        <StandardText style={{ color: '#fff' }}>
+                        <StandardText
+                          fontWeight="semibold"
+                          style={{ color: '#fff' }}
+                        >
                           Close Ticket
                         </StandardText>
                       </Button>
@@ -463,7 +471,7 @@ const styles = StyleSheet.create({
     bottom: 120,
     right: 30,
     borderRadius: 30,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
   },
   modalOverlay: {
     position: 'absolute',
@@ -517,7 +525,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingVertical: 4,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 5,
   },
   row: {
     flexDirection: 'row',
@@ -561,14 +569,15 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   actionButton: {
-    borderRadius: 25,
-    backgroundColor: '#1976d2',
-    paddingHorizontal: 20,
+    borderRadius: 5,
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 5,
     elevation: 2,
   },
   chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
 });
 
 import withAuthProtection from '../components/withAuthProtection';
+import { color } from 'react-native-elements/dist/helpers';
 
 export default withAuthProtection(Tickets);

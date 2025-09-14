@@ -162,26 +162,30 @@ const Tenants = ({ navigation }) => {
 
             <Gap size="md" />
 
-            {/* Filters as Chips */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={{ marginBottom: 16 }}
+              style={styles.filterContainer}
             >
               {filterOptions.map(option => (
                 <Chip
                   key={option.key}
                   selected={selectedFilter === option.key}
+                  selectedColor="#fff"
                   onPress={() => setSelectedFilter(option.key)}
                   style={[
                     styles.chip,
-                    selectedFilter === option.key && {
-                      backgroundColor: colors.primary,
+                    {
+                      backgroundColor:
+                        selectedFilter === option.key
+                          ? colors.secondary
+                          : '#f5f5f5',
                     },
                   ]}
                   textStyle={{
                     color: selectedFilter === option.key ? '#fff' : '#000',
                     fontFamily: 'Metropolis-Medium',
+                    fontWeight: selectedFilter === option.key ? '600' : '400',
                   }}
                 >
                   {option.label} ({option.value})
@@ -454,7 +458,7 @@ const styles = StyleSheet.create({
     height: 26,
   },
   badgeNotice: {
-    backgroundColor: '#ff9800',
+    backgroundColor: colors.primary,
     height: 26,
     marginRight: 6, // Add margin for consistency with badgeDues
   },
@@ -463,7 +467,7 @@ const styles = StyleSheet.create({
     right: 30,
     borderRadius: 30,
     bottom: 120,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
   },
 
   /* overlay + popup styles */

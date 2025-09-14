@@ -1016,13 +1016,13 @@ const Notices = ({ navigation }) => {
               {filteredNotices.length === 1 ? 'notice' : 'notices'}
             </StandardText>
           </View>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => Alert.alert('Create Notice', 'Feature coming soon!')}
             style={componentStyles.addButton}
             activeOpacity={0.8}
           >
             <Icon name="add" size={20} color={colors.white} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 

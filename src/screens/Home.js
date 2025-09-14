@@ -252,7 +252,7 @@ const Home = ({ navigation }) => {
               size={40}
               icon="menu"
               style={{ backgroundColor: colors.white }}
-              color={colors.primary}
+              color={colors.secondary}
             />
           </TouchableOpacity>
 
@@ -287,7 +287,7 @@ const Home = ({ navigation }) => {
               size={40}
               icon="theme-light-dark"
               style={{ backgroundColor: colors.white }}
-              color={colors.primary}
+              color={colors.secondary}
             />
           </TouchableOpacity>
         </Appbar.Header>
@@ -298,13 +298,13 @@ const Home = ({ navigation }) => {
             <MaterialCommunityIcons
               name="lightning-bolt-outline"
               size={22}
-              color="#D81B60"
+              color={colors.white}
             />
             <View style={{ marginLeft: 10 }}>
-              <StandardText fontWeight="bold">
+              <StandardText style={{ color: colors.white }} fontWeight="bold">
                 Real-time tracking enabled
               </StandardText>
-              <StandardText size="sm">
+              <StandardText style={{ color: colors.white }} size="sm">
                 Monitor rent, occupancy & issues in one place.
               </StandardText>
             </View>
@@ -312,7 +312,7 @@ const Home = ({ navigation }) => {
 
           {/* Search + scope filter */}
 
-          <View>
+          {/* <View>
             <SegmentedButtons
               value={scope}
               onValueChange={setScope}
@@ -328,7 +328,7 @@ const Home = ({ navigation }) => {
                   },
                   style: {
                     backgroundColor:
-                      scope === 'property' ? '#4CAF50' : '#f0f0f0',
+                      scope === 'property' ? colors.secondary : '#f0f0f0',
                   },
                 },
                 {
@@ -341,7 +341,8 @@ const Home = ({ navigation }) => {
                     color: scope === 'unit' ? '#fff' : '#000',
                   },
                   style: {
-                    backgroundColor: scope === 'unit' ? '#4CAF50' : '#f0f0f0',
+                    backgroundColor:
+                      scope === 'unit' ? colors.secondary : '#f0f0f0',
                   },
                 },
                 {
@@ -354,12 +355,13 @@ const Home = ({ navigation }) => {
                     color: scope === 'tenant' ? '#fff' : '#000',
                   },
                   style: {
-                    backgroundColor: scope === 'tenant' ? '#4CAF50' : '#f0f0f0',
+                    backgroundColor:
+                      scope === 'tenant' ? colors.secondary : '#f0f0f0',
                   },
                 },
               ]}
             />
-          </View>
+          </View> */}
           <View style={styles.searchRow}>
             <View style={{ flex: 1, marginRight: 10 }}>
               <TextInput
@@ -630,7 +632,7 @@ const Home = ({ navigation }) => {
           <Gap size="md" />
 
           {/* Forecasts */}
-          <StandardCard
+          {/* <StandardCard
             style={[styles.kpiCard, { height: 450, width: '100%' }]}
           >
             <StandardText size="lg" fontWeight="bold" textAlign="center">
@@ -657,7 +659,7 @@ const Home = ({ navigation }) => {
                 labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
               }}
             />
-          </StandardCard>
+          </StandardCard> */}
 
           <Gap size="md" />
 
@@ -904,9 +906,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#FFE4EC',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     marginBottom: 10,
+    opacity: 1,
   },
 
   searchRow: {

@@ -1,15 +1,15 @@
-import {View, StyleSheet} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import React from 'react';
-import {useTheme} from 'react-native-paper';
+import { useTheme } from 'react-native-paper';
 import {
   cardShadow,
   screenPadding,
   standardBorderRadius,
 } from '../../theme/styleConstant';
-import {getColor} from '../../theme/color';
+import { getColor } from '../../theme/color';
 
-const StandardCard = ({children, style}) => {
-  const {colors} = useTheme(); // 🎨 Get active theme colors
+const StandardCard = ({ children, style }) => {
+  const { colors } = useTheme(); // 🎨 Get active theme colors
   const shadow = cardShadow?.shadow;
 
   const baseStyle = StyleSheet.create({

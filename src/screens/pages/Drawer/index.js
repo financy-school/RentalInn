@@ -213,13 +213,13 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
                   <Icon
                     name="ellipse-outline"
                     size={8}
-                    color={themeColors.textSecondary}
+                    color={themeColors.textPrimary}
                     style={styles.submenuIcon}
                   />
                   <StandardText
                     style={[
                       styles.submenuLabel,
-                      { color: themeColors.textSecondary },
+                      { color: themeColors.textPrimary },
                     ]}
                   >
                     {subItem.label}
@@ -395,13 +395,16 @@ const styles = {
     paddingTop: Platform.OS === 'android' ? 20 : 10,
   },
   logoContainer: {
-    alignItems: 'flex-start',
     marginBottom: 20,
     backgroundColor: colors.backgroundLight,
+    width: '100%',
+    alignItems: 'flex-start',
+    paddingRight: 20,
   },
   logo: {
-    width: Math.min(screenWidth * 0.9, 250),
-    height: 80,
+    width: '90%',
+    height: 60,
+    alignSelf: 'flex-start',
   },
   userInfoContainer: {
     flexDirection: 'row',
