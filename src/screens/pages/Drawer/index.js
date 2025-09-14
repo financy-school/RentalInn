@@ -58,8 +58,8 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
         mode === 'dark' ? colors.white : colors.textPrimary || colors.black,
       textSecondary:
         mode === 'dark'
-          ? colors.gray200 || '#b3b3b3'
-          : colors.textSecondary || '#666',
+          ? colors.background || '#b3b3b3'
+          : colors.background || '#666',
       cardBackground: mode === 'dark' ? colors.gray800 || '#2a2a2a' : '#f8f8f8',
       activeBackground:
         mode === 'dark'
@@ -264,73 +264,80 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
         bounces={false}
       >
         {/* Header Section */}
-        <SafeAreaView style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image
-              style={styles.logo}
-              source={require('../../../assets/rentalinn.png')}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* User Info */}
-          <View style={styles.userInfoContainer}>
-            <View
-              style={[
-                styles.avatarContainer,
-                { backgroundColor: colors.primary },
-              ]}
-            >
-              <StandardText fontWeight="bold" style={styles.avatarText}>
-                {userInfo.initials}
-              </StandardText>
+        <SafeAreaView
+          style={[styles.header, { backgroundColor: colors.backgroundLight }]}
+        >
+          <View style={{ backgroundColor: colors.backgroundLight }}>
+            <View style={styles.logoContainer}>
+              <Image
+                style={styles.logo}
+                source={require('../../../assets/rentalinn.png')}
+                resizeMode="contain"
+              />
             </View>
 
-            <View style={styles.userDetails}>
-              <StandardText
-                fontWeight="bold"
-                style={[styles.userName, { color: themeColors.textPrimary }]}
-              >
-                {userInfo.firstName}
-              </StandardText>
-              <StandardText
+            {/* User Info */}
+            <View style={styles.userInfoContainer}>
+              <View
                 style={[
-                  styles.userContact,
-                  { color: themeColors.textSecondary },
-                ]}
-                numberOfLines={1}
-              >
-                {userInfo.email}
-              </StandardText>
-              <StandardText
-                style={[
-                  styles.userContact,
-                  { color: themeColors.textSecondary },
+                  styles.avatarContainer,
+                  { backgroundColor: colors.primary },
                 ]}
               >
-                +91 {userInfo.phone}
-              </StandardText>
-            </View>
-          </View>
+                <StandardText fontWeight="bold" style={styles.avatarText}>
+                  {userInfo.initials}
+                </StandardText>
+              </View>
 
-          {/* Status Card */}
-          <View
-            style={[
-              styles.statusCard,
-              {
-                backgroundColor: themeColors.statusBackground,
-                borderColor: themeColors.borderColor,
-              },
-            ]}
-          >
-            <StandardText
-              fontWeight="bold"
-              style={[styles.statusText, { color: themeColors.statusText }]}
-            >
-              10 Rooms Active • 2 Requests
-            </StandardText>
+              <View style={styles.userDetails}>
+                <StandardText
+                  fontWeight="bold"
+                  style={[
+                    styles.userName,
+                    { color: themeColors.textSecondary },
+                  ]}
+                >
+                  {userInfo.firstName}
+                </StandardText>
+                <StandardText
+                  style={[
+                    styles.userContact,
+                    { color: themeColors.textSecondary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {userInfo.email}
+                </StandardText>
+                <StandardText
+                  style={[
+                    styles.userContact,
+                    { color: themeColors.textSecondary },
+                  ]}
+                >
+                  +91 {userInfo.phone}
+                </StandardText>
+              </View>
+            </View>
           </View>
         </SafeAreaView>
+
+        {/* Status Card */}
+        {/* <View
+          style={[
+            styles.statusCard,
+            {
+              backgroundColor: themeColors.statusBackground,
+              borderColor: themeColors.borderColor,
+            },
+          ]}
+        >
+          <StandardText
+            fontWeight="bold"
+            style={[styles.statusText, { color: themeColors.statusText }]}
+          >
+            10 Rooms Active • 2 Requests
+          </StandardText>
+        </View> */}
 
         {/* Menu Section */}
         <View style={styles.menuContainer}>
@@ -386,21 +393,19 @@ const styles = {
   header: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 20 : 10,
-    paddingBottom: 20,
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 20,
     backgroundColor: colors.backgroundLight,
   },
   logo: {
-    width: Math.min(screenWidth * 0.5, 200),
+    width: Math.min(screenWidth * 0.9, 250),
     height: 80,
   },
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
   },
   avatarContainer: {
     width: 50,
@@ -411,7 +416,7 @@ const styles = {
     marginRight: 15,
   },
   avatarText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 18,
   },
   userDetails: {
@@ -424,6 +429,7 @@ const styles = {
   userContact: {
     fontSize: 14,
     marginBottom: 2,
+    color: '#FFFFFF',
   },
   statusCard: {
     paddingVertical: 12,
