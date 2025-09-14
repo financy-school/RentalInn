@@ -23,6 +23,7 @@ import { ThemeContext } from '../../../context/ThemeContext';
 import { SCREEN_NAMES, menuItems } from '../../../navigation/constants';
 import { navigateToRoute } from '../../../navigation/navigationUtils';
 import colors from '../../../theme/color';
+import { color } from 'react-native-elements/dist/helpers';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -390,6 +391,7 @@ const styles = {
   logoContainer: {
     alignItems: 'center',
     marginBottom: 20,
+    backgroundColor: colors.backgroundLight,
   },
   logo: {
     width: Math.min(screenWidth * 0.5, 200),

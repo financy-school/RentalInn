@@ -414,13 +414,13 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
   },
   logoImage: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     borderRadius: 60,
   },
   headerTitle: {
     fontSize: 28,
-    marginTop: 20,
+    // marginTop: 20,
   },
   headerSubtitle: {
     fontSize: 16,

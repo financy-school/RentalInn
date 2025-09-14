@@ -62,12 +62,13 @@ const SignUp = ({ navigation }) => {
 
   // Theme variables
   const isDark = mode === 'dark';
+
   const backgroundColor = isDark
     ? colors.backgroundDark
     : colors.backgroundLight;
   const primary = colors.primary;
   const onPrimary = colors.onPrimary;
-  const cardBackground = isDark ? colors.backgroundDark : colors.white;
+  const cardBackground = isDark ? colors.light_black : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
 
@@ -209,7 +210,7 @@ const SignUp = ({ navigation }) => {
           style={[
             styles.headerSection,
             {
-              backgroundColor: primary,
+              backgroundColor: backgroundColor,
               height: Dimensions.get('window').height * 0.35,
             },
           ]}
@@ -624,11 +625,11 @@ const styles = StyleSheet.create({
   headerSection: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
+    // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
   },
   logoImage: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     borderRadius: 50,
   },
   headerTitle: {
