@@ -19,6 +19,7 @@ import colors from '../theme/color';
 import { deleteTenant, putTenantOnNotice } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Share from 'react-native-share';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -55,6 +56,40 @@ const TenantDetails = ({ navigation, route }) => {
   const closeMenu = () => {
     setActiveMenu(false);
     setMenuPosition(null);
+  };
+
+  const handleShareTenant = async tenant => {
+    try {
+      const message =
+        `👤 Tenant Details\n` +
+        `Name: ${tenant.name || 'N/A'}\n` +
+        `Phone: ${tenant.phone || 'N/A'}\n` +
+        (tenant.alternate_phone
+          ? `Alternate Phone: ${tenant.alternate_phone}\n`
+          : '') +
+        `Email: ${tenant.email || 'N/A'}\n` +
+        `Room: ${tenant?.room?.name || 'No room assigned'}\n` +
+        `Rent: ₹${tenant?.room?.rentAmount || 'N/A'}\n` +
+        `Check-in Date: ${tenant.check_in_date || 'N/A'}\n` +
+        `Check-out Date: ${tenant.check_out_date || 'N/A'}\n` +
+        (tenant.lock_in_period
+          ? `Lock-in Period: ${tenant.lock_in_period} months\n`
+          : '') +
+        (tenant.agreement_period
+          ? `Agreement Period: ${tenant.agreement_period} months\n`
+          : '') +
+        (tenant.tenant_type ? `Tenant Type: ${tenant.tenant_type}\n` : '') +
+        (tenant.has_dues ? `⚠️ Has outstanding dues\n` : '✅ No dues\n') +
+        (tenant.is_on_notice ? `⚠️ On notice period\n` : '');
+
+      await Share.open({
+        title: 'Share Tenant Details',
+        message,
+      });
+    } catch (err) {
+      // User cancelled or error occurred
+      console.log('Share cancelled or failed:', err);
+    }
   };
 
   return (
@@ -334,9 +369,12 @@ const TenantDetails = ({ navigation, route }) => {
                 { borderColor: colors.primary },
               ]}
               labelStyle={[styles.buttonLabel, { color: colors.primary }]}
-              onPress={() =>
-                navigation.navigate('EditTenant', { tenantId: tenant.id })
-              }
+              onPress={() => {
+                navigation.navigate('AddTenant', {
+                  tenant: tenant,
+                  isEdit: true,
+                });
+              }}
             >
               Edit Details
             </Button>
@@ -381,7 +419,10 @@ const TenantDetails = ({ navigation, route }) => {
               style={styles.menuItem}
               onPress={() => {
                 closeMenu();
-                navigation.navigate('EditTenant', { tenantId: tenant.id });
+                navigation.navigate('AddTenant', {
+                  tenant: tenant,
+                  isEdit: true,
+                });
               }}
             >
               <MaterialCommunityIcons
@@ -393,7 +434,13 @@ const TenantDetails = ({ navigation, route }) => {
               <StandardText style={{ color: textPrimary }}>Edit</StandardText>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                handleShareTenant(tenant);
+              }}
+            >
               <MaterialCommunityIcons
                 name="share-variant"
                 size={20}

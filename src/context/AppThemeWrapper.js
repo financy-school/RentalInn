@@ -1,12 +1,13 @@
-import React, {useContext} from 'react';
-import {PaperProvider} from 'react-native-paper';
-import {ThemeContext} from './ThemeContext';
-import {darkTheme, lightTheme} from '../theme/theme';
+import React, { useContext } from 'react';
+import { PaperProvider } from 'react-native-paper';
+import { ThemeContext } from './ThemeContext';
+import { darkTheme, lightTheme } from '../theme/theme';
 
-const AppThemeWrapper = ({children}) => {
-  const {theme} = useContext(ThemeContext);
+const AppThemeWrapper = ({ children }) => {
+  const { theme } = useContext(ThemeContext);
 
-  const paperTheme = theme === 'dark' ? darkTheme : lightTheme;
+  // const paperTheme = theme === 'dark' ? darkTheme : lightTheme;
+  const paperTheme = lightTheme;
 
   return <PaperProvider theme={paperTheme}>{children}</PaperProvider>;
 };

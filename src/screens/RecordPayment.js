@@ -54,6 +54,7 @@ const RecordPayment = ({ navigation, route }) => {
     { id: 'phonepe', name: 'Phone Pe', icon: 'phone' },
     { id: 'paytm', name: 'Paytm', icon: 'wallet' },
     { id: 'upi', name: 'UPI', icon: 'bank-transfer' },
+    { id: 'other', name: 'Other', icon: 'credit-card' },
   ];
 
   // Mock tenant data for demo (replace with actual data)
@@ -74,8 +75,8 @@ const RecordPayment = ({ navigation, route }) => {
   const formatDateForDisplay = date => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2);
-    return `${day} ${month}' ${year}`;
+    const year = String(date.getFullYear()).slice();
+    return `${day}-${month}-${year}`;
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -142,11 +143,11 @@ const RecordPayment = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <StatusBar
+      {/* <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundColor}
         translucent={Platform.OS === 'android'}
-      />
+      /> */}
 
       {/* Header */}
       {/* <View style={[styles.header, { backgroundColor: cardBackground }]}>
@@ -533,8 +534,9 @@ const styles = StyleSheet.create({
   },
   paymentModeItem: {
     flex: 1,
-    minWidth: (screenWidth - 80) / 3,
-    maxWidth: (screenWidth - 80) / 2.5,
+
+    minWidth: (screenWidth - 100) / 3,
+    maxWidth: (screenWidth - 100) / 3,
     flexDirection: 'column',
     alignItems: 'center',
     paddingVertical: 16,

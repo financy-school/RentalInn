@@ -232,6 +232,11 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'Room Details',
             headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
           }}
         />
 
@@ -242,6 +247,11 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'Tenant Details',
             headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
           }}
         />
 
@@ -252,6 +262,11 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'Notices',
             headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
           }}
         />
 
@@ -262,6 +277,11 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'FAQ',
             headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
           }}
         />
 
@@ -272,6 +292,11 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'Contact Support',
             headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
           }}
         />
 
@@ -282,6 +307,11 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'App Tutorial',
             headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
           }}
         />
 
@@ -294,6 +324,11 @@ const RootStack = () => {
             headerTintColor: colors.black,
             presentation: 'modal',
             animation: 'slide_from_bottom',
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
           }}
         />
 
@@ -309,6 +344,11 @@ const RootStack = () => {
             component={AddRoom}
             options={{
               headerLeft: () => null,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
             }}
           />
 
@@ -317,6 +357,11 @@ const RootStack = () => {
             component={AddTenant}
             options={{
               headerLeft: () => null,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
             }}
           />
 
@@ -326,6 +371,11 @@ const RootStack = () => {
             options={{
               headerTitle: 'Add Ticket',
               headerLeft: () => null,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
             }}
           />
         </Stack.Group>
