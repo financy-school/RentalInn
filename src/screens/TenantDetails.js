@@ -13,6 +13,7 @@ import { Button, Chip, Card, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
 import StandardInformationAccordion from '../components/StandardInformationAccordion/StandardInformationAccordion';
 import colors from '../theme/color';
@@ -93,12 +94,7 @@ const TenantDetails = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundColor}
-        translucent={Platform.OS === 'android'}
-      />
-
+      <StandardHeader navigation={navigation} title="Tenant Details" />
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -540,7 +536,6 @@ const DetailRow = ({ icon, label, value, isMultiline, isDark }) => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 44 : 20,
   },
   headerBanner: {
     height: 120,

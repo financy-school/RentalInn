@@ -230,6 +230,7 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'Room Details',
             headerTintColor: colors.black,
+            headerShown: false,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
               fontSize: 18,
@@ -245,6 +246,7 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'Tenant Details',
             headerTintColor: colors.black,
+            headerShown: false,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
               fontSize: 18,
@@ -320,6 +322,7 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'Record Payment',
             headerTintColor: colors.black,
+            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
             headerTitleStyle: {

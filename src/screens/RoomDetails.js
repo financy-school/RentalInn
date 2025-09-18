@@ -12,6 +12,7 @@ import { Avatar, Chip, Text } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import colors from '../theme/color';
@@ -103,315 +104,108 @@ const RoomDetails = ({ navigation, route }) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* ===== Image Carousel ===== */}
-      <View style={{ height: 250, marginBottom: 12 }}>
-        <Animated.ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false },
-          )}
-          scrollEventThrottle={16}
-        >
-          {imageUrls.map((img, index) => (
-            <Image
-              key={index}
-              source={{ uri: img }}
-              style={{ width: screenWidth, height: 250, resizeMode: 'cover' }}
-            />
-          ))}
-        </Animated.ScrollView>
-
-        {/* Dots */}
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            alignSelf: 'center',
-            flexDirection: 'row',
-          }}
-        >
-          {imageUrls.map((_, index) => {
-            const opacity = scrollX.interpolate({
-              inputRange: [
-                screenWidth * (index - 1),
-                screenWidth * index,
-                screenWidth * (index + 1),
-              ],
-              outputRange: [0.3, 1, 0.3],
-              extrapolate: 'clamp',
-            });
-            return (
-              <Animated.View
+    <View style={styles.container}>
+      <StandardHeader navigation={navigation} title="Room Details" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* ===== Image Carousel ===== */}
+        <View style={{ height: 250, marginBottom: 12 }}>
+          <Animated.ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: false },
+            )}
+            scrollEventThrottle={16}
+          >
+            {imageUrls.map((img, index) => (
+              <Image
                 key={index}
-                style={{
-                  height: 6,
-                  width: 50,
-                  backgroundColor: '#000',
-                  opacity,
-                  margin: 4,
-                  borderRadius: 5,
-                }}
+                source={{ uri: img }}
+                style={{ width: screenWidth, height: 250, resizeMode: 'cover' }}
               />
-            );
-          })}
-        </View>
-      </View>
+            ))}
+          </Animated.ScrollView>
 
-      {/* ===== Room Header ===== */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          backgroundColor: '#fff',
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          padding: 16,
-          marginTop: 16,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <MaterialCommunityIcons
-            name="door"
-            size={40}
-            color={colors.primary}
-          />
-          <StandardText style={{ marginLeft: 6 }} fontWeight="bold" size="xl">
-            Room {room.name}
-          </StandardText>
-        </View>
-        <View
-          style={{
-            backgroundColor: room.status === 'vacant' ? '#DFF5E1' : '#FFF2D8',
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            borderRadius: 15,
-          }}
-        >
-          <Text
+          {/* Dots */}
+          <View
             style={{
-              color: room.status === 'vacant' ? '#219653' : '#F2994A',
-              fontWeight: 'bold',
-              fontSize: 12,
+              position: 'absolute',
+              bottom: 10,
+              alignSelf: 'center',
+              flexDirection: 'row',
             }}
           >
-            {room.available ? 'Available' : 'Occupied'}
-          </Text>
+            {imageUrls.map((_, index) => {
+              const opacity = scrollX.interpolate({
+                inputRange: [
+                  screenWidth * (index - 1),
+                  screenWidth * index,
+                  screenWidth * (index + 1),
+                ],
+                outputRange: [0.3, 1, 0.3],
+                extrapolate: 'clamp',
+              });
+              return (
+                <Animated.View
+                  key={index}
+                  style={{
+                    height: 6,
+                    width: 50,
+                    backgroundColor: '#000',
+                    opacity,
+                    margin: 4,
+                    borderRadius: 5,
+                  }}
+                />
+              );
+            })}
+          </View>
         </View>
-      </View>
-      <View
-        style={{
-          height: 1,
-          backgroundColor: '#E0E0E0',
-          marginVertical: 10,
-          marginHorizontal: 25,
-          width: '70%',
-          borderRadius: 5,
-          alignSelf: 'center',
-        }}
-      />
 
-      {/* ===== Content ===== */}
-      <ScrollView
-        style={{ paddingHorizontal: 15, paddingTop: 10 }}
-        onScrollBeginDrag={() => closeMenu()} // hide menu on scroll
-      >
-        <View style={{ gap: 20 }}>
+        {/* ===== Room Header ===== */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: '#fff',
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            padding: 16,
+            marginTop: 16,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialCommunityIcons
+              name="door"
+              size={40}
+              color={colors.primary}
+            />
+            <StandardText style={{ marginLeft: 6 }} fontWeight="bold" size="xl">
+              Room {room.name}
+            </StandardText>
+          </View>
           <View
-            style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+            style={{
+              backgroundColor: room.status === 'vacant' ? '#DFF5E1' : '#FFF2D8',
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 15,
+            }}
           >
-            {/* LEFT COLUMN */}
-            <View>
-              {/* Bed Count */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialCommunityIcons name="bed" size={22} color="#000" />
-                <StandardText
-                  style={{ marginLeft: 6 }}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Bed: <Text style={{ color: '#F2994A' }}>{room.bedCount}</Text>
-                </StandardText>
-              </View>
-
-              {/* Available */}
-              <StandardText
-                style={{ marginLeft: 28, color: 'gray', marginTop: 4 }}
-                size="sm"
-              >
-                Available:{' '}
-                {room.bedCount > 0 &&
-                  Array.from({ length: room.bedCount - tenants.length }).map(
-                    (_, index) => (
-                      <MaterialCommunityIcons
-                        key={index}
-                        name="bed"
-                        size={18}
-                        color="#F2C94C"
-                      />
-                    ),
-                  )}
-              </StandardText>
-
-              {/* Occupied */}
-              <StandardText
-                style={{ marginLeft: 28, color: 'gray', marginTop: 2 }}
-                size="sm"
-              >
-                Occupied:{' '}
-                {!!tenants &&
-                  tenants.length > 0 &&
-                  tenants.map((tenant, index) => (
-                    <MaterialCommunityIcons
-                      key={index}
-                      name="bed"
-                      size={18}
-                      color="#BDBDBD"
-                    />
-                  ))}
-              </StandardText>
-
-              {/* Rent Due */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginTop: 16,
-                }}
-              >
-                <MaterialCommunityIcons name="cash" size={22} color="#000" />
-                <StandardText
-                  style={{ marginLeft: 6 }}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Rent Due:{' '}
-                  <Text style={{ color: '#F2994A' }}>
-                    {room.rentDueCount || 0}
-                  </Text>
-                </StandardText>
-              </View>
-              {/* Rent Due People */}
-              <View style={{ marginLeft: 28, marginTop: 6 }}>
-                {['Rihaa Kapoor', 'Schmidt'].map((name, idx) => (
-                  <View
-                    key={idx}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginBottom: 4,
-                    }}
-                  >
-                    {/* <Avatar.Image
-                      size={24}
-                      source={require('../assets/avatar-placeholder.png')} // Replace with real image if needed
-                    /> */}
-                    <MaterialCommunityIcons
-                      name="account-circle"
-                      size={22}
-                      color="#000"
-                    />
-                    <StandardText style={{ marginLeft: 8 }} size="sm">
-                      {name}
-                    </StandardText>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* RIGHT COLUMN */}
-            <View>
-              {/* Active Ticket */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialCommunityIcons
-                  name="ticket-confirmation"
-                  size={22}
-                  color="#000"
-                />
-                <StandardText
-                  style={{ marginLeft: 6 }}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Active Ticket:{' '}
-                  <Text style={{ color: '#F2994A' }}>
-                    {room.activeTickets || 0}
-                  </Text>
-                </StandardText>
-              </View>
-              <StandardText
-                style={{ marginLeft: 28, color: 'gray', marginTop: 4 }}
-                size="sm"
-              >
-                {room.ticketMessage || 'Cupboard door needs fixing'}
-              </StandardText>
-
-              {/* Under Notice */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginTop: 16,
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="calendar-alert"
-                  size={22}
-                  color="#000"
-                />
-                <StandardText
-                  style={{ marginLeft: 6 }}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Under Notice:{' '}
-                  <Text style={{ color: '#F2994A' }}>{room.room || 0}</Text>
-                </StandardText>
-              </View>
-              <View style={{ marginLeft: 28, marginTop: 6 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {/* <Avatar.Image
-                    size={24}
-                    source={require('../assets/avatar-placeholder.png')} // Replace with real image if needed
-                  /> */}
-                  <MaterialCommunityIcons
-                    name="account-circle"
-                    size={22}
-                    color="#000"
-                  />
-                  <StandardText style={{ marginLeft: 8 }} size="sm">
-                    Rihan Kapoor
-                  </StandardText>
-                </View>
-              </View>
-            </View>
+            <Text
+              style={{
+                color: room.status === 'vacant' ? '#219653' : '#F2994A',
+                fontWeight: 'bold',
+                fontSize: 12,
+              }}
+            >
+              {room.available ? 'Available' : 'Occupied'}
+            </Text>
           </View>
         </View>
-        <View>
-          <StandardText fontWeight="bold" size="md" style={{ marginBottom: 8 }}>
-            Amenities
-          </StandardText>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            {(room.amenities
-              ? room.amenities.split(',').map(item => item.trim())
-              : ['WiFi', 'AC', 'Heater', 'Wardrobe', 'Attached Bathroom']
-            ).map((item, idx) => (
-              <Chip
-                key={idx}
-                style={{ backgroundColor: '#F0F0F0' }}
-                textStyle={{ fontWeight: '500' }}
-                icon="check"
-              >
-                {item}
-              </Chip>
-            ))}
-          </View>
-        </View>
-
         <View
           style={{
             height: 1,
@@ -424,206 +218,435 @@ const RoomDetails = ({ navigation, route }) => {
           }}
         />
 
-        <StandardText fontWeight="bold" size="xl" style={{ marginBottom: 8 }}>
-          List of Tenants
-        </StandardText>
-
-        {tenants.map(tenant => (
-          <StandardCard key={tenant.id} style={styles.card}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('TenantDetails', { tenant })}
+        {/* ===== Content ===== */}
+        <ScrollView
+          style={{ paddingHorizontal: 15, paddingTop: 10 }}
+          onScrollBeginDrag={() => closeMenu()} // hide menu on scroll
+        >
+          <View style={{ gap: 20 }}>
+            <View
+              style={{ flexDirection: 'row', justifyContent: 'space-between' }}
             >
-              <View style={styles.row}>
-                <Avatar.Image
-                  size={60}
-                  source={{ uri: 'https://avatar.iran.liara.run/public/37' }}
-                  style={{ marginRight: 14 }}
-                />
-                <View style={{ flex: 1 }}>
-                  <View style={styles.rowBetween}>
-                    <StandardText fontWeight="bold" size="lg">
-                      {tenant.name}
-                    </StandardText>
+              {/* LEFT COLUMN */}
+              <View>
+                {/* Bed Count */}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="bed" size={22} color="#000" />
+                  <StandardText
+                    style={{ marginLeft: 6 }}
+                    fontWeight="bold"
+                    size="md"
+                  >
+                    Bed:{' '}
+                    <Text style={{ color: '#F2994A' }}>{room.bedCount}</Text>
+                  </StandardText>
+                </View>
 
-                    {/* Custom Menu Anchor */}
-                    <TouchableOpacity
-                      ref={r => (anchorRefs.current[tenant.id] = r)}
-                      onPress={() => openMenu(tenant.id)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                {/* Available */}
+                <StandardText
+                  style={{ marginLeft: 28, color: 'gray', marginTop: 4 }}
+                  size="sm"
+                >
+                  Available:{' '}
+                  {room.bedCount > 0 &&
+                    Array.from({ length: room.bedCount - tenants.length }).map(
+                      (_, index) => (
+                        <MaterialCommunityIcons
+                          key={index}
+                          name="bed"
+                          size={18}
+                          color="#F2C94C"
+                        />
+                      ),
+                    )}
+                </StandardText>
+
+                {/* Occupied */}
+                <StandardText
+                  style={{ marginLeft: 28, color: 'gray', marginTop: 2 }}
+                  size="sm"
+                >
+                  Occupied:{' '}
+                  {!!tenants &&
+                    tenants.length > 0 &&
+                    tenants.map((tenant, index) => (
+                      <MaterialCommunityIcons
+                        key={index}
+                        name="bed"
+                        size={18}
+                        color="#BDBDBD"
+                      />
+                    ))}
+                </StandardText>
+
+                {/* Rent Due */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginTop: 16,
+                  }}
+                >
+                  <MaterialCommunityIcons name="cash" size={22} color="#000" />
+                  <StandardText
+                    style={{ marginLeft: 6 }}
+                    fontWeight="bold"
+                    size="md"
+                  >
+                    Rent Due:{' '}
+                    <Text style={{ color: '#F2994A' }}>
+                      {room.rentDueCount || 0}
+                    </Text>
+                  </StandardText>
+                </View>
+                {/* Rent Due People */}
+                <View style={{ marginLeft: 28, marginTop: 6 }}>
+                  {['Rihaa Kapoor', 'Schmidt'].map((name, idx) => (
+                    <View
+                      key={idx}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginBottom: 4,
+                      }}
                     >
+                      {/* <Avatar.Image
+                      size={24}
+                      source={require('../assets/avatar-placeholder.png')} // Replace with real image if needed
+                    /> */}
                       <MaterialCommunityIcons
-                        name="dots-vertical"
+                        name="account-circle"
                         size={22}
-                        color="#444"
+                        color="#000"
                       />
-                    </TouchableOpacity>
-                  </View>
+                      <StandardText style={{ marginLeft: 8 }} size="sm">
+                        {name}
+                      </StandardText>
+                    </View>
+                  ))}
+                </View>
+              </View>
 
-                  {/* Badges */}
-                  <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                    {tenant.has_dues && (
-                      <Chip
-                        style={styles.badgeDues}
-                        textStyle={{ color: '#fff' }}
-                      >
-                        Dues
-                      </Chip>
-                    )}
-                    {tenant.is_on_notice && (
-                      <Chip
-                        style={styles.badgeNotice}
-                        textStyle={{ color: '#fff' }}
-                      >
-                        Notice
-                      </Chip>
-                    )}
-                  </View>
+              {/* RIGHT COLUMN */}
+              <View>
+                {/* Active Ticket */}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons
+                    name="ticket-confirmation"
+                    size={22}
+                    color="#000"
+                  />
+                  <StandardText
+                    style={{ marginLeft: 6 }}
+                    fontWeight="bold"
+                    size="md"
+                  >
+                    Active Ticket:{' '}
+                    <Text style={{ color: '#F2994A' }}>
+                      {room.activeTickets || 0}
+                    </Text>
+                  </StandardText>
+                </View>
+                <StandardText
+                  style={{ marginLeft: 28, color: 'gray', marginTop: 4 }}
+                  size="sm"
+                >
+                  {room.ticketMessage || 'Cupboard door needs fixing'}
+                </StandardText>
 
-                  {/* Details */}
-                  <View style={{ marginTop: 8 }}>
-                    <View style={styles.detailRow}>
-                      <MaterialCommunityIcons
-                        name="alert-circle"
-                        size={18}
-                        color="#555"
-                      />
-                      <StandardText style={styles.detailText}>
-                        Under Notice : {tenant.is_on_notice ? 'Yes' : 'No'}
-                      </StandardText>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <MaterialCommunityIcons
-                        name="cash"
-                        size={18}
-                        color="#555"
-                      />
-                      <StandardText style={styles.detailText}>
-                        ₹{tenant.room.rentAmount}
-                      </StandardText>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <MaterialCommunityIcons
-                        name="alert-circle"
-                        size={18}
-                        color="#555"
-                      />
-                      <StandardText style={styles.detailText}>
-                        {tenant.has_dues ? 'Dues' : 'No Dues'}
-                      </StandardText>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <MaterialCommunityIcons
-                        name="calendar-check"
-                        size={18}
-                        color="#555"
-                      />
-                      <StandardText style={styles.detailText}>
-                        Joined: {tenant.check_in_date}
-                      </StandardText>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <MaterialCommunityIcons
-                        name="calendar-check"
-                        size={18}
-                        color="#555"
-                      />
-                      <StandardText style={styles.detailText}>
-                        Lease End: {tenant.check_out_date}
-                      </StandardText>
-                    </View>
+                {/* Under Notice */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginTop: 16,
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name="calendar-alert"
+                    size={22}
+                    color="#000"
+                  />
+                  <StandardText
+                    style={{ marginLeft: 6 }}
+                    fontWeight="bold"
+                    size="md"
+                  >
+                    Under Notice:{' '}
+                    <Text style={{ color: '#F2994A' }}>{room.room || 0}</Text>
+                  </StandardText>
+                </View>
+                <View style={{ marginLeft: 28, marginTop: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* <Avatar.Image
+                    size={24}
+                    source={require('../assets/avatar-placeholder.png')} // Replace with real image if needed
+                  /> */}
+                    <MaterialCommunityIcons
+                      name="account-circle"
+                      size={22}
+                      color="#000"
+                    />
+                    <StandardText style={{ marginLeft: 8 }} size="sm">
+                      Rihan Kapoor
+                    </StandardText>
                   </View>
                 </View>
               </View>
-            </TouchableOpacity>
-          </StandardCard>
-        ))}
-
-        <Gap size="xxl" />
-      </ScrollView>
-
-      {/* ===== CUSTOM MENU OVERLAY ===== */}
-      {activeMenuTenantId && menuPosition && (
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => closeMenu()}
-        >
-          <View
-            style={[
-              styles.popup,
-              {
-                top: menuPosition.y + menuPosition.height + 6,
-                left: Math.max(8, Math.min(menuPosition.x, SCREEN_WIDTH - 180)),
-              },
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu();
-                navigation.navigate('EditTenant', {
-                  tenantId: activeMenuTenantId,
-                });
-              }}
-            >
-              <MaterialCommunityIcons
-                name="pencil"
-                size={18}
-                color="#555"
-                style={{ marginRight: 10 }}
-              />
-              <StandardText>Edit</StandardText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                putTenantOnNotice(credentials.accessToken, activeMenuTenantId, {
-                  notice: true,
-                });
-                closeMenu();
-              }}
-            >
-              <MaterialCommunityIcons
-                name="alert-circle-outline"
-                size={18}
-                color="#e53935"
-                style={{ marginRight: 10 }}
-              />
-              <StandardText>Put on Notice</StandardText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={async () => {
-                await deleteTenant(credentials.accessToken, activeMenuTenantId);
-                closeMenu();
-                const res = await getTenants(
-                  credentials.accessToken,
-                  credentials.property_id,
-                  room.id,
-                );
-                setTenants(res.data);
-              }}
-            >
-              <MaterialCommunityIcons
-                name="trash-can-outline"
-                size={18}
-                color="#e53935"
-                style={{ marginRight: 10 }}
-              />
-              <StandardText>Delete</StandardText>
-            </TouchableOpacity>
+            </View>
           </View>
-        </TouchableOpacity>
-      )}
+          <View>
+            <StandardText
+              fontWeight="bold"
+              size="md"
+              style={{ marginBottom: 8 }}
+            >
+              Amenities
+            </StandardText>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              {(room.amenities
+                ? room.amenities.split(',').map(item => item.trim())
+                : ['WiFi', 'AC', 'Heater', 'Wardrobe', 'Attached Bathroom']
+              ).map((item, idx) => (
+                <Chip
+                  key={idx}
+                  style={{ backgroundColor: '#F0F0F0' }}
+                  textStyle={{ fontWeight: '500' }}
+                  icon="check"
+                >
+                  {item}
+                </Chip>
+              ))}
+            </View>
+          </View>
+
+          <View
+            style={{
+              height: 1,
+              backgroundColor: '#E0E0E0',
+              marginVertical: 10,
+              marginHorizontal: 25,
+              width: '70%',
+              borderRadius: 5,
+              alignSelf: 'center',
+            }}
+          />
+
+          <StandardText fontWeight="bold" size="xl" style={{ marginBottom: 8 }}>
+            List of Tenants
+          </StandardText>
+
+          {tenants.map(tenant => (
+            <StandardCard key={tenant.id} style={styles.card}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('TenantDetails', { tenant })}
+              >
+                <View style={styles.row}>
+                  <Avatar.Image
+                    size={60}
+                    source={{ uri: 'https://avatar.iran.liara.run/public/37' }}
+                    style={{ marginRight: 14 }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.rowBetween}>
+                      <StandardText fontWeight="bold" size="lg">
+                        {tenant.name}
+                      </StandardText>
+
+                      {/* Custom Menu Anchor */}
+                      <TouchableOpacity
+                        ref={r => (anchorRefs.current[tenant.id] = r)}
+                        onPress={() => openMenu(tenant.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <MaterialCommunityIcons
+                          name="dots-vertical"
+                          size={22}
+                          color="#444"
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Badges */}
+                    <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                      {tenant.has_dues && (
+                        <Chip
+                          style={styles.badgeDues}
+                          textStyle={{ color: '#fff' }}
+                        >
+                          Dues
+                        </Chip>
+                      )}
+                      {tenant.is_on_notice && (
+                        <Chip
+                          style={styles.badgeNotice}
+                          textStyle={{ color: '#fff' }}
+                        >
+                          Notice
+                        </Chip>
+                      )}
+                    </View>
+
+                    {/* Details */}
+                    <View style={{ marginTop: 8 }}>
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="alert-circle"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          Under Notice : {tenant.is_on_notice ? 'Yes' : 'No'}
+                        </StandardText>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="cash"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          ₹{tenant.room.rentAmount}
+                        </StandardText>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="alert-circle"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          {tenant.has_dues ? 'Dues' : 'No Dues'}
+                        </StandardText>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="calendar-check"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          Joined: {tenant.check_in_date}
+                        </StandardText>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="calendar-check"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          Lease End: {tenant.check_out_date}
+                        </StandardText>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </StandardCard>
+          ))}
+
+          <Gap size="xxl" />
+        </ScrollView>
+
+        {/* ===== CUSTOM MENU OVERLAY ===== */}
+        {activeMenuTenantId && menuPosition && (
+          <TouchableOpacity
+            style={styles.menuOverlay}
+            activeOpacity={1}
+            onPress={() => closeMenu()}
+          >
+            <View
+              style={[
+                styles.popup,
+                {
+                  top: menuPosition.y + menuPosition.height + 6,
+                  left: Math.max(
+                    8,
+                    Math.min(menuPosition.x, SCREEN_WIDTH - 180),
+                  ),
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  closeMenu();
+                  navigation.navigate('EditTenant', {
+                    tenantId: activeMenuTenantId,
+                  });
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="pencil"
+                  size={18}
+                  color="#555"
+                  style={{ marginRight: 10 }}
+                />
+                <StandardText>Edit</StandardText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  putTenantOnNotice(
+                    credentials.accessToken,
+                    activeMenuTenantId,
+                    {
+                      notice: true,
+                    },
+                  );
+                  closeMenu();
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={18}
+                  color="#e53935"
+                  style={{ marginRight: 10 }}
+                />
+                <StandardText>Put on Notice</StandardText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={async () => {
+                  await deleteTenant(
+                    credentials.accessToken,
+                    activeMenuTenantId,
+                  );
+                  closeMenu();
+                  const res = await getTenants(
+                    credentials.accessToken,
+                    credentials.property_id,
+                    room.id,
+                  );
+                  setTenants(res.data);
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={18}
+                  color="#e53935"
+                  style={{ marginRight: 10 }}
+                />
+                <StandardText>Delete</StandardText>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
   card: {
     backgroundColor: '#fff',

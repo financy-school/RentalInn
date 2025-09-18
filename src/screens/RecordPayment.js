@@ -13,6 +13,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
 import colors from '../theme/color';
@@ -141,7 +142,12 @@ const RecordPayment = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor }]}>
+      <StandardHeader
+        navigation={navigation}
+        title="Record Payment"
+        loading={loading}
+      />
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -390,7 +396,7 @@ const RecordPayment = ({ navigation, route }) => {
           maximumDate={new Date()}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
