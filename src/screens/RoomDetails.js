@@ -14,7 +14,6 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import colors from '../theme/color';
 import {
   deleteTenant,
@@ -104,7 +103,7 @@ const RoomDetails = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* ===== Image Carousel ===== */}
       <View style={{ height: 250, marginBottom: 12 }}>
         <Animated.ScrollView
@@ -172,7 +171,7 @@ const RoomDetails = ({ navigation, route }) => {
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           padding: 16,
-          marginTop: -20,
+          marginTop: 16,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -620,7 +619,7 @@ const RoomDetails = ({ navigation, route }) => {
           </View>
         </TouchableOpacity>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 

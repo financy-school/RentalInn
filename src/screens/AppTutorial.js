@@ -13,7 +13,6 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import GradientCard from '../components/GradientCard/GradientCard';
 import StyledButton from '../components/StyledButton/StyledButton';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 
 const { height } = Dimensions.get('window');
@@ -408,7 +407,7 @@ const AppTutorial = ({ navigation }) => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <StandardText size="lg" fontWeight="600" style={styles.headerTitle}>
@@ -544,7 +543,7 @@ const AppTutorial = ({ navigation }) => {
           />
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -18,7 +18,6 @@ import StandardInformationAccordion from '../components/StandardInformationAccor
 import colors from '../theme/color';
 import { deleteTenant, putTenantOnNotice } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Share from 'react-native-share';
 
 const screenWidth = Dimensions.get('window').width;
@@ -93,7 +92,7 @@ const TenantDetails = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor }]}>
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundColor}
@@ -493,7 +492,7 @@ const TenantDetails = ({ navigation, route }) => {
           </View>
         </TouchableOpacity>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -541,6 +540,7 @@ const DetailRow = ({ icon, label, value, isMultiline, isDark }) => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
   },
   headerBanner: {
     height: 120,
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop: -20,
+    marginTop: 16,
   },
   profileCard: {
     borderRadius: 16,

@@ -15,11 +15,8 @@ import GradientCard from '../components/GradientCard/GradientCard';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
-
 import Gap from '../components/Gap/Gap';
-
 import * as ImagePicker from 'react-native-image-picker';
-import LinearGradient from 'react-native-linear-gradient';
 import {
   createDocument,
   uploadToS3,
@@ -29,8 +26,57 @@ import {
 import StandardText from '../components/StandardText/StandardText';
 import { ThemeContext } from '../context/ThemeContext';
 import { CredentialsContext } from '../context/CredentialsContext';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { width } = Dimensions.get('window');
+
+const CustomHeader = ({ navigation, isEdit, loading }) => {
+  const theme = useTheme();
+
+  const styles = StyleSheet.create({
+    customHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: theme.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.outline,
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 8,
+    },
+    headerTitle: {
+      flex: 1,
+      textAlign: 'center',
+      color: theme.colors.onSurface,
+    },
+    headerSpacer: {
+      width: 40, // Same width as back button to center the title
+    },
+  });
+
+  return (
+    <View style={styles.customHeader}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => {
+          if (!loading) navigation.goBack();
+        }}
+        disabled={loading}
+      >
+        <Icon name="arrow-left" size={24} color={theme.colors.onSurface} />
+      </TouchableOpacity>
+
+      <StandardText size="lg" fontWeight="600" style={styles.headerTitle}>
+        {isEdit ? 'Edit Room' : 'Add Room'}
+      </StandardText>
+
+      <View style={styles.headerSpacer} />
+    </View>
+  );
+};
 
 const AddRoom = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -332,9 +378,8 @@ const AddRoom = ({ navigation, route }) => {
   };
 
   const styles = StyleSheet.create({
-    container: {
+    scrollContainer: {
       flex: 1,
-      paddingTop: 10,
       backgroundColor: theme.colors.surface,
     },
     headerContainer: {
@@ -467,333 +512,334 @@ const AddRoom = ({ navigation, route }) => {
   });
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      {/* <View style={styles.headerContainer}>
-        <View style={styles.titleContainer}>
-          <LinearGradient
-            colors={[theme.colors.primary, theme.colors.secondary]}
-            style={styles.gradientTitle}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <StandardText
-              size="xl"
-              fontWeight="bold"
-              style={{ color: theme.colors.onPrimary }}
-            >
-              {isEdit ? '✏️ Edit Room' : '✨ Add New Room'}
-            </StandardText>
-          </LinearGradient>
-        </View>
-      </View> */}
-
-      <GradientCard
-        gradient={true}
-        gradientColors={[
-          mode === 'dark' ? '#2a2a2a' : '#ffffff',
-          mode === 'dark' ? '#1f1f1f' : '#f8f9fa',
-        ]}
+    <View style={{ flex: 1 }}>
+      <CustomHeader navigation={navigation} isEdit={isEdit} loading={loading} />
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Basic Information */}
-        <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-          🏠 Basic Information
-        </StandardText>
+        <GradientCard
+          gradient={true}
+          gradientColors={
+            mode === 'dark' ? ['#2a2a2a', '#1f1f1f'] : ['#ffffff', '#f8f9fa']
+          }
+        >
+          {/* Basic Information */}
+          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
+            🏠 Basic Information
+          </StandardText>
 
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <StyledTextInput
-              label="Room Name *"
-              value={formData.roomName}
-              onChangeText={value => handleInputChange('roomName', value)}
-              mode="outlined"
-              left={<TextInput.Icon icon="home" />}
-              placeholder="e.g., Deluxe Room A"
-              error={errors.roomName}
-            />
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <StyledTextInput
+                label="Room Name *"
+                value={formData.roomName}
+                onChangeText={value => handleInputChange('roomName', value)}
+                mode="outlined"
+                left={<TextInput.Icon icon="home" />}
+                placeholder="e.g., Deluxe Room A"
+                error={errors.roomName}
+              />
+            </View>
+
+            <View style={styles.formColumn}>
+              <StandardText
+                size="sm"
+                fontWeight="600"
+                style={styles.fieldLabel}
+              >
+                Area Type *
+              </StandardText>
+              <View style={styles.chipContainer}>
+                {areaTypes.map(type => (
+                  <AnimatedChip
+                    key={type}
+                    label={type}
+                    selected={formData.areaType === type}
+                    onPress={() => handleInputChange('areaType', type)}
+                    size="medium"
+                    style={[
+                      styles.chip,
+                      formData.areaType === type && styles.chipSelected,
+                    ]}
+                    textStyle={[
+                      styles.chipText,
+                      formData.areaType === type && styles.chipTextSelected,
+                    ]}
+                  />
+                ))}
+              </View>
+              {errors.areaType && (
+                <StandardText size="xs" style={styles.errorText}>
+                  {errors.areaType}
+                </StandardText>
+              )}
+            </View>
           </View>
 
-          <View style={styles.formColumn}>
-            <StandardText size="sm" fontWeight="600" style={styles.fieldLabel}>
-              Area Type *
-            </StandardText>
-            <View style={styles.chipContainer}>
-              {areaTypes.map(type => (
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <StyledTextInput
+                label="Floor Number *"
+                value={formData.floorNumber}
+                onChangeText={value => handleInputChange('floorNumber', value)}
+                mode="outlined"
+                keyboardType="numeric"
+                left={<TextInput.Icon icon="stairs" />}
+                placeholder="1"
+                error={errors.floorNumber}
+              />
+            </View>
+
+            <View style={styles.formColumn}>
+              <StyledTextInput
+                label="Number of Beds *"
+                value={formData.bedCount}
+                onChangeText={value => handleInputChange('bedCount', value)}
+                placeholder="2"
+                mode="outlined"
+                keyboardType="numeric"
+                left={<TextInput.Icon icon="bed" />}
+                error={errors.bedCount}
+              />
+            </View>
+          </View>
+
+          <StyledTextInput
+            label="Number of Bathrooms *"
+            value={formData.bathroomCount}
+            onChangeText={value => handleInputChange('bathroomCount', value)}
+            mode="outlined"
+            keyboardType="numeric"
+            left={<TextInput.Icon icon="shower" />}
+            placeholder="1"
+            error={errors.bathroomCount}
+            containerStyle={styles.halfWidth}
+          />
+
+          {/* Pricing Information */}
+          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
+            💰 Pricing Details
+          </StandardText>
+
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <StyledTextInput
+                label="Rent Amount *"
+                value={formData.rentAmount}
+                onChangeText={value => handleInputChange('rentAmount', value)}
+                mode="outlined"
+                keyboardType="numeric"
+                left={<TextInput.Icon icon="currency-inr" />}
+                placeholder="5000"
+                error={errors.rentAmount}
+              />
+            </View>
+
+            <View style={styles.formColumn}>
+              <StyledTextInput
+                label="Security Amount *"
+                value={formData.securityAmount}
+                onChangeText={value =>
+                  handleInputChange('securityAmount', value)
+                }
+                mode="outlined"
+                keyboardType="numeric"
+                left={<TextInput.Icon icon="shield-check" />}
+                placeholder="10000"
+                error={errors.securityAmount}
+              />
+            </View>
+          </View>
+
+          {/* Room Features */}
+          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
+            🛏️ Room Features
+          </StandardText>
+
+          <StyledTextInput
+            label="Amenities"
+            value={formData.amenities}
+            onChangeText={value => handleInputChange('amenities', value)}
+            mode="outlined"
+            left={<TextInput.Icon icon="home-heart" />}
+            placeholder="AC, WiFi, Geyser (separate by commas)"
+            error={errors.amenities}
+          />
+
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <StandardText
+                size="sm"
+                fontWeight="600"
+                style={styles.fieldLabel}
+              >
+                Furnished
+              </StandardText>
+              <View style={styles.chipContainer}>
                 <AnimatedChip
-                  key={type}
-                  label={type}
-                  selected={formData.areaType === type}
-                  onPress={() => handleInputChange('areaType', type)}
+                  label="Yes"
+                  selected={formData.furnished === true}
+                  onPress={() => handleInputChange('furnished', true)}
                   size="medium"
                   style={[
                     styles.chip,
-                    formData.areaType === type && styles.chipSelected,
+                    formData.furnished === true && styles.chipSelected,
                   ]}
                   textStyle={[
                     styles.chipText,
-                    formData.areaType === type && styles.chipTextSelected,
+                    formData.furnished === true && styles.chipTextSelected,
                   ]}
                 />
+                <AnimatedChip
+                  label="No"
+                  selected={formData.furnished === false}
+                  onPress={() => handleInputChange('furnished', false)}
+                  size="medium"
+                  style={[
+                    styles.chip,
+                    formData.furnished === false && styles.chipSelected,
+                  ]}
+                  textStyle={[
+                    styles.chipText,
+                    formData.furnished === false && styles.chipTextSelected,
+                  ]}
+                />
+              </View>
+            </View>
+
+            <View style={styles.formColumn}>
+              <StandardText
+                size="sm"
+                fontWeight="600"
+                style={styles.fieldLabel}
+              >
+                Available
+              </StandardText>
+              <View style={styles.chipContainer}>
+                <AnimatedChip
+                  label="Yes"
+                  selected={formData.available === true}
+                  onPress={() => handleInputChange('available', true)}
+                  size="medium"
+                  style={[
+                    styles.chip,
+                    formData.available === true && styles.chipSelected,
+                  ]}
+                  textStyle={[
+                    styles.chipText,
+                    formData.available === true && styles.chipTextSelected,
+                  ]}
+                />
+                <AnimatedChip
+                  label="No"
+                  selected={formData.available === false}
+                  onPress={() => handleInputChange('available', false)}
+                  size="medium"
+                  style={[
+                    styles.chip,
+                    formData.available === false && styles.chipSelected,
+                  ]}
+                  textStyle={[
+                    styles.chipText,
+                    formData.available === false && styles.chipTextSelected,
+                  ]}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Electricity Details */}
+          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
+            ⚡ Electricity Details
+          </StandardText>
+
+          <View style={styles.formRow}>
+            <View style={styles.formColumn}>
+              <StyledTextInput
+                label="Last Electricity Reading *"
+                value={formData.lastElectricityReading}
+                onChangeText={value =>
+                  handleInputChange('lastElectricityReading', value)
+                }
+                mode="outlined"
+                keyboardType="numeric"
+                left={<TextInput.Icon icon="gauge" />}
+                placeholder="1250"
+                error={errors.lastElectricityReading}
+              />
+            </View>
+
+            <View style={styles.formColumn}>
+              <TouchableOpacity onPress={openDatePicker}>
+                <StyledTextInput
+                  label="Reading Date *"
+                  value={formData.lastElectricityReadingDate}
+                  mode="outlined"
+                  left={<TextInput.Icon icon="calendar" />}
+                  placeholder="YYYY-MM-DD"
+                  error={errors.lastElectricityReadingDate}
+                  editable={false}
+                  pointerEvents="none"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={
+                formData.lastElectricityReadingDate
+                  ? new Date(formData.lastElectricityReadingDate)
+                  : new Date()
+              }
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+            />
+          )}
+
+          {/* Room Images */}
+          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
+            📸 Room Images ({roomImages.length}/5)
+          </StandardText>
+
+          {roomImages.length > 0 ? (
+            <View style={styles.imageGrid}>
+              {roomImages.map(img => (
+                <View key={img.id} style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: img.uri }}
+                    style={styles.roomImage}
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => removeImage(img.id)}
+                  >
+                    <StandardText
+                      size="xs"
+                      fontWeight="bold"
+                      style={{ color: theme.colors.onErrorContainer }}
+                    >
+                      ×
+                    </StandardText>
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
-            {errors.areaType && (
-              <StandardText size="xs" style={styles.errorText}>
-                {errors.areaType}
+          ) : (
+            <TouchableOpacity
+              style={styles.imageUploadArea}
+              onPress={pickImages}
+            >
+              <StandardText size="md" style={styles.imageUploadText}>
+                📷{'\n'}Tap to add room images{'\n'}(up to 5 images)
               </StandardText>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <StyledTextInput
-              label="Floor Number *"
-              value={formData.floorNumber}
-              onChangeText={value => handleInputChange('floorNumber', value)}
-              mode="outlined"
-              keyboardType="numeric"
-              left={<TextInput.Icon icon="stairs" />}
-              placeholder="1"
-              error={errors.floorNumber}
-            />
-          </View>
-
-          <View style={styles.formColumn}>
-            <StyledTextInput
-              label="Number of Beds *"
-              value={formData.bedCount}
-              onChangeText={value => handleInputChange('bedCount', value)}
-              placeholder="2"
-              mode="outlined"
-              keyboardType="numeric"
-              left={<TextInput.Icon icon="bed" />}
-              error={errors.bedCount}
-            />
-          </View>
-        </View>
-
-        <StyledTextInput
-          label="Number of Bathrooms *"
-          value={formData.bathroomCount}
-          onChangeText={value => handleInputChange('bathroomCount', value)}
-          mode="outlined"
-          keyboardType="numeric"
-          left={<TextInput.Icon icon="shower" />}
-          placeholder="1"
-          error={errors.bathroomCount}
-          containerStyle={styles.halfWidth}
-        />
-
-        {/* Pricing Information */}
-        <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-          💰 Pricing Details
-        </StandardText>
-
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <StyledTextInput
-              label="Rent Amount *"
-              value={formData.rentAmount}
-              onChangeText={value => handleInputChange('rentAmount', value)}
-              mode="outlined"
-              keyboardType="numeric"
-              left={<TextInput.Icon icon="currency-inr" />}
-              placeholder="5000"
-              error={errors.rentAmount}
-            />
-          </View>
-
-          <View style={styles.formColumn}>
-            <StyledTextInput
-              label="Security Amount *"
-              value={formData.securityAmount}
-              onChangeText={value => handleInputChange('securityAmount', value)}
-              mode="outlined"
-              keyboardType="numeric"
-              left={<TextInput.Icon icon="shield-check" />}
-              placeholder="10000"
-              error={errors.securityAmount}
-            />
-          </View>
-        </View>
-
-        {/* Room Features */}
-        <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-          🛏️ Room Features
-        </StandardText>
-
-        <StyledTextInput
-          label="Amenities"
-          value={formData.amenities}
-          onChangeText={value => handleInputChange('amenities', value)}
-          mode="outlined"
-          left={<TextInput.Icon icon="home-heart" />}
-          placeholder="AC, WiFi, Geyser (separate by commas)"
-          error={errors.amenities}
-        />
-
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <StandardText size="sm" fontWeight="600" style={styles.fieldLabel}>
-              Furnished
-            </StandardText>
-            <View style={styles.chipContainer}>
-              <AnimatedChip
-                label="Yes"
-                selected={formData.furnished === true}
-                onPress={() => handleInputChange('furnished', true)}
-                size="medium"
-                style={[
-                  styles.chip,
-                  formData.furnished === true && styles.chipSelected,
-                ]}
-                textStyle={[
-                  styles.chipText,
-                  formData.furnished === true && styles.chipTextSelected,
-                ]}
-              />
-              <AnimatedChip
-                label="No"
-                selected={formData.furnished === false}
-                onPress={() => handleInputChange('furnished', false)}
-                size="medium"
-                style={[
-                  styles.chip,
-                  formData.furnished === false && styles.chipSelected,
-                ]}
-                textStyle={[
-                  styles.chipText,
-                  formData.furnished === false && styles.chipTextSelected,
-                ]}
-              />
-            </View>
-          </View>
-
-          <View style={styles.formColumn}>
-            <StandardText size="sm" fontWeight="600" style={styles.fieldLabel}>
-              Available
-            </StandardText>
-            <View style={styles.chipContainer}>
-              <AnimatedChip
-                label="Yes"
-                selected={formData.available === true}
-                onPress={() => handleInputChange('available', true)}
-                size="medium"
-                style={[
-                  styles.chip,
-                  formData.available === true && styles.chipSelected,
-                ]}
-                textStyle={[
-                  styles.chipText,
-                  formData.available === true && styles.chipTextSelected,
-                ]}
-              />
-              <AnimatedChip
-                label="No"
-                selected={formData.available === false}
-                onPress={() => handleInputChange('available', false)}
-                size="medium"
-                style={[
-                  styles.chip,
-                  formData.available === false && styles.chipSelected,
-                ]}
-                textStyle={[
-                  styles.chipText,
-                  formData.available === false && styles.chipTextSelected,
-                ]}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Electricity Details */}
-        <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-          ⚡ Electricity Details
-        </StandardText>
-
-        <View style={styles.formRow}>
-          <View style={styles.formColumn}>
-            <StyledTextInput
-              label="Last Electricity Reading *"
-              value={formData.lastElectricityReading}
-              onChangeText={value =>
-                handleInputChange('lastElectricityReading', value)
-              }
-              mode="outlined"
-              keyboardType="numeric"
-              left={<TextInput.Icon icon="gauge" />}
-              placeholder="1250"
-              error={errors.lastElectricityReading}
-            />
-          </View>
-
-          <View style={styles.formColumn}>
-            <TouchableOpacity onPress={openDatePicker}>
-              <StyledTextInput
-                label="Reading Date *"
-                value={formData.lastElectricityReadingDate}
-                mode="outlined"
-                left={<TextInput.Icon icon="calendar" />}
-                placeholder="YYYY-MM-DD"
-                error={errors.lastElectricityReadingDate}
-                editable={false}
-                pointerEvents="none"
-              />
             </TouchableOpacity>
-          </View>
-        </View>
+          )}
 
-        {showDatePicker && (
-          <DateTimePicker
-            value={
-              formData.lastElectricityReadingDate
-                ? new Date(formData.lastElectricityReadingDate)
-                : new Date()
-            }
-            mode="date"
-            display="default"
-            onChange={onDateChange}
-          />
-        )}
-
-        {/* Room Images */}
-        <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-          📸 Room Images ({roomImages.length}/5)
-        </StandardText>
-
-        {roomImages.length > 0 ? (
-          <View style={styles.imageGrid}>
-            {roomImages.map(img => (
-              <View key={img.id} style={styles.imageContainer}>
-                <Image
-                  source={{ uri: img.uri }}
-                  style={styles.roomImage}
-                  resizeMode="cover"
-                />
-                <TouchableOpacity
-                  style={styles.removeImageButton}
-                  onPress={() => removeImage(img.id)}
-                >
-                  <StandardText
-                    size="xs"
-                    fontWeight="bold"
-                    style={{ color: theme.colors.onErrorContainer }}
-                  >
-                    ×
-                  </StandardText>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.imageUploadArea} onPress={pickImages}>
-            <StandardText size="md" style={styles.imageUploadText}>
-              📷{'\n'}Tap to add room images{'\n'}(up to 5 images)
-            </StandardText>
-          </TouchableOpacity>
-        )}
-
-        {/* <StyledButton
+          {/* <StyledButton
           title={roomImages.length > 0 ? 'Add More Images' : 'Upload Images'}
           icon="camera-plus"
           variant="outlined"
@@ -803,45 +849,50 @@ const AddRoom = ({ navigation, route }) => {
           disabled={roomImages.length >= 5}
         /> */}
 
-        {/* Submit Buttons */}
-        <View style={styles.submitContainer}>
-          <StyledButton
-            title={
-              loading
-                ? isEdit
-                  ? 'Updating...'
-                  : 'Creating...'
-                : isEdit
-                ? 'Update Room'
-                : 'Create Room'
-            }
-            icon={
-              loading ? 'loading' : isEdit ? 'content-save-edit' : 'plus-circle'
-            }
-            variant="primary"
-            size="large"
-            onPress={handleSubmit}
-            disabled={loading}
-            loading={loading}
-            fullWidth={true}
-          />
+          {/* Submit Buttons */}
+          <View style={styles.submitContainer}>
+            <StyledButton
+              title={
+                loading
+                  ? isEdit
+                    ? 'Updating...'
+                    : 'Creating...'
+                  : isEdit
+                  ? 'Update Room'
+                  : 'Create Room'
+              }
+              icon={
+                loading
+                  ? 'loading'
+                  : isEdit
+                  ? 'content-save-edit'
+                  : 'plus-circle'
+              }
+              variant="primary"
+              size="large"
+              onPress={handleSubmit}
+              disabled={loading}
+              loading={loading}
+              fullWidth={true}
+            />
 
-          <StyledButton
-            title="Cancel"
-            icon="close"
-            variant="outlined"
-            size="medium"
-            onPress={() => {
-              if (!loading) navigation.goBack();
-            }}
-            disabled={loading}
-            fullWidth={true}
-          />
-        </View>
-      </GradientCard>
+            <StyledButton
+              title="Cancel"
+              icon="close"
+              variant="outlined"
+              size="medium"
+              onPress={() => {
+                if (!loading) navigation.goBack();
+              }}
+              disabled={loading}
+              fullWidth={true}
+            />
+          </View>
+        </GradientCard>
 
-      <Gap size="lg" />
-    </ScrollView>
+        <Gap size="lg" />
+      </ScrollView>
+    </View>
   );
 };
 

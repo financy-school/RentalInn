@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     paddingHorizontal: 20,
-    marginTop: -60,
+    marginTop: 16,
     marginBottom: 20,
     flex: 1,
   },

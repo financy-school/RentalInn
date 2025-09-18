@@ -20,7 +20,6 @@ import StyledButton from '../components/StyledButton/StyledButton';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
 import * as ImagePicker from 'react-native-image-picker';
-import LinearGradient from 'react-native-linear-gradient';
 import { ThemeContext } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -158,7 +157,6 @@ const AddTicket = ({ navigation }) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      paddingTop: 10,
       backgroundColor: theme.colors.surface,
     },
     headerContainer: {
@@ -236,24 +234,6 @@ const AddTicket = ({ navigation }) => {
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      {/* <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary, theme.colors.secondary]}
-          style={styles.gradientTitle}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <StandardText
-            size="xl"
-            fontWeight="bold"
-            style={{ color: theme.colors.onPrimary }}
-          >
-            🎫 Create Support Ticket
-          </StandardText>
-        </LinearGradient>
-      </View> */}
-
       <GradientCard
         gradient={true}
         gradientColors={[
@@ -416,8 +396,6 @@ const AddTicket = ({ navigation }) => {
           />
         </View>
       </GradientCard>
-
-      <Gap size="lg" />
     </ScrollView>
   );
 };

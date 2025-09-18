@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Dimensions,
   TextInput,
+  Platform,
 } from 'react-native';
 import {
   Appbar,
@@ -34,17 +35,6 @@ import CircularIconsWithText from '../components/cards/CircularIcon';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
-// import {
-//   BottomSheetModal,
-//   BottomSheetView,
-//   BottomSheetModalProvider,
-// } from '@gorhom/bottom-sheet';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import AddTenant from '../components/cards/AddTenant';
-import SendAnnouncement from '../components/cards/SendAnnouncement';
-import RecordPayment from '../components/cards/RecordPayment';
-import AddRoom from '../components/cards/AddRoom';
-import Contacts from '../components/cards/Contacts';
 import { PieChart, LineChart, StackedBarChart } from 'react-native-chart-kit';
 import * as Progress from 'react-native-progress';
 import colors from '../theme/color';
@@ -243,76 +233,74 @@ const Home = ({ navigation }) => {
   };
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {/* Appbar */}
-        <Appbar.Header style={{ backgroundColor: 'transparent' }}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+    <View style={styles.container}>
+      {/* Custom Header */}
+      <View style={styles.customHeader}>
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <Avatar.Icon
+            size={40}
+            icon="menu"
+            style={{ backgroundColor: colors.white }}
+            color={colors.secondary}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.headerContent}>
+          <StandardText size="md" style={styles.welcomeText}>
+            Welcome
+          </StandardText>
+          <StandardText size="lg" fontWeight="bold" style={styles.nameText}>
+            {credentials?.firstName} {credentials?.lastName}
+          </StandardText>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate('Notices');
+          }}
+        >
+          <View>
             <Avatar.Icon
               size={40}
-              icon="menu"
-              style={{ backgroundColor: colors.white }}
-              color={colors.secondary}
-            />
-          </TouchableOpacity>
-
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <StandardText size="md">Welcome</StandardText>
-            <StandardText size="lg" fontWeight="bold">
-              {credentials?.firstName} {credentials?.lastName}
-            </StandardText>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('Notices');
-            }}
-          >
-            <View>
-              <Avatar.Icon
-                size={40}
-                icon="bell"
-                style={{ backgroundColor: colors.light_black }}
-                color={colors.white}
-              />
-              <Badge
-                style={{ position: 'absolute', top: -4, right: -4 }}
-                size={10}
-              />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={toggleTheme} style={{ marginLeft: 10 }}>
-            <Avatar.Icon
-              size={40}
-              icon="theme-light-dark"
-              style={{ backgroundColor: colors.white }}
-              color={colors.secondary}
-            />
-          </TouchableOpacity>
-        </Appbar.Header>
-
-        <ScrollView>
-          {/* Pitch-aligned alerting & filters */}
-          <Card style={styles.bannerCard}>
-            <MaterialCommunityIcons
-              name="lightning-bolt-outline"
-              size={22}
+              icon="bell"
+              style={{ backgroundColor: colors.light_black }}
               color={colors.white}
             />
-            <View style={{ marginLeft: 10 }}>
-              <StandardText style={{ color: colors.white }} fontWeight="bold">
-                Real-time tracking enabled
-              </StandardText>
-              <StandardText style={{ color: colors.white }} size="sm">
-                Monitor rent, occupancy & issues in one place.
-              </StandardText>
-            </View>
-          </Card>
+            <Badge style={styles.badge} size={10} />
+          </View>
+        </TouchableOpacity>
 
-          {/* Search + scope filter */}
+        {/* <TouchableOpacity onPress={toggleTheme} style={{ marginLeft: 10 }}>
+          <Avatar.Icon
+            size={40}
+            icon="theme-light-dark"
+            style={{ backgroundColor: colors.white }}
+            color={colors.secondary}
+          />
+        </TouchableOpacity> */}
+      </View>
 
-          {/* <View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Pitch-aligned alerting & filters */}
+        <Card style={styles.bannerCard}>
+          <MaterialCommunityIcons
+            name="lightning-bolt-outline"
+            size={22}
+            color={colors.white}
+          />
+          <View style={{ marginLeft: 10 }}>
+            <StandardText style={{ color: colors.white }} fontWeight="bold">
+              Real-time tracking enabled
+            </StandardText>
+            <StandardText style={{ color: colors.white }} size="sm">
+              Monitor rent, occupancy & issues in one place.
+            </StandardText>
+          </View>
+        </Card>
+
+        {/* Search + scope filter */}
+
+        {/* <View>
             <SegmentedButtons
               value={scope}
               onValueChange={setScope}
@@ -362,135 +350,135 @@ const Home = ({ navigation }) => {
               ]}
             />
           </View> */}
-          <View style={styles.searchRow}>
-            <View style={{ flex: 1, marginRight: 10 }}>
-              <TextInput
-                placeholder="Search tenants, units, or properties"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                style={styles.searchInput}
-              />
-            </View>
+        <View style={styles.searchRow}>
+          <View style={{ flex: 1, marginRight: 10 }}>
+            <TextInput
+              placeholder="Search tenants, units, or properties"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+            />
           </View>
+        </View>
 
-          {/* Property chips */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 10 }}
+        {/* Property chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: 10 }}
+        >
+          {properties.map(p => (
+            <Chip
+              key={p}
+              selected={selectedProperty === p}
+              onPress={() => setSelectedProperty(p)}
+              style={{ marginRight: 8 }}
+              textStyle={{
+                color: selectedProperty === p ? '#fff' : '#000',
+                fontFamily: 'Metropolis-Medium',
+              }}
+            >
+              {p}
+            </Chip>
+          ))}
+        </ScrollView>
+
+        {/* KPI Cards */}
+        <View style={styles.kpiGrid}>
+          <StandardCard style={styles.kpiCard}>
+            <StandardText size="sm">Occupancy</StandardText>
+            <StandardText size="xl" fontWeight="bold">
+              {occupancyPct}%
+            </StandardText>
+            <Progress.Bar
+              progress={occupancyPct / 100}
+              width={null}
+              style={{ marginTop: 8 }}
+              color={colors.primary}
+            />
+          </StandardCard>
+          <StandardCard style={styles.kpiCard}>
+            <StandardText size="sm">Rent Collected</StandardText>
+            <StandardText size="xl" fontWeight="bold">
+              ₹{paid.toLocaleString()}
+            </StandardText>
+            <StandardText size="sm">
+              Overdue: ₹{notPaid.toLocaleString()}
+            </StandardText>
+          </StandardCard>
+          <StandardCard style={styles.kpiCard}>
+            <StandardText size="sm">Tenants</StandardText>
+            <StandardText size="xl" fontWeight="bold">
+              {totalTenants}
+            </StandardText>
+            <StandardText size="sm">
+              Vacant Units: {vacantRooms}/{totalRooms}
+            </StandardText>
+          </StandardCard>
+        </View>
+
+        <Gap size="md" />
+
+        {/* Paid vs Overdue + Revenue Trend */}
+        {console.log('piePaidVsDue', piePaidVsDue)}
+        <View style={{ gap: 12 }}>
+          <StandardCard
+            style={[styles.kpiCard, { height: 300, width: '100%' }]}
           >
-            {properties.map(p => (
-              <Chip
-                key={p}
-                selected={selectedProperty === p}
-                onPress={() => setSelectedProperty(p)}
-                style={{ marginRight: 8 }}
-                textStyle={{
-                  color: selectedProperty === p ? '#fff' : '#000',
-                  fontFamily: 'Metropolis-Medium',
-                }}
-              >
-                {p}
-              </Chip>
-            ))}
-          </ScrollView>
+            <StandardText size="lg" fontWeight="bold" textAlign="center">
+              Rent Collection
+            </StandardText>
+            <PieChart
+              data={piePaidVsDue}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={{
+                backgroundGradientFrom: '#ffffff',
+                backgroundGradientTo: '#ffffff',
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              }}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="15"
+              hasLegend={true}
+              absolute // shows absolute values instead of percentages
+            />
+          </StandardCard>
 
-          {/* KPI Cards */}
-          <View style={styles.kpiGrid}>
-            <StandardCard style={styles.kpiCard}>
-              <StandardText size="sm">Occupancy</StandardText>
-              <StandardText size="xl" fontWeight="bold">
-                {occupancyPct}%
-              </StandardText>
-              <Progress.Bar
-                progress={occupancyPct / 100}
-                width={null}
-                style={{ marginTop: 8 }}
-                color={colors.primary}
-              />
-            </StandardCard>
-            <StandardCard style={styles.kpiCard}>
-              <StandardText size="sm">Rent Collected</StandardText>
-              <StandardText size="xl" fontWeight="bold">
-                ₹{paid.toLocaleString()}
-              </StandardText>
-              <StandardText size="sm">
-                Overdue: ₹{notPaid.toLocaleString()}
-              </StandardText>
-            </StandardCard>
-            <StandardCard style={styles.kpiCard}>
-              <StandardText size="sm">Tenants</StandardText>
-              <StandardText size="xl" fontWeight="bold">
-                {totalTenants}
-              </StandardText>
-              <StandardText size="sm">
-                Vacant Units: {vacantRooms}/{totalRooms}
-              </StandardText>
-            </StandardCard>
-          </View>
+          <StandardCard
+            style={[styles.kpiCard, { height: 350, width: '100%' }]}
+          >
+            <StandardText size="lg" fontWeight="bold" textAlign="center">
+              Revenue & Vacancy Loss
+            </StandardText>
+            <StackedBarChart
+              data={{
+                labels: months,
+                legend: ['Revenue (₹k)', 'Vacancy Loss (₹k)'],
+                data: revenueByMonth.map((rev, i) => [
+                  rev,
+                  vacancyLossByMonth[i],
+                ]),
+                barColors: ['#1976D2', '#E53935'],
+              }}
+              width={screenWidth - 40}
+              height={240}
+              chartConfig={{
+                backgroundColor: '#fff',
+                backgroundGradientFrom: '#fff',
+                backgroundGradientTo: '#fff',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+              }}
+            />
+          </StandardCard>
+        </View>
 
-          <Gap size="md" />
+        <Gap size="md" />
 
-          {/* Paid vs Overdue + Revenue Trend */}
-          {console.log('piePaidVsDue', piePaidVsDue)}
-          <View style={{ gap: 12 }}>
-            <StandardCard
-              style={[styles.kpiCard, { height: 300, width: '100%' }]}
-            >
-              <StandardText size="lg" fontWeight="bold" textAlign="center">
-                Rent Collection
-              </StandardText>
-              <PieChart
-                data={piePaidVsDue}
-                width={screenWidth - 40}
-                height={220}
-                chartConfig={{
-                  backgroundGradientFrom: '#ffffff',
-                  backgroundGradientTo: '#ffffff',
-                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                }}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="15"
-                hasLegend={true}
-                absolute // shows absolute values instead of percentages
-              />
-            </StandardCard>
-
-            <StandardCard
-              style={[styles.kpiCard, { height: 350, width: '100%' }]}
-            >
-              <StandardText size="lg" fontWeight="bold" textAlign="center">
-                Revenue & Vacancy Loss
-              </StandardText>
-              <StackedBarChart
-                data={{
-                  labels: months,
-                  legend: ['Revenue (₹k)', 'Vacancy Loss (₹k)'],
-                  data: revenueByMonth.map((rev, i) => [
-                    rev,
-                    vacancyLossByMonth[i],
-                  ]),
-                  barColors: ['#1976D2', '#E53935'],
-                }}
-                width={screenWidth - 40}
-                height={240}
-                chartConfig={{
-                  backgroundColor: '#fff',
-                  backgroundGradientFrom: '#fff',
-                  backgroundGradientTo: '#fff',
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-                }}
-              />
-            </StandardCard>
-          </View>
-
-          <Gap size="md" />
-
-          {/* Auto-Reconciliation (Payment Inbox Preview) */}
-          {/* <StandardCard
+        {/* Auto-Reconciliation (Payment Inbox Preview) */}
+        {/* <StandardCard
             style={[styles.kpiCard, { height: 400, width: '100%' }]}
           >
             <View style={styles.rowBetween}>
@@ -545,204 +533,198 @@ const Home = ({ navigation }) => {
             </Button>
           </StandardCard> */}
 
-          <StandardCard
-            style={[
-              styles.kpiCard,
-              { height: 400, width: '100%', position: 'relative' },
-            ]}
-          >
-            <View style={styles.rowBetween}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <StandardCard
+          style={[
+            styles.kpiCard,
+            { height: 400, width: '100%', position: 'relative' },
+          ]}
+        >
+          <View style={styles.rowBetween}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <MaterialCommunityIcons
+                name="sync"
+                size={20}
+                color={colors.primary}
+              />
+              <StandardText
+                size="lg"
+                fontWeight="bold"
+                style={{ marginLeft: 6 }}
+              >
+                Auto Reconciliation
+              </StandardText>
+            </View>
+            <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
+          </View>
+          <StandardText size="sm" style={{ marginTop: 6 }}>
+            Securely reads payment messages and updates records instantly.
+          </StandardText>
+
+          <Gap size="sm" />
+          {reconInbox.map(msg => (
+            <List.Item
+              key={msg.id}
+              title={`${msg.from} • ${msg.preview}`}
+              left={() => (
                 <MaterialCommunityIcons
-                  name="sync"
-                  size={20}
+                  name="message-text-outline"
+                  size={22}
                   color={colors.primary}
                 />
-                <StandardText
-                  size="lg"
-                  fontWeight="bold"
-                  style={{ marginLeft: 6 }}
+              )}
+              right={() => (
+                <Chip
+                  mode={msg.matched ? 'flat' : 'outlined'}
+                  icon={msg.matched ? 'check' : 'alert'}
                 >
-                  Auto Reconciliation
-                </StandardText>
-              </View>
-              <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
-            </View>
-            <StandardText size="sm" style={{ marginTop: 6 }}>
-              Securely reads payment messages and updates records instantly.
-            </StandardText>
+                  {msg.matched ? 'Matched' : 'Review'}
+                </Chip>
+              )}
+            />
+          ))}
+          <Button
+            mode="contained"
+            buttonColor={colors.primary}
+            style={{ marginTop: 6 }}
+            disabled
+          >
+            Sync Now
+          </Button>
 
-            <Gap size="sm" />
-            {reconInbox.map(msg => (
-              <List.Item
-                key={msg.id}
-                title={`${msg.from} • ${msg.preview}`}
-                left={() => (
+          {/* Premium Feature Lock Overlay */}
+          <View style={styles.premiumOverlay}>
+            <View style={styles.premiumContent}>
+              <View style={styles.lockIconContainer}>
+                <MaterialCommunityIcons name="lock" size={40} color="#FFD700" />
+                <View style={styles.crownIcon}>
                   <MaterialCommunityIcons
-                    name="message-text-outline"
-                    size={22}
-                    color={colors.primary}
-                  />
-                )}
-                right={() => (
-                  <Chip
-                    mode={msg.matched ? 'flat' : 'outlined'}
-                    icon={msg.matched ? 'check' : 'alert'}
-                  >
-                    {msg.matched ? 'Matched' : 'Review'}
-                  </Chip>
-                )}
-              />
-            ))}
-            <Button
-              mode="contained"
-              buttonColor={colors.primary}
-              style={{ marginTop: 6 }}
-              disabled
-            >
-              Sync Now
-            </Button>
-
-            {/* Premium Feature Lock Overlay */}
-            <View style={styles.premiumOverlay}>
-              <View style={styles.premiumContent}>
-                <View style={styles.lockIconContainer}>
-                  <MaterialCommunityIcons
-                    name="lock"
-                    size={40}
+                    name="crown"
+                    size={24}
                     color="#FFD700"
                   />
-                  <View style={styles.crownIcon}>
-                    <MaterialCommunityIcons
-                      name="crown"
-                      size={24}
-                      color="#FFD700"
-                    />
-                  </View>
                 </View>
-
-                <StandardText
-                  fontWeight="bold"
-                  size="lg"
-                  style={styles.premiumTitle}
-                >
-                  Premium Feature
-                </StandardText>
-
-                <StandardText
-                  size="sm"
-                  style={styles.premiumDescription}
-                  textAlign="center"
-                >
-                  Please contact your sales manager to unlock this feature
-                </StandardText>
-
-                <TouchableOpacity style={styles.contactButton}>
-                  <MaterialCommunityIcons
-                    name="phone"
-                    size={16}
-                    color="#fff"
-                    style={{ marginRight: 6 }}
-                  />
-                  <StandardText
-                    fontWeight="semibold"
-                    style={styles.contactButtonText}
-                  >
-                    Contact Sales
-                  </StandardText>
-                </TouchableOpacity>
               </View>
+
+              <StandardText
+                fontWeight="bold"
+                size="lg"
+                style={styles.premiumTitle}
+              >
+                Premium Feature
+              </StandardText>
+
+              <StandardText
+                size="sm"
+                style={styles.premiumDescription}
+                textAlign="center"
+              >
+                Please contact your sales manager to unlock this feature
+              </StandardText>
+
+              <TouchableOpacity style={styles.contactButton}>
+                <MaterialCommunityIcons
+                  name="phone"
+                  size={16}
+                  color="#fff"
+                  style={{ marginRight: 6 }}
+                />
+                <StandardText
+                  fontWeight="semibold"
+                  style={styles.contactButtonText}
+                >
+                  Contact Sales
+                </StandardText>
+              </TouchableOpacity>
             </View>
-          </StandardCard>
+          </View>
+        </StandardCard>
 
-          <Gap size="md" />
+        <Gap size="md" />
 
-          {/* P&L by scope */}
-          <StandardCard
-            style={[styles.kpiCard, { height: 500, width: '100%' }]}
+        {/* P&L by scope */}
+        <StandardCard style={[styles.kpiCard, { height: 500, width: '100%' }]}>
+          <StandardText size="lg" fontWeight="bold">
+            Profit & Loss —{' '}
+            {scope === 'property'
+              ? 'Property'
+              : scope === 'unit'
+              ? 'Unit'
+              : 'Tenant'}
+          </StandardText>
+          <DataTable>
+            <DataTable.Header>
+              <DataTable.Title>
+                {scope === 'property'
+                  ? 'Property'
+                  : scope === 'unit'
+                  ? 'Unit'
+                  : 'Tenant'}
+              </DataTable.Title>
+              <DataTable.Title numeric>Revenue</DataTable.Title>
+              <DataTable.Title numeric>Expenses</DataTable.Title>
+              <DataTable.Title numeric>Net</DataTable.Title>
+            </DataTable.Header>
+
+            {[
+              { k: 'Green View / 201 / John', r: 52000, e: 17500 },
+              { k: 'City Heights / 305 / Riya', r: 48000, e: 16000 },
+              { k: 'Lake Shore / 102 / Alex', r: 46000, e: 13000 },
+            ].map((row, idx) => {
+              const net = row.r - row.e;
+              return (
+                <DataTable.Row key={idx}>
+                  <DataTable.Cell>
+                    {
+                      row.k.split(' / ')[
+                        scope === 'property' ? 0 : scope === 'unit' ? 1 : 2
+                      ]
+                    }
+                  </DataTable.Cell>
+                  <DataTable.Cell numeric>
+                    ₹{row.r.toLocaleString()}
+                  </DataTable.Cell>
+                  <DataTable.Cell numeric>
+                    ₹{row.e.toLocaleString()}
+                  </DataTable.Cell>
+                  <DataTable.Cell
+                    numeric
+                    style={{ color: net >= 0 ? '#2E7D32' : '#C62828' }}
+                  >
+                    ₹{net.toLocaleString()}
+                  </DataTable.Cell>
+                </DataTable.Row>
+              );
+            })}
+          </DataTable>
+
+          <Gap size="sm" />
+          <StandardText
+            size="md"
+            fontWeight="bold"
+            style={{ textAlign: 'center' }}
           >
-            <StandardText size="lg" fontWeight="bold">
-              Profit & Loss —{' '}
-              {scope === 'property'
-                ? 'Property'
-                : scope === 'unit'
-                ? 'Unit'
-                : 'Tenant'}
-            </StandardText>
-            <DataTable>
-              <DataTable.Header>
-                <DataTable.Title>
-                  {scope === 'property'
-                    ? 'Property'
-                    : scope === 'unit'
-                    ? 'Unit'
-                    : 'Tenant'}
-                </DataTable.Title>
-                <DataTable.Title numeric>Revenue</DataTable.Title>
-                <DataTable.Title numeric>Expenses</DataTable.Title>
-                <DataTable.Title numeric>Net</DataTable.Title>
-              </DataTable.Header>
+            Expenses Breakdown
+          </StandardText>
+          <PieChart
+            data={expensesBreakdown}
+            width={screenWidth - 40}
+            height={210}
+            accessor="population"
+            backgroundColor="transparent"
+            chartConfig={{
+              backgroundColor: '#fff',
+              backgroundGradientFrom: '#fff',
+              backgroundGradientTo: '#fff',
+              color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+            }}
+            paddingLeft="12"
+          />
+        </StandardCard>
 
-              {[
-                { k: 'Green View / 201 / John', r: 52000, e: 17500 },
-                { k: 'City Heights / 305 / Riya', r: 48000, e: 16000 },
-                { k: 'Lake Shore / 102 / Alex', r: 46000, e: 13000 },
-              ].map((row, idx) => {
-                const net = row.r - row.e;
-                return (
-                  <DataTable.Row key={idx}>
-                    <DataTable.Cell>
-                      {
-                        row.k.split(' / ')[
-                          scope === 'property' ? 0 : scope === 'unit' ? 1 : 2
-                        ]
-                      }
-                    </DataTable.Cell>
-                    <DataTable.Cell numeric>
-                      ₹{row.r.toLocaleString()}
-                    </DataTable.Cell>
-                    <DataTable.Cell numeric>
-                      ₹{row.e.toLocaleString()}
-                    </DataTable.Cell>
-                    <DataTable.Cell
-                      numeric
-                      style={{ color: net >= 0 ? '#2E7D32' : '#C62828' }}
-                    >
-                      ₹{net.toLocaleString()}
-                    </DataTable.Cell>
-                  </DataTable.Row>
-                );
-              })}
-            </DataTable>
+        <Gap size="md" />
 
-            <Gap size="sm" />
-            <StandardText
-              size="md"
-              fontWeight="bold"
-              style={{ textAlign: 'center' }}
-            >
-              Expenses Breakdown
-            </StandardText>
-            <PieChart
-              data={expensesBreakdown}
-              width={screenWidth - 40}
-              height={210}
-              accessor="population"
-              backgroundColor="transparent"
-              chartConfig={{
-                backgroundColor: '#fff',
-                backgroundGradientFrom: '#fff',
-                backgroundGradientTo: '#fff',
-                color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-              }}
-              paddingLeft="12"
-            />
-          </StandardCard>
-
-          <Gap size="md" />
-
-          {/* Forecasts */}
-          {/* <StandardCard
+        {/* Forecasts */}
+        {/* <StandardCard
             style={[styles.kpiCard, { height: 450, width: '100%' }]}
           >
             <StandardText size="lg" fontWeight="bold" textAlign="center">
@@ -771,237 +753,226 @@ const Home = ({ navigation }) => {
             />
           </StandardCard> */}
 
-          <Gap size="md" />
+        <Gap size="md" />
 
-          {/* Issues & Maintenance Board */}
-          <StandardCard
-            style={[styles.kpiCard, { height: 350, width: '100%' }]}
-          >
-            <View style={styles.rowBetween}>
-              <StandardText size="lg" fontWeight="bold">
-                Issues & Maintenance
-              </StandardText>
-            </View>
-            {maintenanceRequests.map(req => (
-              <List.Item
-                key={req.id}
-                title={req.title}
-                description={`Priority: ${req.priority}`}
-                titleStyle={{
-                  fontFamily: 'Metropolis-Medium',
-                  fontSize: 16,
-                }}
-                descriptionStyle={{
-                  fontFamily: 'Metropolis-Regular',
-                  fontSize: 14,
-                }}
-                style={{}}
-                left={() => (
-                  <MaterialCommunityIcons
-                    name="wrench"
-                    size={22}
-                    color={colors.primary}
-                  />
-                )}
-                right={() => (
-                  <Chip
-                    textStyle={{
-                      fontFamily: 'Metropolis-Medium',
-                      fontSize: 14,
-                    }}
-                  >
-                    {req.status}
-                  </Chip>
-                )}
-              />
-            ))}
-          </StandardCard>
-
-          <Gap size="md" />
-
-          {/* Tenant Leaderboard */}
-          <StandardCard
-            style={[styles.kpiCard, { height: 300, width: '100%' }]}
-          >
+        {/* Issues & Maintenance Board */}
+        <StandardCard style={[styles.kpiCard, { height: 350, width: '100%' }]}>
+          <View style={styles.rowBetween}>
             <StandardText size="lg" fontWeight="bold">
-              Top Tenants
+              Issues & Maintenance
             </StandardText>
-            {tenants.map(t => (
-              <List.Item
-                key={t.id}
-                title={`${t.name} — ${t.room}`}
-                description={t.status}
-                titleStyle={{
-                  fontFamily: 'Metropolis-Medium',
-                  fontSize: 16,
-                }}
-                descriptionStyle={{
-                  fontFamily: 'Metropolis-Regular',
-                  fontSize: 14,
-                }}
-                style={{}}
-                left={() => <Avatar.Icon size={36} icon="account-circle" />}
-                right={() =>
-                  t.status === 'On-time' ? (
-                    <Chip icon="star">Consistent</Chip>
-                  ) : (
-                    <Chip icon="alert">Overdue</Chip>
-                  )
-                }
-              />
-            ))}
-          </StandardCard>
-
-          <Gap size="md" />
-
-          {/* 🪪 Tenant KYC Status */}
-          {/* 🪪 Tenant KYC Overview */}
-          <StandardCard
-            style={[styles.kpiCard, { height: 350, width: '100%' }]}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+          </View>
+          {maintenanceRequests.map(req => (
+            <List.Item
+              key={req.id}
+              title={req.title}
+              description={`Priority: ${req.priority}`}
+              titleStyle={{
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 16,
               }}
-            >
-              <StandardText size="lg" fontWeight="bold">
-                🪪 Tenant KYC
-              </StandardText>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('KYCDetails')}
-              >
-                <StandardText style={{ color: colors.primary }}>
-                  View More
-                </StandardText>
-              </TouchableOpacity>
-            </View>
-
-            {/* Summary */}
-            <View style={styles.kycSummary}>
-              <View
-                style={[styles.kycSummaryBox, { backgroundColor: '#4CAF50' }]}
-              >
-                <StandardText fontWeight="bold" style={styles.kycSummaryText}>
-                  Verified: 12
-                </StandardText>
-              </View>
-              <View
-                style={[styles.kycSummaryBox, { backgroundColor: '#FFC107' }]}
-              >
-                <StandardText fontWeight="bold" style={styles.kycSummaryText}>
-                  Pending: 3
-                </StandardText>
-              </View>
-              <View
-                style={[styles.kycSummaryBox, { backgroundColor: '#F44336' }]}
-              >
-                <StandardText fontWeight="bold" style={styles.kycSummaryText}>
-                  Rejected: 1
-                </StandardText>
-              </View>
-            </View>
-
-            {/* Last 3 KYCs */}
-            <StandardText
-              size="md"
-              fontWeight="semibold"
-              style={{ marginTop: 10 }}
-            >
-              Last 3 KYC Submissions
-            </StandardText>
-            {[
-              { name: 'Ravi Kumar', status: 'verified', date: '2025-08-30' },
-              { name: 'Amit Sharma', status: 'pending', date: '2025-08-29' },
-              { name: 'Neha Verma', status: 'rejected', date: '2025-08-28' },
-            ].map((kyc, index) => (
-              <View key={index} style={styles.kycRow}>
-                <View>
-                  <StandardText>{kyc.name}</StandardText>
-                  <StandardText size="sm" style={{ color: '#666' }}>
-                    Submitted: {kyc.date}
-                  </StandardText>
-                </View>
-                <View
-                  style={[
-                    styles.kycBadge,
-                    kyc.status === 'verified'
-                      ? { backgroundColor: '#4CAF50' }
-                      : kyc.status === 'pending'
-                      ? { backgroundColor: '#FFC107' }
-                      : { backgroundColor: '#F44336' },
-                  ]}
-                >
-                  <StandardText fontWeight="bold" style={styles.kycText}>
-                    {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
-                  </StandardText>
-                </View>
-              </View>
-            ))}
-          </StandardCard>
-
-          <Gap size="md" />
-
-          {/* Occupancy Grid */}
-          <StandardCard
-            sstyle={[styles.kpiCard, { height: 300, width: '100%' }]}
-          >
-            <StandardText size="lg" fontWeight="bold">
-              Room Occupancy Map
-            </StandardText>
-            <View style={styles.gridWrapper}>
-              {occupancyGrid.map((room, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[
-                    styles.roomBox,
-                    { backgroundColor: getRoomColor(room.status) },
-                  ]}
-                  onPress={() => {
-                    setSelectedAction({ label: 'RoomDetails', data: room });
+              descriptionStyle={{
+                fontFamily: 'Metropolis-Regular',
+                fontSize: 14,
+              }}
+              style={{}}
+              left={() => (
+                <MaterialCommunityIcons
+                  name="wrench"
+                  size={22}
+                  color={colors.primary}
+                />
+              )}
+              right={() => (
+                <Chip
+                  textStyle={{
+                    fontFamily: 'Metropolis-Medium',
+                    fontSize: 14,
                   }}
                 >
-                  <StandardText fontWeight="bold" style={styles.roomText}>
-                    {room.room}
-                  </StandardText>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.legendContainer}>
-              <View style={styles.legendItem}>
-                <View
-                  style={[styles.legendColor, { backgroundColor: '#4CAF50' }]}
-                />
-                <StandardText>Occupied</StandardText>
-              </View>
-              <View style={styles.legendItem}>
-                <View
-                  style={[styles.legendColor, { backgroundColor: '#F44336' }]}
-                />
-                <StandardText>Overdue</StandardText>
-              </View>
-              <View style={styles.legendItem}>
-                <View
-                  style={[styles.legendColor, { backgroundColor: '#BDBDBD' }]}
-                />
-                <StandardText>Vacant</StandardText>
-              </View>
-            </View>
-          </StandardCard>
+                  {req.status}
+                </Chip>
+              )}
+            />
+          ))}
+        </StandardCard>
 
-          <Gap size="xl" />
-        </ScrollView>
+        <Gap size="md" />
 
-        {/* FAB */}
-        {/* <FAB
+        {/* Tenant Leaderboard */}
+        <StandardCard style={[styles.kpiCard, { height: 300, width: '100%' }]}>
+          <StandardText size="lg" fontWeight="bold">
+            Top Tenants
+          </StandardText>
+          {tenants.map(t => (
+            <List.Item
+              key={t.id}
+              title={`${t.name} — ${t.room}`}
+              description={t.status}
+              titleStyle={{
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 16,
+              }}
+              descriptionStyle={{
+                fontFamily: 'Metropolis-Regular',
+                fontSize: 14,
+              }}
+              style={{}}
+              left={() => <Avatar.Icon size={36} icon="account-circle" />}
+              right={() =>
+                t.status === 'On-time' ? (
+                  <Chip icon="star">Consistent</Chip>
+                ) : (
+                  <Chip icon="alert">Overdue</Chip>
+                )
+              }
+            />
+          ))}
+        </StandardCard>
+
+        <Gap size="md" />
+
+        {/* 🪪 Tenant KYC Status */}
+        {/* 🪪 Tenant KYC Overview */}
+        <StandardCard style={[styles.kpiCard, { height: 350, width: '100%' }]}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <StandardText size="lg" fontWeight="bold">
+              🪪 Tenant KYC
+            </StandardText>
+            <TouchableOpacity onPress={() => navigation.navigate('KYCDetails')}>
+              <StandardText style={{ color: colors.primary }}>
+                View More
+              </StandardText>
+            </TouchableOpacity>
+          </View>
+
+          {/* Summary */}
+          <View style={styles.kycSummary}>
+            <View
+              style={[styles.kycSummaryBox, { backgroundColor: '#4CAF50' }]}
+            >
+              <StandardText fontWeight="bold" style={styles.kycSummaryText}>
+                Verified: 12
+              </StandardText>
+            </View>
+            <View
+              style={[styles.kycSummaryBox, { backgroundColor: '#FFC107' }]}
+            >
+              <StandardText fontWeight="bold" style={styles.kycSummaryText}>
+                Pending: 3
+              </StandardText>
+            </View>
+            <View
+              style={[styles.kycSummaryBox, { backgroundColor: '#F44336' }]}
+            >
+              <StandardText fontWeight="bold" style={styles.kycSummaryText}>
+                Rejected: 1
+              </StandardText>
+            </View>
+          </View>
+
+          {/* Last 3 KYCs */}
+          <StandardText
+            size="md"
+            fontWeight="semibold"
+            style={{ marginTop: 8 }}
+          >
+            Last 3 KYC Submissions
+          </StandardText>
+          {[
+            { name: 'Ravi Kumar', status: 'verified', date: '2025-08-30' },
+            { name: 'Amit Sharma', status: 'pending', date: '2025-08-29' },
+            { name: 'Neha Verma', status: 'rejected', date: '2025-08-28' },
+          ].map((kyc, index) => (
+            <View key={index} style={styles.kycRow}>
+              <View>
+                <StandardText>{kyc.name}</StandardText>
+                <StandardText size="sm" style={{ color: '#666' }}>
+                  Submitted: {kyc.date}
+                </StandardText>
+              </View>
+              <View
+                style={[
+                  styles.kycBadge,
+                  kyc.status === 'verified'
+                    ? { backgroundColor: '#4CAF50' }
+                    : kyc.status === 'pending'
+                    ? { backgroundColor: '#FFC107' }
+                    : { backgroundColor: '#F44336' },
+                ]}
+              >
+                <StandardText fontWeight="bold" style={styles.kycText}>
+                  {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
+                </StandardText>
+              </View>
+            </View>
+          ))}
+        </StandardCard>
+
+        <Gap size="md" />
+
+        {/* Occupancy Grid */}
+        <StandardCard sstyle={[styles.kpiCard, { height: 300, width: '100%' }]}>
+          <StandardText size="lg" fontWeight="bold">
+            Room Occupancy Map
+          </StandardText>
+          <View style={styles.gridWrapper}>
+            {occupancyGrid.map((room, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.roomBox,
+                  { backgroundColor: getRoomColor(room.status) },
+                ]}
+                onPress={() => {
+                  setSelectedAction({ label: 'RoomDetails', data: room });
+                }}
+              >
+                <StandardText fontWeight="bold" style={styles.roomText}>
+                  {room.room}
+                </StandardText>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <View
+                style={[styles.legendColor, { backgroundColor: '#4CAF50' }]}
+              />
+              <StandardText>Occupied</StandardText>
+            </View>
+            <View style={styles.legendItem}>
+              <View
+                style={[styles.legendColor, { backgroundColor: '#F44336' }]}
+              />
+              <StandardText>Overdue</StandardText>
+            </View>
+            <View style={styles.legendItem}>
+              <View
+                style={[styles.legendColor, { backgroundColor: '#BDBDBD' }]}
+              />
+              <StandardText>Vacant</StandardText>
+            </View>
+          </View>
+        </StandardCard>
+
+        <Gap size="xl" />
+      </ScrollView>
+
+      {/* FAB */}
+      {/* <FAB
           icon="plus"
           color={colors.white}
           style={styles.fab}
           onPress={() => {}}
         /> */}
-      </View>
-    </GestureHandlerRootView>
+    </View>
   );
 };
 
@@ -1010,6 +981,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 44 : 20, // Add safe area padding for proper spacing
+  },
+
+  customHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    height: 60,
+    // marginTop: -20,
+    marginHorizontal: -16,
+    marginBottom: 16,
+  },
+
+  headerContent: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
+  welcomeText: {
+    color: colors.secondary,
+  },
+
+  nameText: {
+    color: colors.secondary,
+  },
+
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
   },
 
   bannerCard: {
@@ -1067,7 +1070,7 @@ const styles = StyleSheet.create({
   gridWrapper: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 10,
+    marginTop: 8,
     justifyContent: 'space-between',
   },
   roomBox: {
@@ -1108,7 +1111,7 @@ const styles = StyleSheet.create({
   kycSummary: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 10,
+    marginTop: 8,
   },
   kycSummaryBox: {
     padding: 8,

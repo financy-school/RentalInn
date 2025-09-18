@@ -15,7 +15,6 @@ import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
 import Gap from '../components/Gap/Gap';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 
 const ContactSupport = ({ navigation }) => {
@@ -334,24 +333,6 @@ const ContactSupport = ({ navigation }) => {
       contentContainerStyle={styles.scrollContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary, theme.colors.secondary]}
-          style={styles.gradientTitle}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <StandardText
-            size="xl"
-            fontWeight="bold"
-            style={{ color: theme.colors.onPrimary }}
-          >
-            🆘 Contact Support
-          </StandardText>
-        </LinearGradient>
-      </View>
-
       {/* Support Info */}
       <Card style={styles.supportInfoCard}>
         <StandardText style={styles.supportInfoText}>
@@ -577,8 +558,6 @@ const ContactSupport = ({ navigation }) => {
           style={styles.submitButton}
         />
       </GradientCard>
-
-      <Gap size="lg" />
     </ScrollView>
   );
 };

@@ -12,8 +12,6 @@ import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
 import { addTenant, updateTenant } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
 
 const AddTenant = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -284,24 +282,6 @@ const AddTenant = ({ navigation, route }) => {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      {/* <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary, theme.colors.secondary]}
-          style={styles.gradientTitle}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <StandardText
-            size="xl"
-            fontWeight="bold"
-            style={{ color: theme.colors.onPrimary }}
-          >
-            👤 Add New Tenant
-          </StandardText>
-        </LinearGradient>
-      </View> */}
-
       <GradientCard
         gradient={true}
         gradientColors={[

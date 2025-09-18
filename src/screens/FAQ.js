@@ -7,8 +7,6 @@ import GradientCard from '../components/GradientCard/GradientCard';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import SimpleAccordion from '../components/SimpleAccordion/SimpleAccordion';
 import Gap from '../components/Gap/Gap';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
 
 const FAQ = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -356,24 +354,6 @@ const FAQ = ({ navigation }) => {
       contentContainerStyle={styles.scrollContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary, theme.colors.secondary]}
-          style={styles.gradientTitle}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <StandardText
-            size="md"
-            fontWeight="bold"
-            style={{ color: theme.colors.onPrimary }}
-          >
-            ❓ Frequently Asked Questions
-          </StandardText>
-        </LinearGradient>
-      </View>
-
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -462,8 +442,6 @@ const FAQ = ({ navigation }) => {
           </StandardText>
         </View>
       )}
-
-      <Gap size="lg" />
     </ScrollView>
   );
 };

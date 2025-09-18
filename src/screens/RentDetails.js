@@ -12,7 +12,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 import CircularIconsWithText from '../components/cards/CircularIcon';
 import { ThemeContext } from '../context/ThemeContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
@@ -54,42 +54,62 @@ const RentDetails = ({ navigation }) => {
   ];
 
   return (
-    <SafeAreaView
+    <View
       style={{
         flex: 1,
         backgroundColor: colors.background,
         padding: 15,
       }}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-          padding: 15,
-        }}
-      >
-        <ScrollView>
-          <Gap size="xl" />
+      <ScrollView>
+        <Gap size="xl" />
 
-          <Gap size="lg" />
-          <StandardCard
+        <Gap size="lg" />
+        <StandardCard
+          style={{
+            elevation: 2,
+          }}
+        >
+          <View
             style={{
-              elevation: 2,
+              backgroundColor: colors.white,
+              padding: 15,
+              borderRadius: 10,
+              marginTop: 10,
+              shadowColor: colors.primary,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
             }}
           >
             <View
               style={{
-                backgroundColor: colors.white,
-                padding: 15,
-                borderRadius: 10,
-                marginTop: 10,
-                shadowColor: colors.primary,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 3.84,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginVertical: 10,
+                alignItems: 'center',
               }}
             >
+              <StandardText
+                textAlign="center"
+                size="md"
+                fontWeight="bold"
+                style={{ flex: 1 }}
+              >
+                Room Type
+              </StandardText>
+              <StandardText
+                textAlign="center"
+                size="md"
+                fontWeight="bold"
+                style={{ flex: 1 }}
+              >
+                Rent
+              </StandardText>
+            </View>
+            {roomWiseStats.map((item, index) => (
               <View
+                key={index}
                 style={{
                   flexDirection: 'row',
                   justifyContent: 'space-between',
@@ -103,7 +123,7 @@ const RentDetails = ({ navigation }) => {
                   fontWeight="bold"
                   style={{ flex: 1 }}
                 >
-                  Room Type
+                  {item.label}
                 </StandardText>
                 <StandardText
                   textAlign="center"
@@ -111,177 +131,141 @@ const RentDetails = ({ navigation }) => {
                   fontWeight="bold"
                   style={{ flex: 1 }}
                 >
-                  Rent
+                  ₹ {item.value}
                 </StandardText>
               </View>
-              {roomWiseStats.map((item, index) => (
-                <View
-                  key={index}
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    marginVertical: 10,
-                    alignItems: 'center',
-                  }}
-                >
-                  <StandardText
-                    textAlign="center"
-                    size="md"
-                    fontWeight="bold"
-                    style={{ flex: 1 }}
-                  >
-                    {item.label}
-                  </StandardText>
-                  <StandardText
-                    textAlign="center"
-                    size="md"
-                    fontWeight="bold"
-                    style={{ flex: 1 }}
-                  >
-                    ₹ {item.value}
-                  </StandardText>
-                </View>
-              ))}
+            ))}
 
-              <View>
-                <Button
-                  mode="contained"
-                  buttonColor={colors.black}
-                  style={{
-                    width: '45%',
-                    alignSelf: 'center',
-                    marginTop: 10,
-                    marginBottom: 10,
-                    borderRadius: 5,
-                  }}
-                  onPress={() => {
-                    navigation.navigate('Settings');
-                  }}
+            <View>
+              <Button
+                mode="contained"
+                buttonColor={colors.black}
+                style={{
+                  width: '45%',
+                  alignSelf: 'center',
+                  marginTop: 10,
+                  marginBottom: 10,
+                  borderRadius: 5,
+                }}
+                onPress={() => {
+                  navigation.navigate('Settings');
+                }}
+              >
+                EDIT
+              </Button>
+            </View>
+          </View>
+        </StandardCard>
+
+        <Gap size="lg" />
+
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <StandardCard style={{ flex: 1, elevation: 2 }}>
+            <View
+              style={{
+                backgroundColor: colors.white,
+                borderRadius: 10,
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+              }}
+            >
+              <StandardText textAlign="center" size="md" fontWeight="bold">
+                Paid
+              </StandardText>
+
+              <View style={{ marginVertical: 10 }}>
+                <StandardText textAlign="center" size="xl" fontWeight="bold">
+                  124
+                </StandardText>
+                <StandardText
+                  textAlign="center"
+                  size="md"
+                  style={{ marginTop: 4 }}
                 >
-                  EDIT
-                </Button>
+                  Tenants
+                </StandardText>
               </View>
+
+              <Button
+                mode="contained"
+                buttonColor={colors.white}
+                contentStyle={{ paddingVertical: 4 }}
+                labelStyle={{ fontSize: 14, fontWeight: 'bold' }}
+                style={{
+                  borderRadius: 5,
+                  borderColor: colors.black,
+                  borderWidth: 1,
+                }}
+                onPress={() => {}}
+              >
+                <StandardText textAlign="center" size="md" style={{ flex: 1 }}>
+                  VIEW
+                </StandardText>
+              </Button>
             </View>
           </StandardCard>
 
-          <Gap size="lg" />
+          <StandardCard style={{ flex: 1, elevation: 2 }}>
+            <View
+              style={{
+                backgroundColor: colors.white,
+                borderRadius: 10,
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+              }}
+            >
+              <StandardText textAlign="center" size="md" fontWeight="bold">
+                Not-Paid
+              </StandardText>
 
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <StandardCard style={{ flex: 1, elevation: 2 }}>
-              <View
-                style={{
-                  backgroundColor: colors.white,
-                  borderRadius: 10,
-                  shadowColor: colors.primary,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3.84,
-                }}
-              >
-                <StandardText textAlign="center" size="md" fontWeight="bold">
-                  Paid
-                </StandardText>
-
-                <View style={{ marginVertical: 10 }}>
-                  <StandardText textAlign="center" size="xl" fontWeight="bold">
-                    124
-                  </StandardText>
-                  <StandardText
-                    textAlign="center"
-                    size="md"
-                    style={{ marginTop: 4 }}
-                  >
-                    Tenants
-                  </StandardText>
-                </View>
-
-                <Button
-                  mode="contained"
-                  buttonColor={colors.white}
-                  contentStyle={{ paddingVertical: 4 }}
-                  labelStyle={{ fontSize: 14, fontWeight: 'bold' }}
-                  style={{
-                    borderRadius: 5,
-                    borderColor: colors.black,
-                    borderWidth: 1,
-                  }}
-                  onPress={() => {}}
+              <View style={{ marginVertical: 10 }}>
+                <StandardText
+                  textAlign="center"
+                  size="xl"
+                  fontWeight="bold"
+                  color={'default_red'}
                 >
-                  <StandardText
-                    textAlign="center"
-                    size="md"
-                    style={{ flex: 1 }}
-                  >
-                    VIEW
-                  </StandardText>
-                </Button>
-              </View>
-            </StandardCard>
-
-            <StandardCard style={{ flex: 1, elevation: 2 }}>
-              <View
-                style={{
-                  backgroundColor: colors.white,
-                  borderRadius: 10,
-                  shadowColor: colors.primary,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3.84,
-                }}
-              >
-                <StandardText textAlign="center" size="md" fontWeight="bold">
-                  Not-Paid
+                  124
                 </StandardText>
-
-                <View style={{ marginVertical: 10 }}>
-                  <StandardText
-                    textAlign="center"
-                    size="xl"
-                    fontWeight="bold"
-                    color={'default_red'}
-                  >
-                    124
-                  </StandardText>
-                  <StandardText
-                    textAlign="center"
-                    size="md"
-                    style={{ marginTop: 4 }}
-                  >
-                    Tenants
-                  </StandardText>
-                </View>
-
-                <Button
-                  mode="contained"
-                  buttonColor={colors.white}
-                  contentStyle={{ paddingVertical: 4 }}
-                  labelStyle={{ fontSize: 14, fontWeight: 'bold' }}
-                  style={{
-                    borderRadius: 5,
-                    borderColor: colors.black,
-                    borderWidth: 1,
-                  }}
-                  onPress={() => {}}
+                <StandardText
+                  textAlign="center"
+                  size="md"
+                  style={{ marginTop: 4 }}
                 >
-                  <StandardText
-                    textAlign="center"
-                    size="md"
-                    style={{ flex: 1 }}
-                  >
-                    VIEW
-                  </StandardText>
-                </Button>
+                  Tenants
+                </StandardText>
               </View>
-            </StandardCard>
-          </View>
 
-          <Gap size="lg" />
-          <Gap size="lg" />
-          <Gap size="lg" />
-          <Gap size="lg" />
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+              <Button
+                mode="contained"
+                buttonColor={colors.white}
+                contentStyle={{ paddingVertical: 4 }}
+                labelStyle={{ fontSize: 14, fontWeight: 'bold' }}
+                style={{
+                  borderRadius: 5,
+                  borderColor: colors.black,
+                  borderWidth: 1,
+                }}
+                onPress={() => {}}
+              >
+                <StandardText textAlign="center" size="md" style={{ flex: 1 }}>
+                  VIEW
+                </StandardText>
+              </Button>
+            </View>
+          </StandardCard>
+        </View>
+
+        <Gap size="lg" />
+        <Gap size="lg" />
+        <Gap size="lg" />
+        <Gap size="lg" />
+      </ScrollView>
+    </View>
   );
 };
 

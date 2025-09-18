@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import 'react-native-gesture-handler';
 import { AppRegistry, LogBox, StatusBar, StyleSheet } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Context Providers
@@ -65,18 +65,20 @@ const App = () => {
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
-          <ThemeProvider>
-            <CredentialsProvider>
-              <AppThemeWrapper>
-                <StatusBar
-                  barStyle="dark-content"
-                  backgroundColor="transparent"
-                  translucent
-                />
-                <RootStack />
-              </AppThemeWrapper>
-            </CredentialsProvider>
-          </ThemeProvider>
+          <SafeAreaView style={styles.safeArea}>
+            <ThemeProvider>
+              <CredentialsProvider>
+                <AppThemeWrapper>
+                  <StatusBar
+                    barStyle="dark-content"
+                    backgroundColor="transparent"
+                    translucent
+                  />
+                  <RootStack />
+                </AppThemeWrapper>
+              </CredentialsProvider>
+            </ThemeProvider>
+          </SafeAreaView>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
@@ -85,6 +87,9 @@ const App = () => {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
 });

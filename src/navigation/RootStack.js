@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
 import NavigationService from './NavigationService';
 
 // Screens
@@ -35,7 +34,6 @@ import { SCREEN_NAMES } from './constants';
 
 // Constants
 const SPLASH_SCREEN_DURATION = 2000;
-const TOKEN_STORAGE_KEY = 'pgOwnerCredentials';
 
 const Stack = createNativeStackNavigator();
 
@@ -344,6 +342,7 @@ const RootStack = () => {
             component={AddRoom}
             options={{
               headerLeft: () => null,
+              headerShown: false,
               headerTitleStyle: {
                 fontFamily: 'Metropolis-Medium',
                 fontSize: 18,

@@ -20,7 +20,6 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   fetchTenants,
   putTenantOnNotice,
@@ -164,312 +163,298 @@ const Tenants = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={{ flex: 1 }}>
-        <View style={{ flex: 1 }}>
-          {/* Main content */}
-          <ScrollView
-            contentContainerStyle={{ padding: 16 }}
-            onScrollBeginDrag={() => {
-              // hide menu on scroll to avoid stale position
-              closeMenu();
-            }}
-          >
-            {/* Search */}
-            <PaperInput
-              mode="flat"
-              placeholder="Search Tenants..."
-              value={search}
-              onChangeText={setSearch}
-              style={[styles.searchBar, { fontFamily: 'Metropolis-Medium' }]}
-              left={<PaperInput.Icon icon="magnify" />}
-              underlineColor="transparent"
-              activeUnderlineColor="transparent"
-              contentStyle={{ fontFamily: 'Metropolis-Medium' }}
-              theme={{
-                roundness: 25,
-                colors: {
-                  background: '#fff',
-                  text: '#000',
-                  placeholder: '#888',
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Main content */}
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        onScrollBeginDrag={() => {
+          // hide menu on scroll to avoid stale position
+          closeMenu();
+        }}
+      >
+        {/* Search */}
+        <PaperInput
+          mode="flat"
+          placeholder="Search Tenants..."
+          value={search}
+          onChangeText={setSearch}
+          style={[styles.searchBar, { fontFamily: 'Metropolis-Medium' }]}
+          left={<PaperInput.Icon icon="magnify" />}
+          underlineColor="transparent"
+          activeUnderlineColor="transparent"
+          contentStyle={{ fontFamily: 'Metropolis-Medium' }}
+          theme={{
+            roundness: 25,
+            colors: {
+              background: '#fff',
+              text: '#000',
+              placeholder: '#888',
+            },
+          }}
+        />
+
+        <Gap size="md" />
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterContainer}
+        >
+          {filterOptions.map(option => (
+            <Chip
+              key={option.key}
+              selected={selectedFilter === option.key}
+              selectedColor="#fff"
+              onPress={() => setSelectedFilter(option.key)}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor:
+                    selectedFilter === option.key
+                      ? colors.secondary
+                      : '#f5f5f5',
                 },
+              ]}
+              textStyle={{
+                color: selectedFilter === option.key ? '#fff' : '#000',
+                fontFamily: 'Metropolis-Medium',
+                fontWeight: selectedFilter === option.key ? '600' : '400',
               }}
-            />
-
-            <Gap size="md" />
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterContainer}
             >
-              {filterOptions.map(option => (
-                <Chip
-                  key={option.key}
-                  selected={selectedFilter === option.key}
-                  selectedColor="#fff"
-                  onPress={() => setSelectedFilter(option.key)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor:
-                        selectedFilter === option.key
-                          ? colors.secondary
-                          : '#f5f5f5',
-                    },
-                  ]}
-                  textStyle={{
-                    color: selectedFilter === option.key ? '#fff' : '#000',
-                    fontFamily: 'Metropolis-Medium',
-                    fontWeight: selectedFilter === option.key ? '600' : '400',
+              {option.label} ({option.value})
+            </Chip>
+          ))}
+        </ScrollView>
+
+        {/* Loader */}
+        {loading && (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <StandardText>Loading tenants...</StandardText>
+          </View>
+        )}
+
+        {/* Tenant Cards */}
+        {filteredTenants.map(tenant => (
+          <StandardCard key={tenant.id} style={styles.card}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('TenantDetails', { tenant })}
+            >
+              <View style={styles.row}>
+                {/* Avatar */}
+                <Avatar.Image
+                  size={60}
+                  source={{
+                    uri: 'https://avatar.iran.liara.run/public/37',
                   }}
-                >
-                  {option.label} ({option.value})
-                </Chip>
-              ))}
-            </ScrollView>
+                  style={{ marginRight: 14 }}
+                />
 
-            {/* Loader */}
-            {loading && (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <StandardText>Loading tenants...</StandardText>
-              </View>
-            )}
+                {/* Info Section */}
+                <View style={{ flex: 1 }}>
+                  <View style={styles.rowBetween}>
+                    <StandardText fontWeight="bold" size="lg">
+                      {tenant.name}
+                    </StandardText>
 
-            {/* Tenant Cards */}
-            {filteredTenants.map(tenant => (
-              <StandardCard key={tenant.id} style={styles.card}>
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate('TenantDetails', { tenant })
-                  }
-                >
-                  <View style={styles.row}>
-                    {/* Avatar */}
-                    <Avatar.Image
-                      size={60}
-                      source={{
-                        uri: 'https://avatar.iran.liara.run/public/37',
-                      }}
-                      style={{ marginRight: 14 }}
-                    />
+                    {/* anchor button (we keep ref on this button) */}
+                    <TouchableOpacity
+                      ref={r => (anchorRefs.current[tenant.id] = r)}
+                      onPress={() => openMenu(tenant.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <MaterialCommunityIcons
+                        name="dots-vertical"
+                        size={22}
+                        color="#444"
+                      />
+                    </TouchableOpacity>
+                  </View>
 
-                    {/* Info Section */}
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.rowBetween}>
-                        <StandardText fontWeight="bold" size="lg">
-                          {tenant.name}
-                        </StandardText>
+                  {/* Quick badges */}
+                  <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                    {tenant.has_dues && (
+                      <Chip
+                        style={styles.badgeDues}
+                        textStyle={{ color: '#fff' }}
+                      >
+                        Dues
+                      </Chip>
+                    )}
+                    {tenant.is_on_notice && (
+                      <Chip
+                        style={styles.badgeNotice}
+                        textStyle={{
+                          color: '#fff',
+                          fontFamily: 'Metropolis-Medium',
+                          fontSize: 14,
+                          lineHeight: 16, // Add this to help with vertical centering
+                          textAlignVertical: 'center', // Add this to help with vertical centering
+                        }}
+                      >
+                        Notice
+                      </Chip>
+                    )}
+                  </View>
 
-                        {/* anchor button (we keep ref on this button) */}
-                        <TouchableOpacity
-                          ref={r => (anchorRefs.current[tenant.id] = r)}
-                          onPress={() => openMenu(tenant.id)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <MaterialCommunityIcons
-                            name="dots-vertical"
-                            size={22}
-                            color="#444"
-                          />
-                        </TouchableOpacity>
-                      </View>
+                  {/* Small details */}
+                  <View style={{ marginTop: 8 }}>
+                    <View style={styles.detailRow}>
+                      <MaterialCommunityIcons
+                        name="bed"
+                        size={18}
+                        color="#555"
+                      />
+                      <StandardText style={styles.detailText}>
+                        {tenant?.room?.name || 'No room assigned'}
+                      </StandardText>
+                    </View>
 
-                      {/* Quick badges */}
-                      <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                        {tenant.has_dues && (
-                          <Chip
-                            style={styles.badgeDues}
-                            textStyle={{ color: '#fff' }}
-                          >
-                            Dues
-                          </Chip>
-                        )}
-                        {tenant.is_on_notice && (
-                          <Chip
-                            style={styles.badgeNotice}
-                            textStyle={{
-                              color: '#fff',
-                              fontFamily: 'Metropolis-Medium',
-                              fontSize: 14,
-                              lineHeight: 16, // Add this to help with vertical centering
-                              textAlignVertical: 'center', // Add this to help with vertical centering
-                            }}
-                          >
-                            Notice
-                          </Chip>
-                        )}
-                      </View>
+                    <View style={styles.detailRow}>
+                      <MaterialCommunityIcons
+                        name="cash"
+                        size={18}
+                        color="#555"
+                      />
+                      <StandardText style={styles.detailText}>
+                        ₹{tenant?.room?.rentAmount || 'N/A'}
+                      </StandardText>
+                    </View>
 
-                      {/* Small details */}
-                      <View style={{ marginTop: 8 }}>
-                        <View style={styles.detailRow}>
-                          <MaterialCommunityIcons
-                            name="bed"
-                            size={18}
-                            color="#555"
-                          />
-                          <StandardText style={styles.detailText}>
-                            {tenant?.room?.name || 'No room assigned'}
-                          </StandardText>
-                        </View>
-
-                        <View style={styles.detailRow}>
-                          <MaterialCommunityIcons
-                            name="cash"
-                            size={18}
-                            color="#555"
-                          />
-                          <StandardText style={styles.detailText}>
-                            ₹{tenant?.room?.rentAmount || 'N/A'}
-                          </StandardText>
-                        </View>
-
-                        <View style={styles.detailRow}>
-                          <MaterialCommunityIcons
-                            name="calendar-check"
-                            size={18}
-                            color="#555"
-                          />
-                          <StandardText style={styles.detailText}>
-                            Joined: {tenant.check_in_date}
-                          </StandardText>
-                        </View>
-                      </View>
+                    <View style={styles.detailRow}>
+                      <MaterialCommunityIcons
+                        name="calendar-check"
+                        size={18}
+                        color="#555"
+                      />
+                      <StandardText style={styles.detailText}>
+                        Joined: {tenant.check_in_date}
+                      </StandardText>
                     </View>
                   </View>
-                </TouchableOpacity>
-              </StandardCard>
-            ))}
-
-            <Gap size="xl" />
-          </ScrollView>
-
-          {/* Floating Add Button */}
-          <FAB
-            icon="plus"
-            color="#fff"
-            style={styles.fab}
-            onPress={() => navigation.navigate('AddTenant')}
-          />
-
-          {/* CUSTOM MENU OVERLAY (renders at top level using measured coords) */}
-          {activeMenuTenantId && menuPosition && (
-            <TouchableOpacity
-              style={styles.menuOverlay}
-              activeOpacity={1}
-              onPress={() => closeMenu()}
-            >
-              <View
-                style={[
-                  styles.popup,
-                  {
-                    top: menuPosition.y + menuPosition.height + 6,
-                    left: Math.max(
-                      8,
-                      Math.min(menuPosition.x, SCREEN_WIDTH - 180),
-                    ),
-                  },
-                ]}
-              >
-                {/* Edit */}
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => {
-                    closeMenu();
-                    const selectedTenant = tenants.find(
-                      t => t.id === activeMenuTenantId,
-                    );
-                    navigation.navigate('AddTenant', {
-                      tenant: selectedTenant,
-                      isEdit: true,
-                    });
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="pencil"
-                    size={18}
-                    color="#555"
-                    style={{ marginRight: 10 }}
-                  />
-                  <StandardText>Edit</StandardText>
-                </TouchableOpacity>
-
-                {/* Share */}
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => {
-                    closeMenu();
-                    const selectedTenant = tenants.find(
-                      t => t.id === activeMenuTenantId,
-                    );
-                    if (selectedTenant) {
-                      handleShareTenant(selectedTenant);
-                    }
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="share-variant"
-                    size={18}
-                    color="#555"
-                    style={{ marginRight: 10 }}
-                  />
-                  <StandardText>Share</StandardText>
-                </TouchableOpacity>
-
-                {/* Put on Notice */}
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => {
-                    putTenantOnNotice(
-                      credentials.accessToken,
-                      activeMenuTenantId,
-                      { notice: true },
-                    );
-                    closeMenu();
-                    fetchData();
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="alert-circle-outline"
-                    size={18}
-                    color="#e53935"
-                    style={{ marginRight: 10 }}
-                  />
-                  <StandardText>Put on Notice</StandardText>
-                </TouchableOpacity>
-
-                {/* Delete */}
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={async () => {
-                    await deleteTenant(
-                      credentials.accessToken,
-                      activeMenuTenantId,
-                    );
-                    closeMenu();
-                    fetchData();
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="trash-can-outline"
-                    size={18}
-                    color="#e53935"
-                    style={{ marginRight: 10 }}
-                  />
-                  <StandardText>Delete</StandardText>
-                </TouchableOpacity>
+                </View>
               </View>
             </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    </SafeAreaView>
+          </StandardCard>
+        ))}
+
+        <Gap size="xl" />
+      </ScrollView>
+
+      {/* Floating Add Button */}
+      <FAB
+        icon="plus"
+        color="#fff"
+        style={styles.fab}
+        onPress={() => navigation.navigate('AddTenant')}
+      />
+
+      {/* CUSTOM MENU OVERLAY (renders at top level using measured coords) */}
+      {activeMenuTenantId && menuPosition && (
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => closeMenu()}
+        >
+          <View
+            style={[
+              styles.popup,
+              {
+                top: menuPosition.y + menuPosition.height + 6,
+                left: Math.max(8, Math.min(menuPosition.x, SCREEN_WIDTH - 180)),
+              },
+            ]}
+          >
+            {/* Edit */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                const selectedTenant = tenants.find(
+                  t => t.id === activeMenuTenantId,
+                );
+                navigation.navigate('AddTenant', {
+                  tenant: selectedTenant,
+                  isEdit: true,
+                });
+              }}
+            >
+              <MaterialCommunityIcons
+                name="pencil"
+                size={18}
+                color="#555"
+                style={{ marginRight: 10 }}
+              />
+              <StandardText>Edit</StandardText>
+            </TouchableOpacity>
+
+            {/* Share */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                closeMenu();
+                const selectedTenant = tenants.find(
+                  t => t.id === activeMenuTenantId,
+                );
+                if (selectedTenant) {
+                  handleShareTenant(selectedTenant);
+                }
+              }}
+            >
+              <MaterialCommunityIcons
+                name="share-variant"
+                size={18}
+                color="#555"
+                style={{ marginRight: 10 }}
+              />
+              <StandardText>Share</StandardText>
+            </TouchableOpacity>
+
+            {/* Put on Notice */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                putTenantOnNotice(credentials.accessToken, activeMenuTenantId, {
+                  notice: true,
+                });
+                closeMenu();
+                fetchData();
+              }}
+            >
+              <MaterialCommunityIcons
+                name="alert-circle-outline"
+                size={18}
+                color="#e53935"
+                style={{ marginRight: 10 }}
+              />
+              <StandardText>Put on Notice</StandardText>
+            </TouchableOpacity>
+
+            {/* Delete */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={async () => {
+                await deleteTenant(credentials.accessToken, activeMenuTenantId);
+                closeMenu();
+                fetchData();
+              }}
+            >
+              <MaterialCommunityIcons
+                name="trash-can-outline"
+                size={18}
+                color="#e53935"
+                style={{ marginRight: 10 }}
+              />
+              <StandardText>Delete</StandardText>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, marginTop: 25 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   searchBar: {
     marginBottom: 10,
     backgroundColor: '#fff',

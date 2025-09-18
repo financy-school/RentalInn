@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  StatusBar,
   Platform,
   Alert,
 } from 'react-native';
@@ -143,33 +142,6 @@ const RecordPayment = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      {/* <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundColor}
-        translucent={Platform.OS === 'android'}
-      /> */}
-
-      {/* Header */}
-      {/* <View style={[styles.header, { backgroundColor: cardBackground }]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.closeButton}
-        >
-          <MaterialCommunityIcons
-            name="close"
-            size={24}
-            color={textSecondary}
-          />
-        </TouchableOpacity>
-        <StandardText
-          fontWeight="bold"
-          style={[styles.headerTitle, { color: textPrimary }]}
-        >
-          Record Payment
-        </StandardText>
-        <View style={styles.placeholder} />
-      </View> */}
-
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}

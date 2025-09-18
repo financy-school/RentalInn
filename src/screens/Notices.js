@@ -7,8 +7,8 @@ import {
   Alert,
   FlatList,
   StyleSheet,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -999,7 +999,7 @@ const Notices = ({ navigation }) => {
   });
 
   return (
-    <SafeAreaView style={componentStyles.container}>
+    <View style={componentStyles.container}>
       {/* Header */}
       <View style={componentStyles.header}>
         <View style={componentStyles.headerRow}>
@@ -1016,13 +1016,6 @@ const Notices = ({ navigation }) => {
               {filteredNotices.length === 1 ? 'notice' : 'notices'}
             </StandardText>
           </View>
-          {/* <TouchableOpacity
-            onPress={() => Alert.alert('Create Notice', 'Feature coming soon!')}
-            style={componentStyles.addButton}
-            activeOpacity={0.8}
-          >
-            <Icon name="add" size={20} color={colors.white} />
-          </TouchableOpacity> */}
         </View>
       </View>
 
@@ -1052,7 +1045,7 @@ const Notices = ({ navigation }) => {
         ListEmptyComponent={EmptyComponent}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

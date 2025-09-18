@@ -9,7 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 // Components
@@ -23,7 +22,6 @@ import { ThemeContext } from '../../../context/ThemeContext';
 import { SCREEN_NAMES, menuItems } from '../../../navigation/constants';
 import { navigateToRoute } from '../../../navigation/navigationUtils';
 import colors from '../../../theme/color';
-import { color } from 'react-native-elements/dist/helpers';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -264,7 +262,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
         bounces={false}
       >
         {/* Header Section */}
-        <SafeAreaView
+        <View
           style={[styles.header, { backgroundColor: colors.backgroundLight }]}
         >
           <View style={{ backgroundColor: colors.backgroundLight }}>
@@ -319,7 +317,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
               </View>
             </View>
           </View>
-        </SafeAreaView>
+        </View>
 
         {/* Status Card */}
         {/* <View

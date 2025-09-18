@@ -15,7 +15,6 @@ import {
   Pressable,
 } from 'react-native';
 import { Button, Chip, FAB, TextInput as PaperInput } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import { CredentialsContext } from '../context/CredentialsContext';
@@ -185,299 +184,295 @@ const Rooms = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.background, marginTop: 25 }}
-    >
-      <View style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ padding: 16 }}>
-          {/* Search */}
-          <PaperInput
-            mode="flat"
-            placeholder="Search Rooms..."
-            value={search}
-            onChangeText={setSearch}
-            style={styles.searchBar}
-            left={<PaperInput.Icon icon="magnify" />}
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            contentStyle={{ fontFamily: 'Metropolis-Medium' }}
-            theme={{
-              roundness: 25,
-              colors: {
-                background: '#fff',
-                text: '#000',
-                placeholder: '#888',
-              },
-            }}
-          />
-
-          <Gap size="md" />
-
-          {/* Filters */}
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterContainer}
-          >
-            {filterOptions.map(option => (
-              <Chip
-                key={option.key}
-                selected={selectedFilter === option.key}
-                selectedColor="#fff"
-                onPress={() => setSelectedFilter(option.key)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor:
-                      selectedFilter === option.key
-                        ? colors.secondary
-                        : '#f5f5f5',
-                  },
-                ]}
-                textStyle={{
-                  color: selectedFilter === option.key ? '#fff' : '#000',
-                  fontFamily: 'Metropolis-Medium',
-                  fontWeight: selectedFilter === option.key ? '600' : '400',
-                }}
-              >
-                {option.label} ({option.value})
-              </Chip>
-            ))}
-          </ScrollView>
-
-          {/* Loader / Error / Empty */}
-          {loading && (
-            <StandardText style={{ textAlign: 'center' }}>
-              Loading rooms...
-            </StandardText>
-          )}
-          {error && (
-            <View style={{ alignItems: 'center' }}>
-              <StandardText style={{ color: 'red' }}>{error}</StandardText>
-              <Button
-                mode="contained"
-                onPress={fetchRooms}
-                style={{ marginTop: 10 }}
-              >
-                Retry
-              </Button>
-            </View>
-          )}
-          {!loading && !error && filteredRooms.length === 0 && (
-            <StandardText style={{ textAlign: 'center' }}>
-              No rooms found
-            </StandardText>
-          )}
-
-          {/* Rooms */}
-          {!loading &&
-            filteredRooms.map(room => (
-              <StandardCard key={room.id} style={styles.card}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('RoomDetails', { room })}
-                >
-                  {/* Image */}
-                  {room.imageUrl ? (
-                    <Image
-                      source={{ uri: room.imageUrl }}
-                      style={{ width: '100%', height: 150 }}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles.imagePlaceholder}>
-                      <MaterialCommunityIcons
-                        name="image-off"
-                        size={40}
-                        color="#aaa"
-                      />
-                    </View>
-                  )}
-
-                  {/* Content */}
-                  <View style={{ padding: 12 }}>
-                    <View style={styles.titleRow}>
-                      <StandardText fontWeight="bold" style={styles.roomTitle}>
-                        {room.name || `Room ${room.id}`}
-                      </StandardText>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          {
-                            backgroundColor:
-                              room.status === 'VACANT'
-                                ? 'rgba(62, 219, 26, 0.1)' // #3EDB1A with 0.1 opacity
-                                : 'rgba(255, 226, 226, 0.1)', // #FFE2E2 with 0.1 opacity
-                          },
-                        ]}
-                      >
-                        <StandardText
-                          style={{
-                            color:
-                              room.status === 'VACANT'
-                                ? '#3EDB1A' // Full opacity for text
-                                : '#D9534F',
-                          }}
-                        >
-                          {room.status}
-                        </StandardText>
-                      </View>
-
-                      {/* Custom Menu Trigger */}
-                      <TouchableOpacity
-                        ref={ref => (iconRefs.current[room.id] = ref)}
-                        onPress={() => openMenu(room, room.id)}
-                      >
-                        <MaterialCommunityIcons
-                          name="dots-vertical"
-                          size={22}
-                          color="#555"
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    <StandardText style={{ marginTop: 4 }}>
-                      Rent:{' '}
-                      <StandardText
-                        fontWeight="bold"
-                        style={{ color: colors.primary }}
-                      >
-                        ₹{room.rentAmount}
-                      </StandardText>
-                    </StandardText>
-
-                    <View style={styles.infoRow}>
-                      <View style={styles.infoItem}>
-                        <MaterialCommunityIcons
-                          name="bed"
-                          size={18}
-                          color="#666"
-                        />
-                        <StandardText style={styles.infoText}>
-                          {room.bedCount} Beds
-                        </StandardText>
-                      </View>
-                      <View style={styles.infoItem}>
-                        <MaterialCommunityIcons
-                          name="shower"
-                          size={18}
-                          color="#666"
-                        />
-                        <StandardText style={styles.infoText}>
-                          {room.bathroomCount} Baths
-                        </StandardText>
-                      </View>
-                      <View style={styles.infoItem}>
-                        <MaterialCommunityIcons
-                          name="stairs"
-                          size={18}
-                          color="#666"
-                        />
-                        <StandardText style={styles.infoText}>
-                          Floor {room.floorNumber}
-                        </StandardText>
-                      </View>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </StandardCard>
-            ))}
-        </ScrollView>
-
-        {/* FAB */}
-        <FAB
-          icon="plus"
-          color="#fff"
-          style={styles.fab}
-          onPress={() => navigation.navigate('AddRoom')}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        {/* Search */}
+        <PaperInput
+          mode="flat"
+          placeholder="Search Rooms..."
+          value={search}
+          onChangeText={setSearch}
+          style={styles.searchBar}
+          left={<PaperInput.Icon icon="magnify" />}
+          underlineColor="transparent"
+          activeUnderlineColor="transparent"
+          contentStyle={{ fontFamily: 'Metropolis-Medium' }}
+          theme={{
+            roundness: 25,
+            colors: {
+              background: '#fff',
+              text: '#000',
+              placeholder: '#888',
+            },
+          }}
         />
 
-        {/* Popup Menu */}
-        <Modal
-          visible={menuVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setMenuVisible(false)}
+        <Gap size="md" />
+
+        {/* Filters */}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterContainer}
         >
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setMenuVisible(false)}
-          >
-            <View
+          {filterOptions.map(option => (
+            <Chip
+              key={option.key}
+              selected={selectedFilter === option.key}
+              selectedColor="#fff"
+              onPress={() => setSelectedFilter(option.key)}
               style={[
-                styles.menuContainer,
-                { top: menuCoords.y, left: menuCoords.x - 150 }, // shift left
+                styles.chip,
+                {
+                  backgroundColor:
+                    selectedFilter === option.key
+                      ? colors.secondary
+                      : '#f5f5f5',
+                },
               ]}
+              textStyle={{
+                color: selectedFilter === option.key ? '#fff' : '#000',
+                fontFamily: 'Metropolis-Medium',
+                fontWeight: selectedFilter === option.key ? '600' : '400',
+              }}
             >
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                  navigation.navigate('AddRoom', {
-                    room: selectedRoom,
-                    isEdit: true,
-                  });
-                }}
+              {option.label} ({option.value})
+            </Chip>
+          ))}
+        </ScrollView>
+
+        {/* Loader / Error / Empty */}
+        {loading && (
+          <StandardText style={{ textAlign: 'center' }}>
+            Loading rooms...
+          </StandardText>
+        )}
+        {error && (
+          <View style={{ alignItems: 'center' }}>
+            <StandardText style={{ color: 'red' }}>{error}</StandardText>
+            <Button
+              mode="contained"
+              onPress={fetchRooms}
+              style={{ marginTop: 8 }}
+            >
+              Retry
+            </Button>
+          </View>
+        )}
+        {!loading && !error && filteredRooms.length === 0 && (
+          <StandardText style={{ textAlign: 'center' }}>
+            No rooms found
+          </StandardText>
+        )}
+
+        {/* Rooms */}
+        {!loading &&
+          filteredRooms.map(room => (
+            <StandardCard key={room.id} style={styles.card}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('RoomDetails', { room })}
               >
-                <MaterialCommunityIcons
-                  name="pencil"
-                  size={18}
-                  color="#555"
-                  style={{ marginRight: 10 }}
-                />
-                <StandardText>Edit</StandardText>
-              </Pressable>
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                  handleShareRoom(selectedRoom);
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="share"
-                  size={18}
-                  color="#555"
-                  style={{ marginRight: 10 }}
-                />
-                <StandardText>Share</StandardText>
-              </Pressable>
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                  // Add your message handling
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="message"
-                  size={18}
-                  color="#555"
-                  style={{ marginRight: 10 }}
-                />
-                <StandardText>Send Message</StandardText>
-              </Pressable>
-              <Pressable
-                style={styles.menuItem}
-                onPress={async () => {
-                  setMenuVisible(false);
-                  await deleteRoom(accessToken, propertyId, selectedRoom.id);
-                  fetchRooms();
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="trash-can"
-                  size={18}
-                  color="#555"
-                  style={{ marginRight: 10, color: 'red' }}
-                />
-                <StandardText style={{ color: 'red' }}>Delete</StandardText>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Modal>
-      </View>
-    </SafeAreaView>
+                {/* Image */}
+                {room.imageUrl ? (
+                  <Image
+                    source={{ uri: room.imageUrl }}
+                    style={{ width: '100%', height: 150 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <MaterialCommunityIcons
+                      name="image-off"
+                      size={40}
+                      color="#aaa"
+                    />
+                  </View>
+                )}
+
+                {/* Content */}
+                <View style={{ padding: 12 }}>
+                  <View style={styles.titleRow}>
+                    <StandardText fontWeight="bold" style={styles.roomTitle}>
+                      {room.name || `Room ${room.id}`}
+                    </StandardText>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor:
+                            room.status === 'VACANT'
+                              ? 'rgba(62, 219, 26, 0.1)' // #3EDB1A with 0.1 opacity
+                              : 'rgba(255, 226, 226, 0.1)', // #FFE2E2 with 0.1 opacity
+                        },
+                      ]}
+                    >
+                      <StandardText
+                        style={{
+                          color:
+                            room.status === 'VACANT'
+                              ? '#3EDB1A' // Full opacity for text
+                              : '#D9534F',
+                        }}
+                      >
+                        {room.status}
+                      </StandardText>
+                    </View>
+
+                    {/* Custom Menu Trigger */}
+                    <TouchableOpacity
+                      ref={ref => (iconRefs.current[room.id] = ref)}
+                      onPress={() => openMenu(room, room.id)}
+                    >
+                      <MaterialCommunityIcons
+                        name="dots-vertical"
+                        size={22}
+                        color="#555"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <StandardText style={{ marginTop: 4 }}>
+                    Rent:{' '}
+                    <StandardText
+                      fontWeight="bold"
+                      style={{ color: colors.primary }}
+                    >
+                      ₹{room.rentAmount}
+                    </StandardText>
+                  </StandardText>
+
+                  <View style={styles.infoRow}>
+                    <View style={styles.infoItem}>
+                      <MaterialCommunityIcons
+                        name="bed"
+                        size={18}
+                        color="#666"
+                      />
+                      <StandardText style={styles.infoText}>
+                        {room.bedCount} Beds
+                      </StandardText>
+                    </View>
+                    <View style={styles.infoItem}>
+                      <MaterialCommunityIcons
+                        name="shower"
+                        size={18}
+                        color="#666"
+                      />
+                      <StandardText style={styles.infoText}>
+                        {room.bathroomCount} Baths
+                      </StandardText>
+                    </View>
+                    <View style={styles.infoItem}>
+                      <MaterialCommunityIcons
+                        name="stairs"
+                        size={18}
+                        color="#666"
+                      />
+                      <StandardText style={styles.infoText}>
+                        Floor {room.floorNumber}
+                      </StandardText>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </StandardCard>
+          ))}
+      </ScrollView>
+
+      {/* FAB */}
+      <FAB
+        icon="plus"
+        color="#fff"
+        style={styles.fab}
+        onPress={() => navigation.navigate('AddRoom')}
+      />
+
+      {/* Popup Menu */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View
+            style={[
+              styles.menuContainer,
+              { top: menuCoords.y, left: menuCoords.x - 150 }, // shift left
+            ]}
+          >
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate('AddRoom', {
+                  room: selectedRoom,
+                  isEdit: true,
+                });
+              }}
+            >
+              <MaterialCommunityIcons
+                name="pencil"
+                size={18}
+                color="#555"
+                style={{ marginRight: 10 }}
+              />
+              <StandardText>Edit</StandardText>
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                handleShareRoom(selectedRoom);
+              }}
+            >
+              <MaterialCommunityIcons
+                name="share"
+                size={18}
+                color="#555"
+                style={{ marginRight: 10 }}
+              />
+              <StandardText>Share</StandardText>
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                // Add your message handling
+              }}
+            >
+              <MaterialCommunityIcons
+                name="message"
+                size={18}
+                color="#555"
+                style={{ marginRight: 10 }}
+              />
+              <StandardText>Send Message</StandardText>
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={async () => {
+                setMenuVisible(false);
+                await deleteRoom(accessToken, propertyId, selectedRoom.id);
+                fetchRooms();
+              }}
+            >
+              <MaterialCommunityIcons
+                name="trash-can"
+                size={18}
+                color="#555"
+                style={{ marginRight: 10, color: 'red' }}
+              />
+              <StandardText style={{ color: 'red' }}>Delete</StandardText>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
   );
 };
 
@@ -489,7 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     elevation: 2,
   },
-  card: { marginTop: 14, borderRadius: 16, overflow: 'hidden', elevation: 3 },
+  card: { marginTop: 16, borderRadius: 16, overflow: 'hidden', elevation: 3 },
   imagePlaceholder: {
     width: '100%',
     height: 150,
