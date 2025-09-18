@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { TextInput as PaperInput, useTheme } from 'react-native-paper';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import {
   createDocument,
@@ -159,6 +160,10 @@ const AddTicket = ({ navigation }) => {
       flex: 1,
       backgroundColor: theme.colors.surface,
     },
+    scrollContainer: {
+      flexGrow: 1,
+      paddingTop: 10,
+    },
     headerContainer: {
       alignItems: 'center',
       marginBottom: 24,
@@ -230,120 +235,138 @@ const AddTicket = ({ navigation }) => {
   });
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
-      <GradientCard
-        gradient={true}
-        gradientColors={[
-          mode === 'dark' ? '#2a2a2a' : '#ffffff',
-          mode === 'dark' ? '#1f1f1f' : '#f8f9fa',
-        ]}
+    <View style={styles.container}>
+      <StandardHeader
+        navigation={navigation}
+        title="Add Ticket"
+        loading={loading}
+      />
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Issue Details Section */}
-        <View style={styles.formSection}>
-          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-            🔧 Issue Details
-          </StandardText>
-
-          <StyledTextInput
-            label="Issue Title"
-            value={form.issue}
-            onChangeText={text => handleChange('issue', text)}
-            placeholder="e.g., Water leakage in bathroom"
-            left={<PaperInput.Icon icon="alert-circle" />}
-          />
-
-          <StyledTextInput
-            label="Description"
-            value={form.description}
-            onChangeText={text => handleChange('description', text)}
-            placeholder="Describe the issue in detail..."
-            multiline
-            numberOfLines={4}
-            left={<PaperInput.Icon icon="text" />}
-          />
-        </View>
-
-        {/* Reporter Details Section */}
-        <View style={styles.formSection}>
-          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-            👤 Reporter Information
-          </StandardText>
-
-          <StyledTextInput
-            label="Raised By"
-            value={form.raisedBy}
-            onChangeText={text => handleChange('raisedBy', text)}
-            placeholder="Your name or tenant name"
-            left={<PaperInput.Icon icon="account" />}
-          />
-
-          <StyledTextInput
-            label="Room ID"
-            value={form.roomId}
-            onChangeText={text => handleChange('roomId', text)}
-            placeholder="e.g., 101, A-1, etc."
-            keyboardType="numeric"
-            left={<PaperInput.Icon icon="door" />}
-          />
-        </View>
-
-        {/* Images Section */}
-        <View style={styles.formSection}>
-          <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
-            📸 Evidence Photos (up to 5) (Optional)
-          </StandardText>
-
-          <StandardText
-            size="sm"
-            style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}
-          >
-            Add up to 5 photos to help us understand the issue better
-          </StandardText>
-
-          {roomImages.length > 0 ? (
-            <View style={styles.imageGrid}>
-              {roomImages.map((img, idx) => (
-                <View key={idx} style={styles.imageContainer}>
-                  <Image
-                    source={{ uri: img.uri }}
-                    style={styles.roomImage}
-                    resizeMode="cover"
-                  />
-                  <TouchableOpacity
-                    style={styles.removeImageButton}
-                    onPress={() => removeImage(idx)}
-                  >
-                    <StandardText
-                      size="xs"
-                      fontWeight="bold"
-                      style={{ color: theme.colors.onErrorContainer }}
-                    >
-                      ×
-                    </StandardText>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.imageUploadArea}
-              onPress={pickImages}
+        <GradientCard
+          gradient={true}
+          gradientColors={[
+            mode === 'dark' ? '#2a2a2a' : '#ffffff',
+            mode === 'dark' ? '#1f1f1f' : '#f8f9fa',
+          ]}
+        >
+          {/* Issue Details Section */}
+          <View style={styles.formSection}>
+            <StandardText
+              size="lg"
+              fontWeight="600"
+              style={styles.sectionTitle}
             >
-              <StandardText
-                size="md"
-                style={{
-                  color: theme.colors.onSurfaceVariant,
-                  textAlign: 'center',
-                }}
+              🔧 Issue Details
+            </StandardText>
+
+            <StyledTextInput
+              label="Issue Title"
+              value={form.issue}
+              onChangeText={text => handleChange('issue', text)}
+              placeholder="e.g., Water leakage in bathroom"
+              left={<PaperInput.Icon icon="alert-circle" />}
+            />
+
+            <StyledTextInput
+              label="Description"
+              value={form.description}
+              onChangeText={text => handleChange('description', text)}
+              placeholder="Describe the issue in detail..."
+              multiline
+              numberOfLines={4}
+              left={<PaperInput.Icon icon="text" />}
+            />
+          </View>
+
+          {/* Reporter Details Section */}
+          <View style={styles.formSection}>
+            <StandardText
+              size="lg"
+              fontWeight="600"
+              style={styles.sectionTitle}
+            >
+              👤 Reporter Information
+            </StandardText>
+
+            <StyledTextInput
+              label="Raised By"
+              value={form.raisedBy}
+              onChangeText={text => handleChange('raisedBy', text)}
+              placeholder="Your name or tenant name"
+              left={<PaperInput.Icon icon="account" />}
+            />
+
+            <StyledTextInput
+              label="Room ID"
+              value={form.roomId}
+              onChangeText={text => handleChange('roomId', text)}
+              placeholder="e.g., 101, A-1, etc."
+              keyboardType="numeric"
+              left={<PaperInput.Icon icon="door" />}
+            />
+          </View>
+
+          {/* Images Section */}
+          <View style={styles.formSection}>
+            <StandardText
+              size="lg"
+              fontWeight="600"
+              style={styles.sectionTitle}
+            >
+              📸 Evidence Photos (up to 5) (Optional)
+            </StandardText>
+
+            <StandardText
+              size="sm"
+              style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}
+            >
+              Add up to 5 photos to help us understand the issue better
+            </StandardText>
+
+            {roomImages.length > 0 ? (
+              <View style={styles.imageGrid}>
+                {roomImages.map((img, idx) => (
+                  <View key={idx} style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: img.uri }}
+                      style={styles.roomImage}
+                      resizeMode="cover"
+                    />
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => removeImage(idx)}
+                    >
+                      <StandardText
+                        size="xs"
+                        fontWeight="bold"
+                        style={{ color: theme.colors.onErrorContainer }}
+                      >
+                        ×
+                      </StandardText>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.imageUploadArea}
+                onPress={pickImages}
               >
-                📷{'\n'}Tap to add photos{'\n'}(up to 5 images)
-              </StandardText>
-            </TouchableOpacity>
-          )}
-          {/* 
+                <StandardText
+                  size="md"
+                  style={{
+                    color: theme.colors.onSurfaceVariant,
+                    textAlign: 'center',
+                  }}
+                >
+                  📷{'\n'}Tap to add photos{'\n'}(up to 5 images)
+                </StandardText>
+              </TouchableOpacity>
+            )}
+            {/* 
           <StyledButton
             title={roomImages.length > 0 ? 'Change Images' : 'Add Images'}
             icon="camera-plus"
@@ -352,51 +375,52 @@ const AddTicket = ({ navigation }) => {
             onPress={pickImages}
             fullWidth={true}
           /> */}
-        </View>
-
-        {/* Status Messages */}
-        {(error || success) && (
-          <View
-            style={[
-              styles.statusContainer,
-              { backgroundColor: getStatusColor() },
-            ]}
-          >
-            <StandardText
-              size="md"
-              fontWeight="600"
-              style={{ color: getStatusTextColor(), textAlign: 'center' }}
-            >
-              {error ? `❌ ${error}` : `✅ ${success}`}
-            </StandardText>
           </View>
-        )}
 
-        {/* Submit Buttons */}
-        <View style={styles.submitContainer}>
-          <StyledButton
-            title={loading ? 'Creating Ticket...' : 'Create Ticket'}
-            icon={loading ? 'loading' : 'send'}
-            variant="primary"
-            size="large"
-            onPress={handleSubmit}
-            disabled={loading}
-            loading={loading}
-            fullWidth={true}
-          />
+          {/* Status Messages */}
+          {(error || success) && (
+            <View
+              style={[
+                styles.statusContainer,
+                { backgroundColor: getStatusColor() },
+              ]}
+            >
+              <StandardText
+                size="md"
+                fontWeight="600"
+                style={{ color: getStatusTextColor(), textAlign: 'center' }}
+              >
+                {error ? `❌ ${error}` : `✅ ${success}`}
+              </StandardText>
+            </View>
+          )}
 
-          <StyledButton
-            title="Cancel"
-            icon="close"
-            variant="outlined"
-            size="medium"
-            onPress={() => navigation.goBack()}
-            disabled={loading}
-            fullWidth={true}
-          />
-        </View>
-      </GradientCard>
-    </ScrollView>
+          {/* Submit Buttons */}
+          <View style={styles.submitContainer}>
+            <StyledButton
+              title={loading ? 'Creating Ticket...' : 'Create Ticket'}
+              icon={loading ? 'loading' : 'send'}
+              variant="primary"
+              size="large"
+              onPress={handleSubmit}
+              disabled={loading}
+              loading={loading}
+              fullWidth={true}
+            />
+
+            <StyledButton
+              title="Cancel"
+              icon="close"
+              variant="outlined"
+              size="medium"
+              onPress={() => navigation.goBack()}
+              disabled={loading}
+              fullWidth={true}
+            />
+          </View>
+        </GradientCard>
+      </ScrollView>
+    </View>
   );
 };
 

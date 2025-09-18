@@ -30,53 +30,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { width } = Dimensions.get('window');
 
-const CustomHeader = ({ navigation, isEdit, loading }) => {
-  const theme = useTheme();
-
-  const styles = StyleSheet.create({
-    customHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.outline,
-    },
-    backButton: {
-      padding: 8,
-      marginRight: 8,
-    },
-    headerTitle: {
-      flex: 1,
-      textAlign: 'center',
-      color: theme.colors.onSurface,
-    },
-    headerSpacer: {
-      width: 40, // Same width as back button to center the title
-    },
-  });
-
-  return (
-    <View style={styles.customHeader}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          if (!loading) navigation.goBack();
-        }}
-        disabled={loading}
-      >
-        <Icon name="arrow-left" size={24} color={theme.colors.onSurface} />
-      </TouchableOpacity>
-
-      <StandardText size="lg" fontWeight="600" style={styles.headerTitle}>
-        {isEdit ? 'Edit Room' : 'Add Room'}
-      </StandardText>
-
-      <View style={styles.headerSpacer} />
-    </View>
-  );
-};
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 
 const AddRoom = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -378,6 +332,9 @@ const AddRoom = ({ navigation, route }) => {
   };
 
   const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
     scrollContainer: {
       flex: 1,
       backgroundColor: theme.colors.surface,
@@ -512,8 +469,12 @@ const AddRoom = ({ navigation, route }) => {
   });
 
   return (
-    <View style={{ flex: 1 }}>
-      <CustomHeader navigation={navigation} isEdit={isEdit} loading={loading} />
+    <View style={styles.container}>
+      <StandardHeader
+        navigation={navigation}
+        title={isEdit ? 'Edit Room' : 'Add Room'}
+        loading={loading}
+      />
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}

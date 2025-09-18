@@ -356,6 +356,7 @@ const RootStack = () => {
             component={AddTenant}
             options={{
               headerLeft: () => null,
+              headerShown: false,
               headerTitleStyle: {
                 fontFamily: 'Metropolis-Medium',
                 fontSize: 18,
@@ -370,6 +371,7 @@ const RootStack = () => {
             options={{
               headerTitle: 'Add Ticket',
               headerLeft: () => null,
+              headerShown: false,
               headerTitleStyle: {
                 fontFamily: 'Metropolis-Medium',
                 fontSize: 18,
