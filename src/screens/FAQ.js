@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View, TouchableOpacity } from 'react-native';
 import { TextInput as PaperInput, useTheme } from 'react-native-paper';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import GradientCard from '../components/GradientCard/GradientCard';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import SimpleAccordion from '../components/SimpleAccordion/SimpleAccordion';
@@ -350,99 +351,102 @@ const FAQ = ({ navigation }) => {
   const totalCategories = faqData.length;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <StandardText size="xl" fontWeight="bold" style={styles.statNumber}>
-            {totalQuestions}
-          </StandardText>
-          <StandardText size="sm" style={styles.statLabel}>
-            Total Questions
-          </StandardText>
+    <View style={styles.container}>
+      <StandardHeader navigation={navigation} title="FAQ" />
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <StandardText size="xl" fontWeight="bold" style={styles.statNumber}>
+              {totalQuestions}
+            </StandardText>
+            <StandardText size="sm" style={styles.statLabel}>
+              Total Questions
+            </StandardText>
+          </View>
+          <View style={styles.statCard}>
+            <StandardText size="xl" fontWeight="bold" style={styles.statNumber}>
+              {totalCategories}
+            </StandardText>
+            <StandardText size="sm" style={styles.statLabel}>
+              Categories
+            </StandardText>
+          </View>
         </View>
-        <View style={styles.statCard}>
-          <StandardText size="xl" fontWeight="bold" style={styles.statNumber}>
-            {totalCategories}
-          </StandardText>
-          <StandardText size="sm" style={styles.statLabel}>
-            Categories
-          </StandardText>
+
+        {/* Search */}
+        <View style={styles.searchContainer}>
+          <StyledTextInput
+            label="Search FAQs"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search questions, answers, or categories..."
+            left={<PaperInput.Icon icon="magnify" />}
+          />
         </View>
-      </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <StyledTextInput
-          label="Search FAQs"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search questions, answers, or categories..."
-          left={<PaperInput.Icon icon="magnify" />}
-        />
-      </View>
-
-      {/* FAQ Categories */}
-      {filteredFAQs.length > 0 ? (
-        filteredFAQs.map((category, categoryIndex) => (
-          <GradientCard key={categoryIndex} style={styles.categoryCard}>
-            <TouchableOpacity
-              style={styles.categoryHeader}
-              onPress={() => toggleCategory(categoryIndex)}
-            >
-              <View style={styles.categoryTitleContainer}>
-                <StandardText
-                  size="lg"
-                  fontWeight="600"
-                  style={styles.categoryTitle}
-                >
-                  {category.category}
-                </StandardText>
-                <StandardText size="sm" style={styles.categoryCount}>
-                  {category.questions.length} question
-                  {category.questions.length !== 1 ? 's' : ''}
-                </StandardText>
-              </View>
-              <StandardText size="lg" style={styles.expandIcon}>
-                {expandedCategory === categoryIndex ? '−' : '+'}
-              </StandardText>
-            </TouchableOpacity>
-
-            {expandedCategory === categoryIndex && (
-              <View style={styles.questionsContainer}>
-                {category.questions.map((qa, questionIndex) => (
-                  <SimpleAccordion
-                    key={questionIndex}
-                    title={qa.question}
-                    titleStyle={styles.accordionTitle}
-                    expandedBackgroundColor={
-                      mode === 'dark' ? '#1a1a1a' : '#ffffff'
-                    }
+        {/* FAQ Categories */}
+        {filteredFAQs.length > 0 ? (
+          filteredFAQs.map((category, categoryIndex) => (
+            <GradientCard key={categoryIndex} style={styles.categoryCard}>
+              <TouchableOpacity
+                style={styles.categoryHeader}
+                onPress={() => toggleCategory(categoryIndex)}
+              >
+                <View style={styles.categoryTitleContainer}>
+                  <StandardText
+                    size="lg"
+                    fontWeight="600"
+                    style={styles.categoryTitle}
                   >
-                    <StandardText style={styles.answerText}>
-                      {qa.answer}
-                    </StandardText>
-                  </SimpleAccordion>
-                ))}
-              </View>
-            )}
-          </GradientCard>
-        ))
-      ) : (
-        <View style={styles.emptyContainer}>
-          <StandardText size="xl">🔍</StandardText>
-          <StandardText size="lg" fontWeight="600" style={styles.emptyText}>
-            No results found
-          </StandardText>
-          <StandardText style={styles.emptyText}>
-            Try adjusting your search terms or browse through categories
-          </StandardText>
-        </View>
-      )}
-    </ScrollView>
+                    {category.category}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.categoryCount}>
+                    {category.questions.length} question
+                    {category.questions.length !== 1 ? 's' : ''}
+                  </StandardText>
+                </View>
+                <StandardText size="lg" style={styles.expandIcon}>
+                  {expandedCategory === categoryIndex ? '−' : '+'}
+                </StandardText>
+              </TouchableOpacity>
+
+              {expandedCategory === categoryIndex && (
+                <View style={styles.questionsContainer}>
+                  {category.questions.map((qa, questionIndex) => (
+                    <SimpleAccordion
+                      key={questionIndex}
+                      title={qa.question}
+                      titleStyle={styles.accordionTitle}
+                      expandedBackgroundColor={
+                        mode === 'dark' ? '#1a1a1a' : '#ffffff'
+                      }
+                    >
+                      <StandardText style={styles.answerText}>
+                        {qa.answer}
+                      </StandardText>
+                    </SimpleAccordion>
+                  ))}
+                </View>
+              )}
+            </GradientCard>
+          ))
+        ) : (
+          <View style={styles.emptyContainer}>
+            <StandardText size="xl">🔍</StandardText>
+            <StandardText size="lg" fontWeight="600" style={styles.emptyText}>
+              No results found
+            </StandardText>
+            <StandardText style={styles.emptyText}>
+              Try adjusting your search terms or browse through categories
+            </StandardText>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 };
 

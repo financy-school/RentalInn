@@ -14,6 +14,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 // Components
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 
 // Context
 import { ThemeContext } from '../context/ThemeContext';
@@ -1000,24 +1001,11 @@ const Notices = ({ navigation }) => {
 
   return (
     <View style={componentStyles.container}>
-      {/* Header */}
-      <View style={componentStyles.header}>
-        <View style={componentStyles.headerRow}>
-          <View>
-            <StandardText
-              fontWeight="bold"
-              size="large"
-              style={componentStyles.headerTitle}
-            >
-              Notices
-            </StandardText>
-            <StandardText style={componentStyles.headerSubtitle}>
-              {filteredNotices.length}{' '}
-              {filteredNotices.length === 1 ? 'notice' : 'notices'}
-            </StandardText>
-          </View>
-        </View>
-      </View>
+      <StandardHeader
+        navigation={navigation}
+        title="Notices"
+        showBackButton={true}
+      />
 
       {/* Filters */}
       <ScrollView

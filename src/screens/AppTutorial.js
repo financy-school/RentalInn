@@ -11,6 +11,7 @@ import {
 import { useTheme, ProgressBar } from 'react-native-paper';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import GradientCard from '../components/GradientCard/GradientCard';
 import StyledButton from '../components/StyledButton/StyledButton';
 import LinearGradient from 'react-native-linear-gradient';
@@ -408,15 +409,15 @@ const AppTutorial = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <StandardText size="lg" fontWeight="600" style={styles.headerTitle}>
-          App Tutorial
-        </StandardText>
-        <TouchableOpacity onPress={skipTutorial}>
-          <StandardText style={styles.skipButton}>Skip</StandardText>
-        </TouchableOpacity>
-      </View>
+      <StandardHeader
+        navigation={navigation}
+        title="App Tutorial"
+        rightComponent={
+          <TouchableOpacity onPress={skipTutorial}>
+            <StandardText style={styles.skipButton}>Skip</StandardText>
+          </TouchableOpacity>
+        }
+      />
 
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
