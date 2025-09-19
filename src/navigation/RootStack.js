@@ -11,6 +11,7 @@ import SplashScreen from '../components/SplashScreen';
 import DrawerStack from './DrawerNavigation';
 import RoomDetails from '../screens/RoomDetails';
 import TenantDetails from '../screens/TenantDetails';
+import TenantKYC from '../screens/TenantKYC';
 import AddRoom from '../screens/AddRoom';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
@@ -245,6 +246,22 @@ const RootStack = () => {
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Tenant Details',
+            headerTintColor: colors.black,
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="TenantKYC"
+          component={TenantKYC}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Tenant KYC',
             headerTintColor: colors.black,
             headerShown: false,
             headerTitleStyle: {

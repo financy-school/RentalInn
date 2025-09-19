@@ -764,208 +764,497 @@ const Home = ({ navigation }) => {
         <Gap size="md" />
 
         {/* Issues & Maintenance Board */}
-        <StandardCard style={[styles.kpiCard, { height: 350, width: '100%' }]}>
+        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
           <View style={styles.rowBetween}>
             <StandardText size="lg" fontWeight="bold">
-              Issues & Maintenance
+              🔧 Issues & Maintenance
             </StandardText>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Tickets')}
+              style={styles.showMoreButton}
+            >
+              <StandardText style={styles.showMoreText}>Show More</StandardText>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={16}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
           </View>
-          {maintenanceRequests.map(req => (
-            <List.Item
-              key={req.id}
-              title={req.title}
-              description={`Priority: ${req.priority}`}
-              titleStyle={{
-                fontFamily: 'Metropolis-Medium',
-                fontSize: 16,
-              }}
-              descriptionStyle={{
-                fontFamily: 'Metropolis-Regular',
-                fontSize: 14,
-              }}
-              style={{}}
-              left={() => (
-                <MaterialCommunityIcons
-                  name="wrench"
-                  size={22}
-                  color={colors.primary}
-                />
-              )}
-              right={() => (
-                <Chip
-                  textStyle={{
-                    fontFamily: 'Metropolis-Medium',
-                    fontSize: 14,
-                  }}
+
+          <View style={styles.maintenanceContainer}>
+            {maintenanceRequests.slice(0, 3).map(req => (
+              <TouchableOpacity
+                key={req.id}
+                style={styles.maintenanceItem}
+                onPress={() => navigation.navigate('Tickets')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.maintenanceLeft}>
+                  <View
+                    style={[
+                      styles.maintenanceIcon,
+                      {
+                        backgroundColor:
+                          req.priority === 'High'
+                            ? colors.error + '20'
+                            : req.priority === 'Medium'
+                            ? colors.warning + '20'
+                            : colors.success + '20',
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="wrench"
+                      size={18}
+                      color={
+                        req.priority === 'High'
+                          ? colors.error
+                          : req.priority === 'Medium'
+                          ? colors.warning
+                          : colors.success
+                      }
+                    />
+                  </View>
+                  <View style={styles.maintenanceContent}>
+                    <StandardText size="md" fontWeight="600" numberOfLines={1}>
+                      {req.title}
+                    </StandardText>
+                    <StandardText size="sm" style={styles.maintenanceSubtext}>
+                      Priority: {req.priority}
+                    </StandardText>
+                  </View>
+                </View>
+                <View
+                  style={[
+                    styles.statusChip,
+                    {
+                      backgroundColor:
+                        req.status === 'Completed'
+                          ? colors.success + '20'
+                          : req.status === 'In-progress'
+                          ? colors.warning + '20'
+                          : colors.error + '20',
+                    },
+                  ]}
                 >
-                  {req.status}
-                </Chip>
-              )}
-            />
-          ))}
+                  <StandardText
+                    size="xs"
+                    fontWeight="600"
+                    style={{
+                      color:
+                        req.status === 'Completed'
+                          ? colors.success
+                          : req.status === 'In-progress'
+                          ? colors.warning
+                          : colors.error,
+                    }}
+                  >
+                    {req.status}
+                  </StandardText>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </StandardCard>
 
         <Gap size="md" />
 
         {/* Tenant Leaderboard */}
-        <StandardCard style={[styles.kpiCard, { height: 300, width: '100%' }]}>
-          <StandardText size="lg" fontWeight="bold">
-            Top Tenants
-          </StandardText>
-          {tenants.map(t => (
-            <List.Item
-              key={t.id}
-              title={`${t.name} — ${t.room}`}
-              description={t.status}
-              titleStyle={{
-                fontFamily: 'Metropolis-Medium',
-                fontSize: 16,
-              }}
-              descriptionStyle={{
-                fontFamily: 'Metropolis-Regular',
-                fontSize: 14,
-              }}
-              style={{}}
-              left={() => <Avatar.Icon size={36} icon="account-circle" />}
-              right={() =>
-                t.status === 'On-time' ? (
-                  <Chip icon="star">Consistent</Chip>
-                ) : (
-                  <Chip icon="alert">Overdue</Chip>
-                )
-              }
-            />
-          ))}
+        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
+          <View style={styles.rowBetween}>
+            <StandardText size="lg" fontWeight="bold">
+              👑 Top Tenants
+            </StandardText>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Tenants')}
+              style={styles.showMoreButton}
+            >
+              <StandardText style={styles.showMoreText}>See More</StandardText>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={16}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.tenantsContainer}>
+            {tenants.slice(0, 3).map((t, index) => (
+              <TouchableOpacity
+                key={t.id}
+                style={styles.tenantItem}
+                onPress={() =>
+                  navigation.navigate('TenantDetails', { tenant: t })
+                }
+                activeOpacity={0.7}
+              >
+                <View style={styles.tenantLeft}>
+                  <View style={styles.tenantRank}>
+                    <StandardText
+                      size="sm"
+                      fontWeight="bold"
+                      style={styles.rankText}
+                    >
+                      #{index + 1}
+                    </StandardText>
+                  </View>
+                  <View style={styles.tenantInfo}>
+                    <StandardText size="md" fontWeight="600" numberOfLines={1}>
+                      {t.name}
+                    </StandardText>
+                    <StandardText size="sm" style={styles.tenantSubtext}>
+                      Room {t.room}
+                    </StandardText>
+                  </View>
+                </View>
+                <View
+                  style={[
+                    styles.statusChip,
+                    {
+                      backgroundColor:
+                        t.status === 'On-time'
+                          ? colors.success + '20'
+                          : colors.error + '20',
+                    },
+                  ]}
+                >
+                  <StandardText
+                    size="xs"
+                    fontWeight="600"
+                    style={{
+                      color:
+                        t.status === 'On-time' ? colors.success : colors.error,
+                    }}
+                  >
+                    {t.status}
+                  </StandardText>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </StandardCard>
 
         <Gap size="md" />
 
         {/* 🪪 Tenant KYC Status */}
-        {/* 🪪 Tenant KYC Overview */}
-        <StandardCard style={[styles.kpiCard, { height: 350, width: '100%' }]}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
+        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
+          <View style={styles.rowBetween}>
             <StandardText size="lg" fontWeight="bold">
               🪪 Tenant KYC
             </StandardText>
-            <TouchableOpacity onPress={() => navigation.navigate('KYCDetails')}>
-              <StandardText style={{ color: colors.primary }}>
-                View More
-              </StandardText>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('TenantKYC')}
+              style={styles.showMoreButton}
+            >
+              <StandardText style={styles.showMoreText}>See More</StandardText>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={16}
+                color={colors.primary}
+              />
             </TouchableOpacity>
           </View>
 
-          {/* Summary */}
-          <View style={styles.kycSummary}>
+          {/* Summary Cards */}
+          <View style={styles.kycSummaryGrid}>
             <View
-              style={[styles.kycSummaryBox, { backgroundColor: '#4CAF50' }]}
+              style={[
+                styles.kycSummaryCard,
+                { backgroundColor: colors.success + '20' },
+              ]}
             >
-              <StandardText fontWeight="bold" style={styles.kycSummaryText}>
-                Verified: 12
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={24}
+                color={colors.success}
+              />
+              <StandardText
+                size="lg"
+                fontWeight="bold"
+                style={{ color: colors.success }}
+              >
+                12
+              </StandardText>
+              <StandardText size="sm" style={{ color: colors.success }}>
+                Verified
               </StandardText>
             </View>
+
             <View
-              style={[styles.kycSummaryBox, { backgroundColor: '#FFC107' }]}
+              style={[
+                styles.kycSummaryCard,
+                { backgroundColor: colors.warning + '20' },
+              ]}
             >
-              <StandardText fontWeight="bold" style={styles.kycSummaryText}>
-                Pending: 3
+              <MaterialCommunityIcons
+                name="clock-outline"
+                size={24}
+                color={colors.warning}
+              />
+              <StandardText
+                size="lg"
+                fontWeight="bold"
+                style={{ color: colors.warning }}
+              >
+                3
+              </StandardText>
+              <StandardText size="sm" style={{ color: colors.warning }}>
+                Pending
               </StandardText>
             </View>
+
             <View
-              style={[styles.kycSummaryBox, { backgroundColor: '#F44336' }]}
+              style={[
+                styles.kycSummaryCard,
+                { backgroundColor: colors.error + '20' },
+              ]}
             >
-              <StandardText fontWeight="bold" style={styles.kycSummaryText}>
-                Rejected: 1
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={24}
+                color={colors.error}
+              />
+              <StandardText
+                size="lg"
+                fontWeight="bold"
+                style={{ color: colors.error }}
+              >
+                1
+              </StandardText>
+              <StandardText size="sm" style={{ color: colors.error }}>
+                Rejected
               </StandardText>
             </View>
           </View>
 
-          {/* Last 3 KYCs */}
-          <StandardText
-            size="md"
-            fontWeight="semibold"
-            style={{ marginTop: 8 }}
-          >
-            Last 3 KYC Submissions
+          {/* Recent KYC Submissions */}
+          <StandardText size="md" fontWeight="600" style={styles.sectionTitle}>
+            Recent Submissions
           </StandardText>
-          {[
-            { name: 'Ravi Kumar', status: 'verified', date: '2025-08-30' },
-            { name: 'Amit Sharma', status: 'pending', date: '2025-08-29' },
-            { name: 'Neha Verma', status: 'rejected', date: '2025-08-28' },
-          ].map((kyc, index) => (
-            <View key={index} style={styles.kycRow}>
-              <View>
-                <StandardText>{kyc.name}</StandardText>
-                <StandardText size="sm" style={{ color: '#666' }}>
-                  Submitted: {kyc.date}
-                </StandardText>
-              </View>
-              <View
-                style={[
-                  styles.kycBadge,
-                  kyc.status === 'verified'
-                    ? { backgroundColor: '#4CAF50' }
-                    : kyc.status === 'pending'
-                    ? { backgroundColor: '#FFC107' }
-                    : { backgroundColor: '#F44336' },
-                ]}
-              >
-                <StandardText fontWeight="bold" style={styles.kycText}>
-                  {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
-                </StandardText>
-              </View>
-            </View>
-          ))}
+
+          <View style={styles.kycList}>
+            {[
+              {
+                name: 'Ravi Kumar',
+                status: 'verified',
+                date: '2025-08-30',
+                id: 'k1',
+              },
+              {
+                name: 'Amit Sharma',
+                status: 'pending',
+                date: '2025-08-29',
+                id: 'k2',
+              },
+              {
+                name: 'Neha Verma',
+                status: 'rejected',
+                date: '2025-08-28',
+                id: 'k3',
+              },
+            ]
+              .slice(0, 3)
+              .map(kyc => (
+                <TouchableOpacity
+                  key={kyc.id}
+                  style={styles.kycItem}
+                  onPress={() =>
+                    navigation.navigate('TenantDetails', {
+                      tenant: { name: kyc.name, id: kyc.id },
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.kycLeft}>
+                    <View
+                      style={[
+                        styles.kycStatusIcon,
+                        {
+                          backgroundColor:
+                            kyc.status === 'verified'
+                              ? colors.success + '20'
+                              : kyc.status === 'pending'
+                              ? colors.warning + '20'
+                              : colors.error + '20',
+                        },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={
+                          kyc.status === 'verified'
+                            ? 'check'
+                            : kyc.status === 'pending'
+                            ? 'clock'
+                            : 'close'
+                        }
+                        size={16}
+                        color={
+                          kyc.status === 'verified'
+                            ? colors.success
+                            : kyc.status === 'pending'
+                            ? colors.warning
+                            : colors.error
+                        }
+                      />
+                    </View>
+                    <View style={styles.kycContent}>
+                      <StandardText
+                        size="md"
+                        fontWeight="600"
+                        numberOfLines={1}
+                      >
+                        {kyc.name}
+                      </StandardText>
+                      <StandardText size="sm" style={styles.kycSubtext}>
+                        Submitted: {kyc.date}
+                      </StandardText>
+                    </View>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusChip,
+                      {
+                        backgroundColor:
+                          kyc.status === 'verified'
+                            ? colors.success + '20'
+                            : kyc.status === 'pending'
+                            ? colors.warning + '20'
+                            : colors.error + '20',
+                      },
+                    ]}
+                  >
+                    <StandardText
+                      size="xs"
+                      fontWeight="600"
+                      style={{
+                        color:
+                          kyc.status === 'verified'
+                            ? colors.success
+                            : kyc.status === 'pending'
+                            ? colors.warning
+                            : colors.error,
+                      }}
+                    >
+                      {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
+                    </StandardText>
+                  </View>
+                </TouchableOpacity>
+              ))}
+          </View>
         </StandardCard>
 
         <Gap size="md" />
 
-        {/* Occupancy Grid */}
-        <StandardCard sstyle={[styles.kpiCard, { height: 300, width: '100%' }]}>
-          <StandardText size="lg" fontWeight="bold">
-            Room Occupancy Map
-          </StandardText>
-          <View style={styles.gridWrapper}>
-            {occupancyGrid.map((room, idx) => (
+        {/* Room Occupancy Map */}
+        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
+          <View style={styles.rowBetween}>
+            <StandardText size="lg" fontWeight="bold">
+              🏠 Room Occupancy Map
+            </StandardText>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Rooms')}
+              style={styles.showMoreButton}
+            >
+              <StandardText style={styles.showMoreText}>View All</StandardText>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={16}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.occupancyStats}>
+            <View style={styles.occupancyStatItem}>
+              <StandardText
+                size="xl"
+                fontWeight="bold"
+                style={{ color: colors.success }}
+              >
+                {totalRooms - vacantRooms}
+              </StandardText>
+              <StandardText size="sm" style={styles.occupancyStatLabel}>
+                Occupied
+              </StandardText>
+            </View>
+            <View style={styles.occupancyStatItem}>
+              <StandardText
+                size="xl"
+                fontWeight="bold"
+                style={{ color: colors.error }}
+              >
+                {vacantRooms}
+              </StandardText>
+              <StandardText size="sm" style={styles.occupancyStatLabel}>
+                Vacant
+              </StandardText>
+            </View>
+            <View style={styles.occupancyStatItem}>
+              <StandardText
+                size="xl"
+                fontWeight="bold"
+                style={{ color: colors.primary }}
+              >
+                {occupancyPct}%
+              </StandardText>
+              <StandardText size="sm" style={styles.occupancyStatLabel}>
+                Occupancy
+              </StandardText>
+            </View>
+          </View>
+
+          <View style={styles.roomGrid}>
+            {occupancyGrid.slice(0, 9).map((room, idx) => (
               <TouchableOpacity
                 key={idx}
                 style={[
-                  styles.roomBox,
+                  styles.roomCard,
                   { backgroundColor: getRoomColor(room.status) },
                 ]}
-                onPress={() => {
-                  setSelectedAction({ label: 'RoomDetails', data: room });
-                }}
+                onPress={() => navigation.navigate('RoomDetails', { room })}
+                activeOpacity={0.8}
               >
-                <StandardText fontWeight="bold" style={styles.roomText}>
+                <StandardText fontWeight="bold" style={styles.roomNumber}>
                   {room.room}
                 </StandardText>
+                <MaterialCommunityIcons
+                  name={
+                    room.status === 'occupied'
+                      ? 'account'
+                      : room.status === 'overdue'
+                      ? 'account-alert'
+                      : 'home-outline'
+                  }
+                  size={16}
+                  color="#fff"
+                  style={styles.roomIcon}
+                />
               </TouchableOpacity>
             ))}
           </View>
-          <View style={styles.legendContainer}>
+
+          <View style={styles.roomLegend}>
             <View style={styles.legendItem}>
               <View
-                style={[styles.legendColor, { backgroundColor: '#4CAF50' }]}
+                style={[styles.legendDot, { backgroundColor: colors.success }]}
               />
-              <StandardText>Occupied</StandardText>
+              <StandardText size="sm">Occupied</StandardText>
             </View>
             <View style={styles.legendItem}>
               <View
-                style={[styles.legendColor, { backgroundColor: '#F44336' }]}
+                style={[styles.legendDot, { backgroundColor: colors.error }]}
               />
-              <StandardText>Overdue</StandardText>
+              <StandardText size="sm">Overdue</StandardText>
             </View>
             <View style={styles.legendItem}>
               <View
-                style={[styles.legendColor, { backgroundColor: '#BDBDBD' }]}
+                style={[
+                  styles.legendDot,
+                  { backgroundColor: colors.light_gray },
+                ]}
               />
-              <StandardText>Vacant</StandardText>
+              <StandardText size="sm">Vacant</StandardText>
             </View>
           </View>
         </StandardCard>
@@ -1208,6 +1497,260 @@ const styles = StyleSheet.create({
   contactButtonText: {
     color: '#333',
     fontSize: 14,
+  },
+
+  // New styles for improved sections
+  showMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+
+  showMoreText: {
+    color: colors.primary,
+    marginRight: 4,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Maintenance styles
+  maintenanceContainer: {
+    marginTop: 16,
+  },
+
+  maintenanceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  maintenanceLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  maintenanceIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  maintenanceContent: {
+    flex: 1,
+  },
+
+  maintenanceSubtext: {
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
+  // Tenants styles
+  tenantsContainer: {
+    marginTop: 16,
+  },
+
+  tenantItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  tenantLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  tenantRank: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  rankText: {
+    color: colors.white,
+  },
+
+  tenantInfo: {
+    flex: 1,
+  },
+
+  tenantSubtext: {
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
+  statusChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+
+  // KYC styles
+  kycSummaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+
+  kycSummaryCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+
+  sectionTitle: {
+    marginTop: 16,
+    marginBottom: 12,
+    color: colors.textPrimary,
+  },
+
+  kycList: {
+    marginTop: 8,
+  },
+
+  kycItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  kycLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  kycStatusIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  kycContent: {
+    flex: 1,
+  },
+
+  kycSubtext: {
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
+  // Room Occupancy styles
+  occupancyStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 16,
+    paddingVertical: 16,
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+  },
+
+  occupancyStatItem: {
+    alignItems: 'center',
+  },
+
+  occupancyStatLabel: {
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+
+  roomGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    gap: 8,
+  },
+
+  roomCard: {
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+
+  roomNumber: {
+    color: '#fff',
+    fontSize: 16,
+  },
+
+  roomIcon: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+  },
+
+  roomLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.accent,
+  },
+
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 6,
   },
 });
 
