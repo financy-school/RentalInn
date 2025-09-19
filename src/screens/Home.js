@@ -201,23 +201,6 @@ const Home = ({ navigation }) => {
     ? Math.round(((totalRooms - vacantRooms) / totalRooms) * 100)
     : 0;
 
-  const piePaidVsDue = [
-    {
-      name: 'Paid',
-      population: 70,
-      color: '#4CAF50',
-      legendFontColor: '#333',
-      legendFontSize: 14,
-    },
-    {
-      name: 'Due',
-      population: 30,
-      color: '#F44336',
-      legendFontColor: '#333',
-      legendFontSize: 14,
-    },
-  ];
-
   // Colors for occupancy grid
   const getRoomColor = status => {
     switch (status) {
@@ -427,61 +410,205 @@ const Home = ({ navigation }) => {
 
         <Gap size="md" />
 
-        {/* Paid vs Overdue + Revenue Trend */}
-        {console.log('piePaidVsDue', piePaidVsDue)}
-        <View style={{ gap: 12 }}>
-          <StandardCard
-            style={[styles.kpiCard, { height: 300, width: '100%' }]}
-          >
-            <StandardText size="lg" fontWeight="bold" textAlign="center">
+        {/* Enhanced Rent Collection */}
+        <StandardCard style={styles.fullWidthCard}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="cash-multiple"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.sectionTitleText}
+            >
               Rent Collection
             </StandardText>
-            <PieChart
-              data={piePaidVsDue}
-              width={screenWidth - 40}
-              height={220}
-              chartConfig={{
-                backgroundGradientFrom: '#ffffff',
-                backgroundGradientTo: '#ffffff',
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              }}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="15"
-              hasLegend={true}
-              absolute // shows absolute values instead of percentages
-            />
-          </StandardCard>
+          </View>
 
-          <StandardCard
-            style={[styles.kpiCard, { height: 350, width: '100%' }]}
-          >
-            <StandardText size="lg" fontWeight="bold" textAlign="center">
-              Revenue & Vacancy Loss
+          {/* Collection Summary */}
+          <View style={styles.collectionSummary}>
+            <View style={styles.collectionStat}>
+              <View
+                style={[
+                  styles.statIndicator,
+                  { backgroundColor: colors.success + '20' },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={20}
+                  color={colors.success}
+                />
+              </View>
+              <StandardText size="sm" style={styles.statLabel}>
+                Collected
+              </StandardText>
+              <StandardText
+                size="lg"
+                fontWeight="bold"
+                style={{ color: colors.success }}
+              >
+                ₹{paid.toLocaleString()}
+              </StandardText>
+              <StandardText size="sm" style={styles.statPercentage}>
+                {Math.round((paid / (paid + notPaid)) * 100)}%
+              </StandardText>
+            </View>
+
+            <View style={styles.collectionDivider} />
+
+            <View style={styles.collectionStat}>
+              <View
+                style={[
+                  styles.statIndicator,
+                  { backgroundColor: colors.error + '20' },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="clock-alert"
+                  size={20}
+                  color={colors.error}
+                />
+              </View>
+              <StandardText size="sm" style={styles.statLabel}>
+                Overdue
+              </StandardText>
+              <StandardText
+                size="lg"
+                fontWeight="bold"
+                style={{ color: colors.error }}
+              >
+                ₹{notPaid.toLocaleString()}
+              </StandardText>
+              <StandardText size="sm" style={styles.statPercentage}>
+                {Math.round((notPaid / (paid + notPaid)) * 100)}%
+              </StandardText>
+            </View>
+          </View>
+
+          {/* Collection Progress Bar */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${(paid / (paid + notPaid)) * 100}%`,
+                    backgroundColor: colors.success,
+                  },
+                ]}
+              />
+            </View>
+            <StandardText size="sm" style={styles.progressText}>
+              Collection Rate: {Math.round((paid / (paid + notPaid)) * 100)}%
             </StandardText>
-            <StackedBarChart
-              data={{
-                labels: months,
-                legend: ['Revenue (₹k)', 'Vacancy Loss (₹k)'],
-                data: revenueByMonth.map((rev, i) => [
-                  rev,
-                  vacancyLossByMonth[i],
-                ]),
-                barColors: ['#1976D2', '#E53935'],
-              }}
-              width={screenWidth - 40}
-              height={240}
-              chartConfig={{
-                backgroundColor: '#fff',
-                backgroundGradientFrom: '#fff',
-                backgroundGradientTo: '#fff',
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-                labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-              }}
+          </View>
+        </StandardCard>
+
+        <Gap size="md" />
+
+        {/* Enhanced Revenue & Vacancy Loss */}
+        <StandardCard style={styles.fullWidthCard}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="chart-line"
+              size={24}
+              color={colors.primary}
             />
-          </StandardCard>
-        </View>
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.sectionTitleText}
+            >
+              Revenue & Vacancy Trends
+            </StandardText>
+          </View>
+
+          {/* Revenue Summary Cards */}
+          <View style={styles.revenueSummaryGrid}>
+            <View
+              style={[
+                styles.revenueSummaryCard,
+                { backgroundColor: colors.success + '15' },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="trending-up"
+                size={20}
+                color={colors.success}
+              />
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Avg Revenue
+              </StandardText>
+              <StandardText
+                size="md"
+                fontWeight="bold"
+                style={{ color: colors.success }}
+              >
+                ₹
+                {Math.round(
+                  revenueByMonth.reduce((a, b) => a + b, 0) /
+                    revenueByMonth.length,
+                )}
+                k
+              </StandardText>
+            </View>
+
+            <View
+              style={[
+                styles.revenueSummaryCard,
+                { backgroundColor: colors.error + '15' },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="trending-down"
+                size={20}
+                color={colors.error}
+              />
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Avg Loss
+              </StandardText>
+              <StandardText
+                size="md"
+                fontWeight="bold"
+                style={{ color: colors.error }}
+              >
+                ₹
+                {Math.round(
+                  vacancyLossByMonth.reduce((a, b) => a + b, 0) /
+                    vacancyLossByMonth.length,
+                )}
+                k
+              </StandardText>
+            </View>
+          </View>
+
+          {/* Chart */}
+          <StackedBarChart
+            data={{
+              labels: months,
+              legend: ['Revenue (₹k)', 'Vacancy Loss (₹k)'],
+              data: revenueByMonth.map((rev, i) => [
+                rev,
+                vacancyLossByMonth[i],
+              ]),
+              barColors: [colors.primary, colors.error],
+            }}
+            width={screenWidth - 64}
+            height={220}
+            chartConfig={{
+              backgroundColor: '#fff',
+              backgroundGradientFrom: '#fff',
+              backgroundGradientTo: '#fff',
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+              labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+            }}
+            style={styles.chartStyle}
+          />
+        </StandardCard>
 
         <Gap size="md" />
 
@@ -649,84 +776,206 @@ const Home = ({ navigation }) => {
 
         <Gap size="md" />
 
-        {/* P&L by scope */}
-        <StandardCard style={[styles.kpiCard, { height: 500, width: '100%' }]}>
-          <StandardText size="lg" fontWeight="bold">
-            Profit & Loss —{' '}
-            {scope === 'property'
-              ? 'Property'
-              : scope === 'unit'
-              ? 'Unit'
-              : 'Tenant'}
-          </StandardText>
-          <DataTable>
-            <DataTable.Header>
-              <DataTable.Title>
-                {scope === 'property'
-                  ? 'Property'
-                  : scope === 'unit'
-                  ? 'Unit'
-                  : 'Tenant'}
-              </DataTable.Title>
-              <DataTable.Title numeric>Revenue</DataTable.Title>
-              <DataTable.Title numeric>Expenses</DataTable.Title>
-              <DataTable.Title numeric>Net</DataTable.Title>
-            </DataTable.Header>
+        {/* Enhanced P&L by scope */}
+        <StandardCard style={styles.fullWidthCard}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="chart-bar"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.sectionTitleText}
+            >
+              Profit & Loss —{' '}
+              {scope === 'property'
+                ? 'Property'
+                : scope === 'unit'
+                ? 'Unit'
+                : 'Tenant'}
+            </StandardText>
+          </View>
 
-            {[
-              { k: 'Green View / 201 / John', r: 52000, e: 17500 },
-              { k: 'City Heights / 305 / Riya', r: 48000, e: 16000 },
-              { k: 'Lake Shore / 102 / Alex', r: 46000, e: 13000 },
-            ].map((row, idx) => {
-              const net = row.r - row.e;
-              return (
-                <DataTable.Row key={idx}>
-                  <DataTable.Cell>
-                    {
-                      row.k.split(' / ')[
-                        scope === 'property' ? 0 : scope === 'unit' ? 1 : 2
-                      ]
-                    }
-                  </DataTable.Cell>
-                  <DataTable.Cell numeric>
-                    ₹{row.r.toLocaleString()}
-                  </DataTable.Cell>
-                  <DataTable.Cell numeric>
-                    ₹{row.e.toLocaleString()}
-                  </DataTable.Cell>
-                  <DataTable.Cell
-                    numeric
-                    style={{ color: net >= 0 ? '#2E7D32' : '#C62828' }}
-                  >
-                    ₹{net.toLocaleString()}
-                  </DataTable.Cell>
-                </DataTable.Row>
-              );
-            })}
-          </DataTable>
+          {/* P&L Summary Cards */}
+          <View style={styles.plSummaryGrid}>
+            <View
+              style={[
+                styles.plSummaryCard,
+                { backgroundColor: colors.success + '15' },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="cash-plus"
+                size={20}
+                color={colors.success}
+              />
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Total Revenue
+              </StandardText>
+              <StandardText
+                size="md"
+                fontWeight="bold"
+                style={{ color: colors.success }}
+              >
+                ₹{(52000 + 48000 + 46000).toLocaleString()}
+              </StandardText>
+            </View>
+
+            <View
+              style={[
+                styles.plSummaryCard,
+                { backgroundColor: colors.error + '15' },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="cash-minus"
+                size={20}
+                color={colors.error}
+              />
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Total Expenses
+              </StandardText>
+              <StandardText
+                size="md"
+                fontWeight="bold"
+                style={{ color: colors.error }}
+              >
+                ₹{(17500 + 16000 + 13000).toLocaleString()}
+              </StandardText>
+            </View>
+
+            <View
+              style={[
+                styles.plSummaryCard,
+                { backgroundColor: colors.primary + '15' },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="trending-up"
+                size={20}
+                color={colors.primary}
+              />
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Net Profit
+              </StandardText>
+              <StandardText
+                size="md"
+                fontWeight="bold"
+                style={{ color: colors.primary }}
+              >
+                ₹
+                {(
+                  52000 +
+                  48000 +
+                  46000 -
+                  (17500 + 16000 + 13000)
+                ).toLocaleString()}
+              </StandardText>
+            </View>
+          </View>
+
+          {/* Enhanced Data Table */}
+          <View style={styles.tableContainer}>
+            <DataTable>
+              <DataTable.Header style={styles.tableHeader}>
+                <DataTable.Title textStyle={styles.tableHeaderText}>
+                  {scope === 'property'
+                    ? 'Property'
+                    : scope === 'unit'
+                    ? 'Unit'
+                    : 'Tenant'}
+                </DataTable.Title>
+                <DataTable.Title numeric textStyle={styles.tableHeaderText}>
+                  Revenue
+                </DataTable.Title>
+                <DataTable.Title numeric textStyle={styles.tableHeaderText}>
+                  Expenses
+                </DataTable.Title>
+                <DataTable.Title numeric textStyle={styles.tableHeaderText}>
+                  Net
+                </DataTable.Title>
+              </DataTable.Header>
+
+              {[
+                { k: 'Green View / 201 / John', r: 52000, e: 17500 },
+                { k: 'City Heights / 305 / Riya', r: 48000, e: 16000 },
+                { k: 'Lake Shore / 102 / Alex', r: 46000, e: 13000 },
+              ].map((row, idx) => {
+                const net = row.r - row.e;
+                return (
+                  <DataTable.Row key={idx} style={styles.tableRow}>
+                    <DataTable.Cell textStyle={styles.tableCellText}>
+                      {
+                        row.k.split(' / ')[
+                          scope === 'property' ? 0 : scope === 'unit' ? 1 : 2
+                        ]
+                      }
+                    </DataTable.Cell>
+                    <DataTable.Cell
+                      numeric
+                      textStyle={[
+                        styles.tableCellText,
+                        { color: colors.success },
+                      ]}
+                    >
+                      ₹{row.r.toLocaleString()}
+                    </DataTable.Cell>
+                    <DataTable.Cell
+                      numeric
+                      textStyle={[
+                        styles.tableCellText,
+                        { color: colors.error },
+                      ]}
+                    >
+                      ₹{row.e.toLocaleString()}
+                    </DataTable.Cell>
+                    <DataTable.Cell
+                      numeric
+                      textStyle={[
+                        styles.tableCellText,
+                        {
+                          color: net >= 0 ? colors.success : colors.error,
+                          fontWeight: 'bold',
+                        },
+                      ]}
+                    >
+                      ₹{net.toLocaleString()}
+                    </DataTable.Cell>
+                  </DataTable.Row>
+                );
+              })}
+            </DataTable>
+          </View>
 
           <Gap size="sm" />
-          <StandardText
-            size="md"
-            fontWeight="bold"
-            style={{ textAlign: 'center' }}
-          >
-            Expenses Breakdown
-          </StandardText>
-          <PieChart
-            data={expensesBreakdown}
-            width={screenWidth - 40}
-            height={210}
-            accessor="population"
-            backgroundColor="transparent"
-            chartConfig={{
-              backgroundColor: '#fff',
-              backgroundGradientFrom: '#fff',
-              backgroundGradientTo: '#fff',
-              color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-            }}
-            paddingLeft="12"
-          />
+
+          {/* Enhanced Expenses Breakdown */}
+          <View style={styles.expensesSection}>
+            <StandardText
+              size="md"
+              fontWeight="bold"
+              style={styles.expensesSectionTitle}
+            >
+              Expenses Breakdown
+            </StandardText>
+            <PieChart
+              data={expensesBreakdown}
+              width={screenWidth - 64}
+              height={180}
+              accessor="population"
+              backgroundColor="transparent"
+              chartConfig={{
+                backgroundColor: '#fff',
+                backgroundGradientFrom: '#fff',
+                backgroundGradientTo: '#fff',
+                color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+              }}
+              paddingLeft="12"
+              style={styles.chartStyle}
+            />
+          </View>
         </StandardCard>
 
         <Gap size="md" />
@@ -764,7 +1013,7 @@ const Home = ({ navigation }) => {
         <Gap size="md" />
 
         {/* Issues & Maintenance Board */}
-        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
+        <StandardCard style={styles.fullWidthCard}>
           <View style={styles.rowBetween}>
             <StandardText size="lg" fontWeight="bold">
               🔧 Issues & Maintenance
@@ -861,7 +1110,7 @@ const Home = ({ navigation }) => {
         <Gap size="md" />
 
         {/* Tenant Leaderboard */}
-        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
+        <StandardCard style={styles.fullWidthCard}>
           <View style={styles.rowBetween}>
             <StandardText size="lg" fontWeight="bold">
               👑 Top Tenants
@@ -938,7 +1187,7 @@ const Home = ({ navigation }) => {
         <Gap size="md" />
 
         {/* 🪪 Tenant KYC Status */}
-        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
+        <StandardCard style={styles.fullWidthCard}>
           <View style={styles.rowBetween}>
             <StandardText size="lg" fontWeight="bold">
               🪪 Tenant KYC
@@ -1146,11 +1395,20 @@ const Home = ({ navigation }) => {
 
         <Gap size="md" />
 
-        {/* Room Occupancy Map */}
-        <StandardCard style={[styles.kpiCard, { width: '100%' }]}>
-          <View style={styles.rowBetween}>
-            <StandardText size="lg" fontWeight="bold">
-              🏠 Room Occupancy Map
+        {/* Enhanced Room Occupancy Map */}
+        <StandardCard style={styles.fullWidthCard}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="home-variant"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.sectionTitleText}
+            >
+              Room Occupancy Map
             </StandardText>
             <TouchableOpacity
               onPress={() => navigation.navigate('Rooms')}
@@ -1390,7 +1648,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginTop: 6,
   },
-  legendItem: { flexDirection: 'row', alignItems: 'center' },
   legendColor: { width: 16, height: 16, borderRadius: 4, marginRight: 6 },
 
   fab: {
@@ -1641,6 +1898,176 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
 
+  // Rent Collection styles
+  collectionSummary: {
+    flexDirection: 'row',
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+
+  collectionStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  collectionDivider: {
+    width: 1,
+    backgroundColor: colors.textSecondary + '30',
+    marginHorizontal: 16,
+  },
+
+  statIndicator: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  statLabel: {
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+
+  statPercentage: {
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+
+  progressContainer: {
+    marginTop: 8,
+  },
+
+  progressBar: {
+    height: 8,
+    backgroundColor: colors.accent,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+
+  progressText: {
+    textAlign: 'center',
+    color: colors.textSecondary,
+  },
+
+  // Revenue Summary styles
+  revenueSummaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 8,
+  },
+
+  revenueSummaryCard: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+
+  summaryLabel: {
+    color: colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+
+  chartStyle: {
+    borderRadius: 12,
+    marginTop: 8,
+  },
+
+  // P&L styles
+  plSummaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 8,
+  },
+
+  plSummaryCard: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+
+  tableContainer: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+
+  tableHeader: {
+    backgroundColor: colors.accent,
+  },
+
+  tableHeaderText: {
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+
+  tableRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.accent,
+  },
+
+  tableCellText: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+
+  tableCellBold: {
+    fontWeight: 'bold',
+  },
+
+  expensesSection: {
+    alignItems: 'center',
+  },
+
+  expensesSectionTitle: {
+    textAlign: 'center',
+    marginBottom: 8,
+    color: colors.textPrimary,
+  },
+
+  // Full width card styles
+  fullWidthCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    justifyContent: 'space-between',
+  },
+
+  sectionTitleText: {
+    flex: 1,
+    marginLeft: 8,
+    color: colors.textPrimary,
+  },
+
+  // KYC List styles
   kycList: {
     marginTop: 8,
   },
@@ -1654,6 +2081,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     backgroundColor: colors.white,
     borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -1685,14 +2114,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Room Occupancy styles
+  // Room Occupancy Map styles
   occupancyStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 16,
-    paddingVertical: 16,
+    marginBottom: 20,
     backgroundColor: colors.accent,
     borderRadius: 12,
+    paddingVertical: 16,
   },
 
   occupancyStatItem: {
@@ -1708,8 +2137,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 8,
+    marginBottom: 20,
   },
 
   roomCard: {
@@ -1718,32 +2146,32 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 3,
   },
 
   roomNumber: {
     color: '#fff',
-    fontSize: 16,
+    marginBottom: 4,
   },
 
   roomIcon: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
+    marginTop: 2,
   },
 
   roomLegend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.accent,
+    marginTop: 8,
+  },
+
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   legendDot: {
