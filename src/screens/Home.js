@@ -371,14 +371,22 @@ const Home = ({ navigation }) => {
             <Chip
               key={p}
               selected={selectedProperty === p}
+              selectedColor="#fff"
               onPress={() => setSelectedProperty(p)}
-              style={{ marginRight: 8 }}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor:
+                    selectedProperty === p ? colors.secondary : '#f5f5f5',
+                },
+              ]}
               textStyle={{
                 color: selectedProperty === p ? '#fff' : '#000',
                 fontFamily: 'Metropolis-Medium',
+                fontWeight: selectedProperty === p ? '600' : '400',
               }}
             >
-              {p}
+              {p})
             </Chip>
           ))}
         </ScrollView>
@@ -1066,6 +1074,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
+  chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
   // Occupancy grid
   gridWrapper: {
     flexDirection: 'row',

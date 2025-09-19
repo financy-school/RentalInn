@@ -261,6 +261,7 @@ const RootStack = () => {
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Notices',
+            headerShown: false,
             headerTintColor: colors.black,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
@@ -277,6 +278,7 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'FAQ',
             headerTintColor: colors.black,
+            headerShown: false,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
               fontSize: 18,
@@ -291,6 +293,7 @@ const RootStack = () => {
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Contact Support',
+            headerShown: false,
             headerTintColor: colors.black,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
@@ -307,6 +310,7 @@ const RootStack = () => {
             ...authenticatedScreenOptions,
             headerTitle: 'App Tutorial',
             headerTintColor: colors.black,
+            headerShown: false,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
               fontSize: 18,
