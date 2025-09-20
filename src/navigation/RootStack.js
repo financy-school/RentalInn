@@ -24,6 +24,8 @@ import Notices from '../screens/Notices';
 import FAQ from '../screens/FAQ';
 import ContactSupport from '../screens/ContactSupport';
 import AppTutorial from '../screens/AppTutorial';
+import Settings from '../screens/Settings';
+import EditProfile from '../screens/EditProfile';
 
 // Context
 import { CredentialsContext } from '../context/CredentialsContext';
@@ -365,6 +367,36 @@ const RootStack = () => {
             headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name={SCREEN_NAMES.SETTINGS}
+          component={Settings}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Settings',
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfile}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Edit Profile',
+            headerShown: false,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
               fontSize: 18,
