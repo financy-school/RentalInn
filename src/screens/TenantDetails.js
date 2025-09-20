@@ -82,31 +82,11 @@ const TenantDetails = ({ navigation, route }) => {
           const errorMessage =
             response.error || 'Failed to fetch tenant details';
           setError(errorMessage);
-          Alert.alert('Error', errorMessage, [
-            {
-              text: 'Go Back',
-              onPress: () => navigation.goBack(),
-            },
-            {
-              text: 'Retry',
-              onPress: () => fetchTenantDetails(),
-            },
-          ]);
         }
       } catch (err) {
         const errorMessage =
           'Network error. Please check your connection and try again.';
         setError(errorMessage);
-        Alert.alert('Network Error', errorMessage, [
-          {
-            text: 'Go Back',
-            onPress: () => navigation.goBack(),
-          },
-          {
-            text: 'Retry',
-            onPress: () => fetchTenantDetails(),
-          },
-        ]);
       } finally {
         setLoading(false);
       }
@@ -328,7 +308,7 @@ const TenantDetails = ({ navigation, route }) => {
   // Error state
   if (error || !tenant) {
     return (
-      <View style={[styles.container, { backgroundColor }]}>
+      <View style={[styles.container]}>
         <StandardHeader navigation={navigation} title="Tenant Details" />
         <View style={styles.errorContainer}>
           <MaterialCommunityIcons

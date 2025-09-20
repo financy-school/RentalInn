@@ -8,7 +8,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { Avatar, Chip, Card } from 'react-native-paper';
+import { Avatar, Chip, Card, Button } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
@@ -222,17 +222,15 @@ const RoomDetails = ({ navigation, route }) => {
             {error ||
               'Room details could not be found. Please check if the room exists and try again.'}
           </StandardText>
-          <TouchableOpacity
+
+          <Button
+            mode="contained"
             style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            labelStyle={{ color: colors.white }}
             onPress={() => navigation.goBack()}
           >
-            <StandardText
-              style={[styles.buttonLabel, { color: colors.white }]}
-              fontWeight="bold"
-            >
-              Go Back
-            </StandardText>
-          </TouchableOpacity>
+            Go Back
+          </Button>
         </View>
       </View>
     );
