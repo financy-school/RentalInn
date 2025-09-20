@@ -333,7 +333,7 @@ const Home = ({ navigation }) => {
               ]}
             />
           </View> */}
-        <View style={styles.searchRow}>
+        {/* <View style={styles.searchRow}>
           <View style={{ flex: 1, marginRight: 10 }}>
             <TextInput
               placeholder="Search tenants, units, or properties"
@@ -342,7 +342,7 @@ const Home = ({ navigation }) => {
               style={styles.searchInput}
             />
           </View>
-        </View>
+        </View> */}
 
         {/* Property chips */}
         <ScrollView
