@@ -205,7 +205,7 @@ const OnboardingScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar
         barStyle="light-content"
         backgroundColor="transparent"
@@ -296,7 +296,7 @@ const OnboardingScreen = ({ navigation }) => {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

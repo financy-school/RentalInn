@@ -6,9 +6,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { Appearance, StatusBar, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../navigation/constants';
+import { StatusBar, Platform } from 'react-native';
 
 // Theme type definitions
 export const THEME_MODES = {
@@ -41,93 +39,51 @@ const THEME_CONFIG = {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [themeMode, setThemeMode] = useState(THEME_MODES.LIGHT);
-  const [systemTheme, setSystemTheme] = useState(THEME_MODES.LIGHT);
-  const [loading, setLoading] = useState(true);
+  // Force theme to always be light
+  const [themeMode] = useState(THEME_MODES.LIGHT);
+  const [loading, setLoading] = useState(false); // No loading needed since theme is fixed
 
-  // Computed theme based on mode and system preference
+  // Always use light theme
   const currentTheme = useMemo(() => {
-    return themeMode === THEME_MODES.SYSTEM ? systemTheme : themeMode;
-  }, [themeMode, systemTheme]);
+    return THEME_MODES.LIGHT;
+  }, []);
 
   const isDarkMode = useMemo(() => {
-    return currentTheme === THEME_MODES.DARK;
-  }, [currentTheme]);
+    return false; // Always light mode
+  }, []);
 
   const isSystemTheme = useMemo(() => {
-    return themeMode === THEME_MODES.SYSTEM;
-  }, [themeMode]);
+    return false; // Never using system theme
+  }, []);
 
-  // Load saved theme preference
+  // Load saved theme preference - simplified since we always use light theme
   const loadThemePreference = useCallback(async () => {
     try {
       setLoading(true);
-
-      const savedTheme = await AsyncStorage.getItem(STORAGE_KEYS.THEME_MODE);
-      const systemColorScheme =
-        Appearance.getColorScheme() || THEME_MODES.LIGHT;
-
-      setSystemTheme(systemColorScheme);
-
-      if (savedTheme && Object.values(THEME_MODES).includes(savedTheme)) {
-        setThemeMode(savedTheme);
-      } else {
-        // Default to system theme for first-time users
-        setThemeMode(THEME_MODES.SYSTEM);
-        await AsyncStorage.setItem(STORAGE_KEYS.THEME_MODE, THEME_MODES.SYSTEM);
-      }
+      // Always set to light theme regardless of saved preference
+      // No need to load or save theme preferences
     } catch (error) {
       console.error('Failed to load theme preference:', error);
-      setThemeMode(THEME_MODES.LIGHT);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Save theme preference
-  const saveThemePreference = useCallback(async theme => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.THEME_MODE, theme);
-    } catch (error) {
-      console.error('Failed to save theme preference:', error);
-    }
+  // Set theme programmatically - no-op since theme is fixed
+  const setTheme = useCallback(async () => {
+    // No-op: theme is always light, cannot be changed
+    console.warn('Theme switching is disabled - always using light theme');
   }, []);
 
-  // Set theme programmatically
-  const setTheme = useCallback(
-    async theme => {
-      if (!Object.values(THEME_MODES).includes(theme)) {
-        console.warn(`Invalid theme mode: ${theme}`);
-        return;
-      }
-
-      setThemeMode(theme);
-      await saveThemePreference(theme);
-    },
-    [saveThemePreference],
-  );
-
-  // Toggle between light and dark themes
+  // Toggle between light and dark themes - no-op since theme is fixed
   const toggleTheme = useCallback(async () => {
-    const newTheme =
-      currentTheme === THEME_MODES.LIGHT ? THEME_MODES.DARK : THEME_MODES.LIGHT;
-
-    await setTheme(newTheme);
-  }, [currentTheme, setTheme]);
-
-  // Handle system theme changes
-  const handleSystemThemeChange = useCallback(preferences => {
-    const newSystemTheme = preferences.colorScheme || THEME_MODES.LIGHT;
-    setSystemTheme(newSystemTheme);
-
-    if (__DEV__) {
-      console.log('System theme changed to:', newSystemTheme);
-    }
+    // No-op: theme is always light, cannot be toggled
+    console.warn('Theme toggling is disabled - always using light theme');
   }, []);
 
-  // Update status bar when theme changes
+  // Update status bar - always use light theme config
   const updateStatusBar = useCallback(() => {
-    const config = THEME_CONFIG[currentTheme];
+    const config = THEME_CONFIG[THEME_MODES.LIGHT]; // Always use light theme config
     if (config) {
       StatusBar.setBarStyle(config.statusBarStyle, true);
 
@@ -135,26 +91,17 @@ export const ThemeProvider = ({ children }) => {
         StatusBar.setBackgroundColor(config.statusBarBackgroundColor, true);
       }
     }
-  }, [currentTheme]);
+  }, []);
 
-  // Initialize theme on component mount
+  // Initialize theme on component mount - simplified
   useEffect(() => {
     loadThemePreference();
   }, [loadThemePreference]);
 
-  // Listen for system theme changes
+  // Update status bar when component mounts
   useEffect(() => {
-    const subscription = Appearance.addChangeListener(handleSystemThemeChange);
-
-    return () => subscription?.remove();
-  }, [handleSystemThemeChange]);
-
-  // Update status bar when theme changes
-  useEffect(() => {
-    if (!loading) {
-      updateStatusBar();
-    }
-  }, [currentTheme, loading, updateStatusBar]);
+    updateStatusBar();
+  }, [updateStatusBar]);
 
   // Context value with memoization for performance
   const contextValue = useMemo(
@@ -166,8 +113,8 @@ export const ThemeProvider = ({ children }) => {
       loading,
       toggleTheme,
       setTheme,
-      systemTheme,
-      availableThemes: Object.values(THEME_MODES),
+      systemTheme: THEME_MODES.LIGHT, // Always light
+      availableThemes: [THEME_MODES.LIGHT], // Only light theme available
     }),
     [
       currentTheme,
@@ -177,7 +124,6 @@ export const ThemeProvider = ({ children }) => {
       loading,
       toggleTheme,
       setTheme,
-      systemTheme,
     ],
   );
 
