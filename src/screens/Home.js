@@ -1,55 +1,61 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  TextInput,
   Platform,
 } from 'react-native';
 import {
-  Appbar,
   Avatar,
   Button,
-  FAB,
   Badge,
   Card,
   List,
   Chip,
   DataTable,
   Switch,
-  SegmentedButtons,
 } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { ThemeContext } from '../context/ThemeContext';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
 import { analyticsDashBoard } from '../services/NetworkUtils';
-import CircularIconsWithText from '../components/cards/CircularIcon';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
-import { PieChart, LineChart, StackedBarChart } from 'react-native-chart-kit';
+import { PieChart, StackedBarChart } from 'react-native-chart-kit';
 import * as Progress from 'react-native-progress';
 import colors from '../theme/color';
+import PropertySelector from '../components/PropertySelector/PropertySelector';
 
 const screenWidth = Dimensions.get('window').width;
 
-const Home = ({ navigation }) => {
-  const { theme: mode, toggleTheme } = useContext(ThemeContext);
-  const { credentials } = useContext(CredentialsContext);
+// Helper components for List items
+const MessageLeftIcon = () => (
+  <MaterialCommunityIcons
+    name="message-text-outline"
+    size={22}
+    color={colors.primary}
+  />
+);
 
-  const [selectedAction, setSelectedAction] = useState(null);
+const MessageRightChip = ({ matched }) => (
+  <Chip mode={matched ? 'flat' : 'outlined'} icon={matched ? 'check' : 'alert'}>
+    {matched ? 'Matched' : 'Review'}
+  </Chip>
+);
+
+// Create a function that returns the right component with matched prop
+const createMessageRightChip = matched => () =>
+  <MessageRightChip matched={matched} />;
+
+const Home = ({ navigation }) => {
+  const { credentials } = useContext(CredentialsContext);
+  const { selectedProperty, isAllPropertiesSelected } = useProperty();
+
   const [analyticsData, setAnalyticsData] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [scope, setScope] = useState('property'); // property | unit | tenant
-  const [selectedProperty, setSelectedProperty] = useState('All');
+  const [scope] = useState('property'); // property | unit | tenant
   const [autoRecon, setAutoRecon] = useState(true);
 
   // const bottomSheetModalRef = useRef(null);
@@ -67,7 +73,14 @@ const Home = ({ navigation }) => {
     const fetchAnalyticsData = async () => {
       try {
         if (credentials?.accessToken) {
-          const response = await analyticsDashBoard(credentials.accessToken);
+          // If a specific property is selected, pass its ID to the API
+          const propertyId = !isAllPropertiesSelected
+            ? selectedProperty?.id
+            : null;
+          const response = await analyticsDashBoard(
+            credentials.accessToken,
+            propertyId,
+          );
           setAnalyticsData(response.data);
         } else {
           // If no credentials, clear analytics data
@@ -80,7 +93,7 @@ const Home = ({ navigation }) => {
       }
     };
     fetchAnalyticsData();
-  }, [credentials]);
+  }, [credentials, selectedProperty, isAllPropertiesSelected]);
 
   // ---------- MOCKS (replace with API responses) ----------
   const paid = analyticsData?.incomeStats?.actualIncome ?? 72000;
@@ -89,7 +102,6 @@ const Home = ({ navigation }) => {
   const vacantRooms = analyticsData?.occupancyStats?.vacantRooms ?? 6;
   const totalRooms = analyticsData?.occupancyStats?.totalRooms ?? 48;
 
-  const properties = ['All', 'Green View', 'City Heights', 'Lake Shore'];
   const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
   const revenueByMonth = [150, 165, 158, 172, 168, 181]; // ₹k
   const vacancyLossByMonth = [12, 10, 14, 9, 11, 8]; // ₹k
@@ -263,6 +275,11 @@ const Home = ({ navigation }) => {
         </TouchableOpacity> */}
       </View>
 
+      {/* Property Selector */}
+      <View style={styles.propertySelectorContainer}>
+        <PropertySelector navigation={navigation} showTitle={false} />
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Pitch-aligned alerting & filters */}
         <Card style={styles.bannerCard}>
@@ -271,7 +288,7 @@ const Home = ({ navigation }) => {
             size={22}
             color={colors.white}
           />
-          <View style={{ marginLeft: 10 }}>
+          <View style={styles.headerLeftContent}>
             <StandardText style={{ color: colors.white }} fontWeight="bold">
               Real-time tracking enabled
             </StandardText>
@@ -344,36 +361,6 @@ const Home = ({ navigation }) => {
           </View>
         </View> */}
 
-        {/* Property chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginBottom: 10 }}
-        >
-          {properties.map(p => (
-            <Chip
-              key={p}
-              selected={selectedProperty === p}
-              selectedColor="#fff"
-              onPress={() => setSelectedProperty(p)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor:
-                    selectedProperty === p ? colors.secondary : '#f5f5f5',
-                },
-              ]}
-              textStyle={{
-                color: selectedProperty === p ? '#fff' : '#000',
-                fontFamily: 'Metropolis-Medium',
-                fontWeight: selectedProperty === p ? '600' : '400',
-              }}
-            >
-              {p})
-            </Chip>
-          ))}
-        </ScrollView>
-
         {/* KPI Cards */}
         <View style={styles.kpiGrid}>
           <StandardCard style={styles.kpiCard}>
@@ -384,7 +371,7 @@ const Home = ({ navigation }) => {
             <Progress.Bar
               progress={occupancyPct / 100}
               width={null}
-              style={{ marginTop: 8 }}
+              style={styles.progressBarMargin}
               color={colors.primary}
             />
           </StandardCard>
@@ -633,7 +620,7 @@ const Home = ({ navigation }) => {
               </View>
               <Switch value={autoRecon} onValueChange={setAutoRecon} />
             </View>
-            <StandardText size="sm" style={{ marginTop: 6 }}>
+            <StandardText size="sm" style={styles.messageText}>
               Securely reads payment messages and updates records instantly.
             </StandardText>
 
@@ -662,20 +649,15 @@ const Home = ({ navigation }) => {
             <Button
               mode="contained"
               buttonColor={colors.primary}
-              style={{ marginTop: 6 }}
+              style={styles.messageText}
             >
               Sync Now
             </Button>
           </StandardCard> */}
 
-        <StandardCard
-          style={[
-            styles.kpiCard,
-            { height: 400, width: '100%', position: 'relative' },
-          ]}
-        >
+        <StandardCard style={[styles.kpiCard, styles.premiumCardStyle]}>
           <View style={styles.rowBetween}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.messageContainer}>
               <MaterialCommunityIcons
                 name="sync"
                 size={20}
@@ -684,14 +666,14 @@ const Home = ({ navigation }) => {
               <StandardText
                 size="lg"
                 fontWeight="bold"
-                style={{ marginLeft: 6 }}
+                style={styles.messageIcon}
               >
                 Auto Reconciliation
               </StandardText>
             </View>
             <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
           </View>
-          <StandardText size="sm" style={{ marginTop: 6 }}>
+          <StandardText size="sm" style={styles.messageText}>
             Securely reads payment messages and updates records instantly.
           </StandardText>
 
@@ -700,27 +682,14 @@ const Home = ({ navigation }) => {
             <List.Item
               key={msg.id}
               title={`${msg.from} • ${msg.preview}`}
-              left={() => (
-                <MaterialCommunityIcons
-                  name="message-text-outline"
-                  size={22}
-                  color={colors.primary}
-                />
-              )}
-              right={() => (
-                <Chip
-                  mode={msg.matched ? 'flat' : 'outlined'}
-                  icon={msg.matched ? 'check' : 'alert'}
-                >
-                  {msg.matched ? 'Matched' : 'Review'}
-                </Chip>
-              )}
+              left={MessageLeftIcon}
+              right={createMessageRightChip(msg.matched)}
             />
           ))}
           <Button
             mode="contained"
             buttonColor={colors.primary}
-            style={{ marginTop: 6 }}
+            style={styles.messagesList}
             disabled
           >
             Sync Now
@@ -761,7 +730,7 @@ const Home = ({ navigation }) => {
                   name="phone"
                   size={16}
                   color="#fff"
-                  style={{ marginRight: 6 }}
+                  style={styles.messageItemIcon}
                 />
                 <StandardText
                   fontWeight="semibold"
@@ -937,8 +906,8 @@ const Home = ({ navigation }) => {
                         styles.tableCellText,
                         {
                           color: net >= 0 ? colors.success : colors.error,
-                          fontWeight: 'bold',
                         },
+                        styles.boldText,
                       ]}
                     >
                       ₹{net.toLocaleString()}
@@ -1551,6 +1520,46 @@ const styles = StyleSheet.create({
     // marginTop: -20,
     marginHorizontal: -16,
     marginBottom: 16,
+  },
+
+  propertySelectorContainer: {
+    marginHorizontal: -16,
+    marginBottom: 16,
+  },
+
+  headerLeftContent: {
+    marginLeft: 10,
+  },
+
+  progressBarMargin: {
+    marginTop: 8,
+  },
+
+  premiumCardStyle: {
+    height: 400,
+    width: '100%',
+    position: 'relative',
+  },
+
+  premiumHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  premiumIconMargin: {
+    marginLeft: 6,
+  },
+
+  premiumTextMargin: {
+    marginTop: 6,
+  },
+
+  premiumButtonMargin: {
+    marginTop: 6,
+  },
+
+  expenseIconMargin: {
+    marginRight: 6,
   },
 
   headerContent: {
@@ -2181,6 +2190,27 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     marginRight: 6,
+  },
+
+  // Message and inline style replacements
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  messageIcon: {
+    marginLeft: 6,
+  },
+  messageText: {
+    marginTop: 6,
+  },
+  messagesList: {
+    marginTop: 6,
+  },
+  messageItemIcon: {
+    marginRight: 6,
+  },
+  boldText: {
+    fontWeight: 'bold',
   },
 });
 

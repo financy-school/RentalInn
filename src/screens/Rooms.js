@@ -18,8 +18,10 @@ import { Button, Chip, FAB, TextInput as PaperInput } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
+import PropertySelector from '../components/PropertySelector/PropertySelector';
 import Share from 'react-native-share';
 import {
   getDocument,
@@ -32,6 +34,7 @@ import StandardText from '../components/StandardText/StandardText';
 const Rooms = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials, isAuthenticated } = useContext(CredentialsContext);
+  const { selectedProperty, isAllPropertiesSelected } = useProperty();
   console.log('Rooms credentials:', credentials);
 
   useEffect(() => {
@@ -65,7 +68,6 @@ const Rooms = ({ navigation }) => {
   ]);
 
   const accessToken = credentials.accessToken;
-  const propertyId = credentials.property_id;
 
   // 🔹 Fetch rooms
   const fetchRooms = useCallback(async () => {
@@ -76,7 +78,14 @@ const Rooms = ({ navigation }) => {
       setLoading(false);
       return;
     }
-    if (!accessToken || !propertyId) {
+
+    // Use selectedProperty from PropertyContext if specific property is selected,
+    // otherwise don't fetch rooms when "All" is selected (rooms are property-specific)
+    const currentPropertyId = !isAllPropertiesSelected
+      ? selectedProperty?.id
+      : null;
+
+    if (!accessToken || !currentPropertyId) {
       setError('Missing access token or property ID');
       setLoading(false);
       return;
@@ -84,7 +93,7 @@ const Rooms = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const response = await propertyRooms(accessToken, propertyId);
+      const response = await propertyRooms(accessToken, currentPropertyId);
       const roomData = response.data.items || [];
 
       const roomsWithImages = await Promise.all(
@@ -93,7 +102,11 @@ const Rooms = ({ navigation }) => {
           if (r.image_document_id_list?.length > 0) {
             try {
               const docId = r.image_document_id_list[0];
-              const res = await getDocument(accessToken, propertyId, docId);
+              const res = await getDocument(
+                accessToken,
+                currentPropertyId,
+                docId,
+              );
               imageUrl = res?.data?.download_url || null;
             } catch (err) {}
           }
@@ -132,7 +145,12 @@ const Rooms = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, credentials?.accessToken, propertyId]);
+  }, [
+    accessToken,
+    credentials?.accessToken,
+    selectedProperty,
+    isAllPropertiesSelected,
+  ]);
 
   useEffect(() => {
     fetchRooms();
@@ -185,6 +203,9 @@ const Rooms = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Property Selector */}
+      <PropertySelector navigation={navigation} />
+
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Search */}
         <PaperInput
@@ -457,8 +478,17 @@ const Rooms = ({ navigation }) => {
               style={styles.menuItem}
               onPress={async () => {
                 setMenuVisible(false);
-                await deleteRoom(accessToken, propertyId, selectedRoom.id);
-                fetchRooms();
+                const currentPropertyId = !isAllPropertiesSelected
+                  ? selectedProperty?.id
+                  : null;
+                if (currentPropertyId) {
+                  await deleteRoom(
+                    accessToken,
+                    currentPropertyId,
+                    selectedRoom.id,
+                  );
+                  fetchRooms();
+                }
               }}
             >
               <MaterialCommunityIcons

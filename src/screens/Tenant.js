@@ -20,12 +20,14 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
+import PropertySelector from '../components/PropertySelector/PropertySelector';
 import {
   fetchTenants,
   putTenantOnNotice,
   deleteTenant,
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
 import colors from '../theme/color';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -33,6 +35,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const Tenants = ({ navigation }) => {
   const { credentials } = useContext(CredentialsContext);
   const { theme: mode } = useContext(ThemeContext);
+  const { selectedProperty, isAllPropertiesSelected } = useProperty();
 
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -55,9 +58,21 @@ const Tenants = ({ navigation }) => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // Use selectedProperty from PropertyContext if specific property is selected,
+      // otherwise don't fetch tenants when "All" is selected (tenants are property-specific)
+      const currentPropertyId = !isAllPropertiesSelected
+        ? selectedProperty?.id
+        : null;
+
+      if (!currentPropertyId) {
+        setTenants([]);
+        setLoading(false);
+        return;
+      }
+
       const res = await fetchTenants(
         credentials.accessToken,
-        credentials.property_id,
+        currentPropertyId,
       );
       const tenantsList = res.data.items || [];
       setTenants(tenantsList);
@@ -78,7 +93,7 @@ const Tenants = ({ navigation }) => {
       setTenants([]);
     }
     setLoading(false);
-  }, [credentials]);
+  }, [credentials, selectedProperty, isAllPropertiesSelected]);
 
   // Filter tenants based on selectedFilter and search
   const filteredTenants = tenants.filter(tenant => {
@@ -164,6 +179,9 @@ const Tenants = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Property Selector */}
+      <PropertySelector navigation={navigation} />
+
       {/* Main content */}
       <ScrollView
         contentContainerStyle={{ padding: 16 }}

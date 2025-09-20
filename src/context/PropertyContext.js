@@ -1,0 +1,281 @@
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useMemo,
+} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CredentialsContext } from './CredentialsContext';
+
+// Property context
+export const PropertyContext = createContext();
+
+// Storage key for properties
+const PROPERTIES_STORAGE_KEY = '@RentalInn:properties';
+const SELECTED_PROPERTY_STORAGE_KEY = '@RentalInn:selectedProperty';
+
+// Default properties (can be removed once user adds their own)
+const DEFAULT_PROPERTIES = [
+  {
+    id: 'all',
+    name: 'All Properties',
+    type: 'aggregate',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    totalRooms: 0,
+    description: 'View analytics for all properties combined',
+    isDefault: true,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+export const PropertyProvider = ({ children }) => {
+  const { credentials } = useContext(CredentialsContext);
+  const [properties, setProperties] = useState(DEFAULT_PROPERTIES);
+  const [selectedProperty, setSelectedProperty] = useState(
+    DEFAULT_PROPERTIES[0],
+  );
+  const [loading, setLoading] = useState(true);
+
+  // Load properties from storage on app start
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        setLoading(true);
+
+        // Load properties
+        const storedProperties = await AsyncStorage.getItem(
+          PROPERTIES_STORAGE_KEY,
+        );
+        const parsedProperties = storedProperties
+          ? JSON.parse(storedProperties)
+          : [];
+
+        // Always include the "All Properties" option
+        const allProperties = [DEFAULT_PROPERTIES[0], ...parsedProperties];
+        setProperties(allProperties);
+
+        // Load selected property
+        const storedSelectedProperty = await AsyncStorage.getItem(
+          SELECTED_PROPERTY_STORAGE_KEY,
+        );
+        if (storedSelectedProperty) {
+          const parsedSelected = JSON.parse(storedSelectedProperty);
+          const foundProperty = allProperties.find(
+            p => p.id === parsedSelected.id,
+          );
+          setSelectedProperty(foundProperty || DEFAULT_PROPERTIES[0]);
+        } else {
+          setSelectedProperty(DEFAULT_PROPERTIES[0]);
+        }
+      } catch (error) {
+        console.error('Error loading properties:', error);
+        setProperties(DEFAULT_PROPERTIES);
+        setSelectedProperty(DEFAULT_PROPERTIES[0]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProperties();
+  }, []);
+
+  // Save properties to storage whenever properties change
+  const saveProperties = useCallback(async newProperties => {
+    try {
+      // Filter out the default "All Properties" entry for storage
+      const propertiesToStore = newProperties.filter(p => p.id !== 'all');
+      await AsyncStorage.setItem(
+        PROPERTIES_STORAGE_KEY,
+        JSON.stringify(propertiesToStore),
+      );
+    } catch (error) {
+      console.error('Error saving properties:', error);
+    }
+  }, []);
+
+  // Save selected property to storage
+  const saveSelectedProperty = useCallback(async property => {
+    try {
+      await AsyncStorage.setItem(
+        SELECTED_PROPERTY_STORAGE_KEY,
+        JSON.stringify(property),
+      );
+    } catch (error) {
+      console.error('Error saving selected property:', error);
+    }
+  }, []);
+
+  // Add new property
+  const addProperty = useCallback(
+    async propertyData => {
+      try {
+        const newProperty = {
+          id: `property_${Date.now()}`,
+          ...propertyData,
+          totalRooms: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const updatedProperties = [...properties, newProperty];
+        setProperties(updatedProperties);
+        await saveProperties(updatedProperties);
+
+        return newProperty;
+      } catch (error) {
+        console.error('Error adding property:', error);
+        throw error;
+      }
+    },
+    [properties, saveProperties],
+  );
+
+  // Update property
+  const updateProperty = useCallback(
+    async (propertyId, updates) => {
+      try {
+        const updatedProperties = properties.map(property =>
+          property.id === propertyId
+            ? { ...property, ...updates, updatedAt: new Date().toISOString() }
+            : property,
+        );
+
+        setProperties(updatedProperties);
+        await saveProperties(updatedProperties);
+
+        // Update selected property if it was the one being updated
+        if (selectedProperty.id === propertyId) {
+          const updatedSelectedProperty = updatedProperties.find(
+            p => p.id === propertyId,
+          );
+          setSelectedProperty(updatedSelectedProperty);
+          await saveSelectedProperty(updatedSelectedProperty);
+        }
+
+        return updatedProperties.find(p => p.id === propertyId);
+      } catch (error) {
+        console.error('Error updating property:', error);
+        throw error;
+      }
+    },
+    [properties, selectedProperty, saveProperties, saveSelectedProperty],
+  );
+
+  // Delete property
+  const deleteProperty = useCallback(
+    async propertyId => {
+      try {
+        // Cannot delete the "All Properties" default entry
+        if (propertyId === 'all') {
+          throw new Error('Cannot delete the "All Properties" entry');
+        }
+
+        const updatedProperties = properties.filter(
+          property => property.id !== propertyId,
+        );
+        setProperties(updatedProperties);
+        await saveProperties(updatedProperties);
+
+        // If the deleted property was selected, switch to "All Properties"
+        if (selectedProperty.id === propertyId) {
+          setSelectedProperty(DEFAULT_PROPERTIES[0]);
+          await saveSelectedProperty(DEFAULT_PROPERTIES[0]);
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Error deleting property:', error);
+        throw error;
+      }
+    },
+    [properties, selectedProperty, saveProperties, saveSelectedProperty],
+  );
+
+  // Switch selected property
+  const switchProperty = useCallback(
+    async property => {
+      try {
+        setSelectedProperty(property);
+        await saveSelectedProperty(property);
+      } catch (error) {
+        console.error('Error switching property:', error);
+        throw error;
+      }
+    },
+    [saveSelectedProperty],
+  );
+
+  // Get properties excluding "All Properties" (for management operations)
+  const managedProperties = useMemo(() => {
+    return properties.filter(p => p.id !== 'all');
+  }, [properties]);
+
+  // Get property by ID
+  const getPropertyById = useCallback(
+    propertyId => {
+      return properties.find(property => property.id === propertyId);
+    },
+    [properties],
+  );
+
+  // Check if user has any properties (excluding "All Properties")
+  const hasProperties = useMemo(() => {
+    return managedProperties.length > 0;
+  }, [managedProperties]);
+
+  // Context value
+  const contextValue = useMemo(
+    () => ({
+      // State
+      properties,
+      managedProperties,
+      selectedProperty,
+      loading,
+      hasProperties,
+
+      // Actions
+      addProperty,
+      updateProperty,
+      deleteProperty,
+      switchProperty,
+      getPropertyById,
+
+      // Helper functions
+      isAllPropertiesSelected: selectedProperty?.id === 'all',
+    }),
+    [
+      properties,
+      managedProperties,
+      selectedProperty,
+      loading,
+      hasProperties,
+      addProperty,
+      updateProperty,
+      deleteProperty,
+      switchProperty,
+      getPropertyById,
+    ],
+  );
+
+  return (
+    <PropertyContext.Provider value={contextValue}>
+      {children}
+    </PropertyContext.Provider>
+  );
+};
+
+// Custom hook for using property context
+export const useProperty = () => {
+  const context = useContext(PropertyContext);
+  if (!context) {
+    throw new Error('useProperty must be used within a PropertyProvider');
+  }
+  return context;
+};
+
+export default PropertyContext;

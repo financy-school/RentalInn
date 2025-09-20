@@ -13,6 +13,7 @@ import RoomDetails from '../screens/RoomDetails';
 import TenantDetails from '../screens/TenantDetails';
 import TenantKYC from '../screens/TenantKYC';
 import AddRoom from '../screens/AddRoom';
+import AddProperty from '../screens/AddProperty';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
 import RecordPayment from '../screens/RecordPayment';
@@ -415,6 +416,20 @@ const RootStack = () => {
           <Stack.Screen
             name={SCREEN_NAMES.ADD_ROOM}
             component={AddRoom}
+            options={{
+              headerLeft: () => null,
+              headerShown: false,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name={SCREEN_NAMES.ADD_PROPERTY}
+            component={AddProperty}
             options={{
               headerLeft: () => null,
               headerShown: false,

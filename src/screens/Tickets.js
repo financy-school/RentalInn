@@ -12,17 +12,20 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
+import PropertySelector from '../components/PropertySelector/PropertySelector';
 import {
   fetchTickets,
   getDocument,
   updateTicket,
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
 import colors from '../theme/color';
 
 const Tickets = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
+  const { selectedProperty, isAllPropertiesSelected } = useProperty();
 
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('ALL');
@@ -44,9 +47,22 @@ const Tickets = ({ navigation }) => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // Use selectedProperty from PropertyContext if specific property is selected,
+      // otherwise don't fetch tickets when "All" is selected (tickets are property-specific)
+      const currentPropertyId = !isAllPropertiesSelected
+        ? selectedProperty?.id
+        : null;
+
+      if (!currentPropertyId) {
+        setAllTickets([]);
+        setTickets([]);
+        setLoading(false);
+        return;
+      }
+
       const response = await fetchTickets(
         credentials.accessToken,
-        credentials.property_id,
+        currentPropertyId,
       );
 
       const items = response?.data?.items || [];
@@ -75,7 +91,7 @@ const Tickets = ({ navigation }) => {
             try {
               const docRes = await getDocument(
                 credentials.accessToken,
-                credentials.property_id,
+                currentPropertyId,
                 docId,
               );
               if (docRes?.data?.download_url) {
@@ -99,7 +115,13 @@ const Tickets = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [credentials, selectedFilter, applyFilter]);
+  }, [
+    credentials,
+    selectedFilter,
+    applyFilter,
+    selectedProperty,
+    isAllPropertiesSelected,
+  ]);
 
   /** --- Apply Filters --- */
   const applyFilter = useCallback(
@@ -159,6 +181,9 @@ const Tickets = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Property Selector */}
+      <PropertySelector navigation={navigation} />
+
       {/* Image Modal */}
       {modalVisible && (
         <View style={styles.modalOverlay}>

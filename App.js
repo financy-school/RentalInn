@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // Context Providers
 import { ThemeProvider } from './src/context/ThemeContext';
 import { CredentialsProvider } from './src/context/CredentialsContext';
+import { PropertyProvider } from './src/context/PropertyContext';
 
 // Navigation
 import RootStack from './src/navigation/RootStack';
@@ -68,14 +69,16 @@ const App = () => {
           <SafeAreaView style={styles.safeArea}>
             <ThemeProvider>
               <CredentialsProvider>
-                <AppThemeWrapper>
-                  <StatusBar
-                    barStyle="dark-content"
-                    backgroundColor="transparent"
-                    translucent
-                  />
-                  <RootStack />
-                </AppThemeWrapper>
+                <PropertyProvider>
+                  <AppThemeWrapper>
+                    <StatusBar
+                      barStyle="dark-content"
+                      backgroundColor="transparent"
+                      translucent
+                    />
+                    <RootStack />
+                  </AppThemeWrapper>
+                </PropertyProvider>
               </CredentialsProvider>
             </ThemeProvider>
           </SafeAreaView>

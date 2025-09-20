@@ -30,6 +30,7 @@ export const SCREEN_NAMES = {
   // Modal screens
   ADD_ROOM: 'AddRoom',
   EDIT_ROOM: 'EditRoom',
+  ADD_PROPERTY: 'AddProperty',
   ADD_TENANT: 'AddTenant',
   EDIT_TENANT: 'EditTenant',
   ADD_TICKET: 'AddTicket',
