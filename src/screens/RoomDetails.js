@@ -19,6 +19,7 @@ import colors from '../theme/color';
 import {
   deleteTenant,
   getDocument,
+  getRoom,
   getTenants,
   putTenantOnNotice,
 } from '../services/NetworkUtils';
@@ -29,13 +30,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const RoomDetails = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
-  const { room } = route.params;
+  const { room: routeRoom, roomId } = route.params;
+
+  const [room, setRoom] = useState(routeRoom || null);
+  const [loading, setLoading] = useState(!routeRoom && !!roomId);
+  const [error, setError] = useState(null);
 
   // Theme variables
   const isDark = mode === 'dark';
-  const backgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
+
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
@@ -46,7 +49,45 @@ const RoomDetails = ({ navigation, route }) => {
   const [imageUrls, setImageUrls] = useState([]);
   const [tenants, setTenants] = useState([]);
 
+  // Fetch room details if roomId is provided but no room data
   useEffect(() => {
+    if (
+      !room &&
+      roomId &&
+      credentials?.accessToken &&
+      credentials?.property_id
+    ) {
+      const fetchRoomDetails = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const response = await getRoom(
+            credentials.accessToken,
+            credentials.property_id,
+            roomId,
+          );
+
+          if (response.success) {
+            setRoom(response.data);
+          } else {
+            setError(response.error || 'Failed to fetch room details');
+            console.error('Failed to fetch room details:', response.error);
+          }
+        } catch (err) {
+          setError('Unable to fetch room details. Please try again.');
+          console.error('Error fetching room details:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchRoomDetails();
+    }
+  }, [roomId, credentials, room]);
+
+  useEffect(() => {
+    if (!room) return;
+
     const fetchImageUrls = async () => {
       if (
         room.image_document_id_list &&
@@ -72,12 +113,22 @@ const RoomDetails = ({ navigation, route }) => {
     };
 
     const fetchTenants = async () => {
-      const res = await getTenants(
-        credentials.accessToken,
-        credentials.property_id,
-        room.id,
-      );
-      setTenants(res.data);
+      try {
+        const res = await getTenants(
+          credentials.accessToken,
+          credentials.property_id,
+          room.id,
+        );
+        if (res.success) {
+          setTenants(res.data);
+        } else {
+          console.error('Failed to fetch tenants:', res.error);
+          setTenants([]);
+        }
+      } catch (err) {
+        console.error('Error fetching tenants:', err);
+        setTenants([]);
+      }
     };
 
     fetchImageUrls();
@@ -127,6 +178,65 @@ const RoomDetails = ({ navigation, route }) => {
     setActiveMenuTenantId(null);
     setMenuPosition(null);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <StandardHeader navigation={navigation} title="Room Details" />
+        <View style={styles.loadingContainer}>
+          <MaterialCommunityIcons
+            name="home-search"
+            size={64}
+            color={isDark ? colors.light_gray : colors.primary}
+          />
+          <StandardText
+            style={[styles.loadingText, { color: textPrimary }]}
+            fontWeight="medium"
+          >
+            Loading room details...
+          </StandardText>
+        </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error || !room) {
+    return (
+      <View style={styles.container}>
+        <StandardHeader navigation={navigation} title="Room Details" />
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons
+            name="home-alert"
+            size={64}
+            color={isDark ? colors.light_gray : colors.error}
+          />
+          <StandardText
+            style={[styles.errorTitle, { color: textPrimary }]}
+            fontWeight="bold"
+          >
+            Unable to Load Room
+          </StandardText>
+          <StandardText style={[styles.errorMessage, { color: textSecondary }]}>
+            {error ||
+              'Room details could not be found. Please check if the room exists and try again.'}
+          </StandardText>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.goBack()}
+          >
+            <StandardText
+              style={[styles.buttonLabel, { color: colors.white }]}
+              fontWeight="bold"
+            >
+              Go Back
+            </StandardText>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -1017,6 +1127,42 @@ const styles = StyleSheet.create({
   },
   menuText: {
     fontSize: 14,
+  },
+  // Loading and Error Styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  loadingText: {
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorTitle: {
+    fontSize: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  retryButton: {
+    borderRadius: 12,
+    paddingVertical: 4,
+  },
+  buttonLabel: {
+    fontFamily: 'Metropolis-Bold',
+    fontSize: 16,
   },
 });
 

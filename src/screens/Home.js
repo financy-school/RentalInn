@@ -182,18 +182,18 @@ const Home = ({ navigation }) => {
   ];
 
   const occupancyGrid = [
-    { room: '101', status: 'occupied' },
-    { room: '102', status: 'vacant' },
-    { room: '103', status: 'overdue' },
-    { room: '201', status: 'occupied' },
-    { room: '202', status: 'occupied' },
-    { room: '203', status: 'vacant' },
-    { room: '301', status: 'overdue' },
-    { room: '302', status: 'occupied' },
-    { room: '303', status: 'vacant' },
-    { room: '401', status: 'occupied' },
-    { room: '402', status: 'occupied' },
-    { room: '403', status: 'vacant' },
+    { id: '5031', room: '101', status: 'occupied' },
+    { id: '4342', room: '102', status: 'vacant' },
+    { id: '3433', room: '103', status: 'overdue' },
+    { id: '2344', room: '201', status: 'occupied' },
+    { id: '3425', room: '202', status: 'occupied' },
+    { id: '23426', room: '203', status: 'vacant' },
+    { id: '3247', room: '301', status: 'overdue' },
+    { id: '2348', room: '302', status: 'occupied' },
+    { id: '2349', room: '303', status: 'vacant' },
+    { id: '23410', room: '401', status: 'occupied' },
+    { id: '23411', room: '402', status: 'occupied' },
+    { id: '232312', room: '403', status: 'vacant' },
   ];
 
   // ---------- Derived ----------
@@ -1470,7 +1470,9 @@ const Home = ({ navigation }) => {
                   styles.roomCard,
                   { backgroundColor: getRoomColor(room.status) },
                 ]}
-                onPress={() => navigation.navigate('RoomDetails', { room })}
+                onPress={() => {
+                  navigation.navigate('RoomDetails', { roomId: room.id });
+                }}
                 activeOpacity={0.8}
               >
                 <StandardText fontWeight="bold" style={styles.roomNumber}>

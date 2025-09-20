@@ -233,6 +233,16 @@ export const propertyRooms = async (accessToken, propertyId) => {
   );
 };
 
+export const getRoom = async (accessToken, propertyId, roomId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/properties/${propertyId}/rooms/${roomId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_ROOM',
+  );
+};
+
 export const createRoom = async (accessToken, propertyId, roomData) => {
   return handleApiResponse(
     () =>
