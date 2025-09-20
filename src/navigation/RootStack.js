@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
+import NavigationService from './NavigationService';
 
 // Screens
 import Login from '../screens/Login';
@@ -11,14 +11,21 @@ import SplashScreen from '../components/SplashScreen';
 import DrawerStack from './DrawerNavigation';
 import RoomDetails from '../screens/RoomDetails';
 import TenantDetails from '../screens/TenantDetails';
+import TenantKYC from '../screens/TenantKYC';
 import AddRoom from '../screens/AddRoom';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
 import RecordPayment from '../screens/RecordPayment';
+import AddInvoice from '../screens/AddInvoice';
+import OnboardingScreen, {
+  ONBOARDING_STORAGE_KEY,
+} from '../screens/OnboardingScreen';
 import Notices from '../screens/Notices';
 import FAQ from '../screens/FAQ';
 import ContactSupport from '../screens/ContactSupport';
 import AppTutorial from '../screens/AppTutorial';
+import Settings from '../screens/Settings';
+import EditProfile from '../screens/EditProfile';
 
 // Context
 import { CredentialsContext } from '../context/CredentialsContext';
@@ -31,14 +38,14 @@ import { SCREEN_NAMES } from './constants';
 
 // Constants
 const SPLASH_SCREEN_DURATION = 2000;
-const TOKEN_STORAGE_KEY = 'pgOwnerCredentials';
 
 const Stack = createNativeStackNavigator();
 
 const RootStack = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const { credentials, setCredentials, isAuthenticated } =
-    useContext(CredentialsContext);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const { isAuthenticated } = useContext(CredentialsContext);
+  const navigationRef = React.useRef(null);
 
   // Default screen options for better consistency
   const defaultScreenOptions = {
@@ -80,45 +87,20 @@ const RootStack = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+        // Check if user has seen onboarding
+        const hasSeenOnboarding = await AsyncStorage.getItem(
+          ONBOARDING_STORAGE_KEY,
+        );
 
-        if (storedToken) {
-          // Parse and set the stored credentials
-          const storedCredentials = JSON.parse(storedToken);
-          // Validate the stored credentials before setting
-          if (
-            storedCredentials &&
-            typeof storedCredentials === 'object' &&
-            storedCredentials.email
-          ) {
-            setCredentials(storedCredentials);
-          } else {
-            console.warn('Invalid stored credentials format, clearing...');
-            await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
-          }
-        }
+        // Set onboarding status first
+        setShowOnboarding(!hasSeenOnboarding);
       } catch (error) {
         console.error('App initialization error:', error);
-        // Clear potentially corrupted storage
-        try {
-          await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
-        } catch (clearError) {
-          console.error('Failed to clear corrupted storage:', clearError);
-        }
-
-        // Optional: Show error alert in development
-        if (__DEV__) {
-          Alert.alert(
-            'Initialization Error',
-            'Failed to initialize app. Please restart.',
-          );
-        }
       }
     };
 
     const initApp = async () => {
       await initializeApp();
-
       // Ensure minimum splash screen duration for better UX
       const timer = setTimeout(() => {
         setIsLoading(false);
@@ -128,28 +110,59 @@ const RootStack = () => {
     };
 
     initApp();
-  }, [setCredentials]);
+  }, []);
+
+  useEffect(() => {
+    const handleNavigation = async () => {
+      if (isLoading) {
+        return;
+      }
+
+      try {
+        if (showOnboarding) {
+          NavigationService.resetRoot(SCREEN_NAMES.ONBOARDING);
+          return;
+        }
+
+        if (isAuthenticated) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+          NavigationService.resetRoot(SCREEN_NAMES.DRAWER_STACK);
+        } else {
+          NavigationService.resetRoot(SCREEN_NAMES.LOGIN);
+        }
+      } catch (error) {
+        NavigationService.resetRoot(SCREEN_NAMES.LOGIN);
+      }
+    };
+
+    handleNavigation();
+  }, [isAuthenticated, isLoading, showOnboarding]);
 
   // Show splash screen while loading
   if (isLoading) {
     return <SplashScreen />;
   }
 
-  // Determine initial route based on authentication status from CredentialsContext
-  const initialRouteName = isAuthenticated
-    ? SCREEN_NAMES.DRAWER_STACK
-    : SCREEN_NAMES.LOGIN;
-
+  // Return the navigation structure
   return (
     <NavigationContainer
+      ref={navigatorRef => {
+        navigationRef.current = navigatorRef;
+        NavigationService.setNavigator(navigatorRef);
+      }}
       onStateChange={state => {
-        // Optional: Log navigation state changes in development
         if (__DEV__) {
           console.log('Navigation state changed:', state);
         }
+
+        if (
+          showOnboarding &&
+          state?.routes?.[state.index]?.name !== SCREEN_NAMES.ONBOARDING
+        ) {
+          setShowOnboarding(false);
+        }
       }}
       onReady={() => {
-        // Optional: Analytics or crash reporting initialization
         if (__DEV__) {
           console.log('Navigation container ready');
         }
@@ -157,152 +170,291 @@ const RootStack = () => {
     >
       <Stack.Navigator
         screenOptions={defaultScreenOptions}
-        initialRouteName={initialRouteName}
+        initialRouteName={
+          showOnboarding
+            ? SCREEN_NAMES.ONBOARDING
+            : isAuthenticated
+            ? SCREEN_NAMES.DRAWER_STACK
+            : SCREEN_NAMES.LOGIN
+        }
       >
-        {isAuthenticated ? (
-          // Authenticated user screens
-          <>
-            <Stack.Screen
-              name={SCREEN_NAMES.DRAWER_STACK}
-              component={DrawerStack}
-              options={{
-                ...defaultScreenOptions,
-                gestureEnabled: false, // Prevent swipe back on main screen
-              }}
-            />
+        {/* Onboarding Screen */}
+        <Stack.Screen
+          name={SCREEN_NAMES.ONBOARDING}
+          component={OnboardingScreen}
+          options={{
+            ...defaultScreenOptions,
+            gestureEnabled: false,
+          }}
+        />
 
-            <Stack.Screen
-              name={SCREEN_NAMES.ROOM_DETAILS}
-              component={RoomDetails}
-              options={{
-                ...authenticatedScreenOptions,
-                headerTitle: 'Room Details',
-                headerTintColor: colors.black,
-              }}
-            />
+        {/* Auth screens */}
+        <Stack.Screen
+          name={SCREEN_NAMES.LOGIN}
+          component={Login}
+          options={{
+            ...defaultScreenOptions,
+            gestureEnabled: false,
+            animation: 'fade',
+            animationTypeForReplace: isAuthenticated ? 'pop' : 'push',
+          }}
+        />
+        <Stack.Screen
+          name={SCREEN_NAMES.SIGNUP}
+          component={SignUp}
+          options={{
+            ...defaultScreenOptions,
+            gestureEnabled: false,
+            animation: 'slide_from_right',
+          }}
+        />
 
-            <Stack.Screen
-              name={SCREEN_NAMES.TENANT_DETAILS}
-              component={TenantDetails}
-              options={{
-                ...authenticatedScreenOptions,
-                headerTitle: 'Tenant Details',
-                headerTintColor: colors.black,
-              }}
-            />
+        {/* Protected screens */}
+        <Stack.Screen
+          name={SCREEN_NAMES.DRAWER_STACK}
+          component={DrawerStack}
+          options={{
+            ...defaultScreenOptions,
+            gestureEnabled: false,
+          }}
+          listeners={{
+            beforeRemove: e => {
+              if (isAuthenticated) {
+                e.preventDefault();
+              }
+            },
+          }}
+        />
 
-            <Stack.Screen
-              name={SCREEN_NAMES.NOTICES}
-              component={Notices}
-              options={{
-                ...authenticatedScreenOptions,
-                headerTitle: 'Notices',
-                headerTintColor: colors.black,
-              }}
-            />
+        {/* Details Screens */}
+        <Stack.Screen
+          name={SCREEN_NAMES.ROOM_DETAILS}
+          component={RoomDetails}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Room Details',
+            headerTintColor: colors.black,
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
 
-            <Stack.Screen
-              name={SCREEN_NAMES.FAQ}
-              component={FAQ}
-              options={{
-                ...authenticatedScreenOptions,
-                headerTitle: 'FAQ',
-                headerTintColor: colors.black,
-              }}
-            />
+        <Stack.Screen
+          name={SCREEN_NAMES.TENANT_DETAILS}
+          component={TenantDetails}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Tenant Details',
+            headerTintColor: colors.black,
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
 
-            <Stack.Screen
-              name={SCREEN_NAMES.CONTACT_SUPPORT}
-              component={ContactSupport}
-              options={{
-                ...authenticatedScreenOptions,
-                headerTitle: 'Contact Support',
-                headerTintColor: colors.black,
-              }}
-            />
+        <Stack.Screen
+          name="TenantKYC"
+          component={TenantKYC}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Tenant KYC',
+            headerTintColor: colors.black,
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
 
-            <Stack.Screen
-              name={SCREEN_NAMES.APP_TUTORIAL}
-              component={AppTutorial}
-              options={{
-                ...authenticatedScreenOptions,
-                headerTitle: 'App Tutorial',
-                headerTintColor: colors.black,
-              }}
-            />
+        <Stack.Screen
+          name={SCREEN_NAMES.NOTICES}
+          component={Notices}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Notices',
+            headerShown: false,
+            headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
 
-            <Stack.Screen
-              name={SCREEN_NAMES.RECORD_PAYMENT}
-              component={RecordPayment}
-              options={{
-                ...authenticatedScreenOptions,
-                headerTitle: 'Record Payment',
-                headerTintColor: colors.black,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-              }}
-            />
+        <Stack.Screen
+          name={SCREEN_NAMES.FAQ}
+          component={FAQ}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'FAQ',
+            headerTintColor: colors.black,
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
 
-            <Stack.Group
-              screenOptions={{
-                ...authenticatedScreenOptions,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-              }}
-            >
-              <Stack.Screen
-                name={SCREEN_NAMES.ADD_ROOM}
-                component={AddRoom}
-                options={{
-                  headerTitle: 'Add Room',
-                  headerLeft: () => null, // Remove back button for modal
-                }}
-              />
+        <Stack.Screen
+          name={SCREEN_NAMES.CONTACT_SUPPORT}
+          component={ContactSupport}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Contact Support',
+            headerShown: false,
+            headerTintColor: colors.black,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
 
-              <Stack.Screen
-                name={SCREEN_NAMES.ADD_TENANT}
-                component={AddTenant}
-                options={{
-                  headerTitle: 'Add Tenant',
-                  headerLeft: () => null,
-                }}
-              />
+        <Stack.Screen
+          name={SCREEN_NAMES.APP_TUTORIAL}
+          component={AppTutorial}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'App Tutorial',
+            headerTintColor: colors.black,
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
 
-              <Stack.Screen
-                name={SCREEN_NAMES.ADD_TICKET}
-                component={AddTicket}
-                options={{
-                  headerTitle: 'Add Ticket',
-                  headerLeft: () => null,
-                }}
-              />
-            </Stack.Group>
-          </>
-        ) : (
-          // Unauthenticated user screens
-          <Stack.Group
-            screenOptions={{
-              ...defaultScreenOptions,
-              gestureEnabled: false, // Prevent swipe back on auth screens
-              animation: 'fade',
+        <Stack.Screen
+          name={SCREEN_NAMES.RECORD_PAYMENT}
+          component={RecordPayment}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Record Payment',
+            headerTintColor: colors.black,
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="AddInvoice"
+          component={AddInvoice}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Add Invoice',
+            headerTintColor: colors.black,
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name={SCREEN_NAMES.SETTINGS}
+          component={Settings}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Settings',
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfile}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Edit Profile',
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Group
+          screenOptions={{
+            ...authenticatedScreenOptions,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        >
+          <Stack.Screen
+            name={SCREEN_NAMES.ADD_ROOM}
+            component={AddRoom}
+            options={{
+              headerLeft: () => null,
+              headerShown: false,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
             }}
-          >
-            <Stack.Screen
-              name={SCREEN_NAMES.LOGIN}
-              component={Login}
-              options={{
-                animationTypeForReplace: credentials ? 'pop' : 'push',
-              }}
-            />
-            <Stack.Screen
-              name={SCREEN_NAMES.SIGNUP}
-              component={SignUp}
-              options={{
-                animation: 'slide_from_right',
-              }}
-            />
-          </Stack.Group>
-        )}
+          />
+
+          <Stack.Screen
+            name={SCREEN_NAMES.ADD_TENANT}
+            component={AddTenant}
+            options={{
+              headerLeft: () => null,
+              headerShown: false,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name={SCREEN_NAMES.ADD_TICKET}
+            component={AddTicket}
+            options={{
+              headerTitle: 'Add Ticket',
+              headerLeft: () => null,
+              headerShown: false,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
+            }}
+          />
+        </Stack.Group>
       </Stack.Navigator>
     </NavigationContainer>
   );

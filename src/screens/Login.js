@@ -22,13 +22,14 @@ import StandardText from '../components/StandardText/StandardText';
 // Services and utilities
 import { handleUserLogin } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
+import AuthHelpers from '../services/AuthHelper';
 
-const { StorageHelper, PerformanceHelper } = helpers;
+const { PerformanceHelper } = helpers;
 
 import {
   STORAGE_KEYS,
-  SUCCESS_MESSAGES,
   ERROR_MESSAGES,
+  SCREEN_NAMES,
 } from '../navigation/constants';
 
 // Theme
@@ -58,7 +59,6 @@ const Login = ({ navigation }) => {
   const onPrimary = colors.white;
   const primary = colors.primary;
 
-  // Load saved credentials on component mount
   useEffect(() => {
     const loadSavedCredentials = async () => {
       try {
@@ -78,9 +78,9 @@ const Login = ({ navigation }) => {
   }, []);
 
   // Validate email format
-  const validateEmail = useCallback(email => {
+  const validateEmail = useCallback(emailToValidate => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(emailToValidate);
   }, []);
 
   // Debounced error clearing
@@ -117,98 +117,54 @@ const Login = ({ navigation }) => {
 
   // Handle login process
   const handleLogin = useCallback(async () => {
-    if (!validateForm()) return;
-
-    setLoading(true);
-    setErrorMessage('');
-
     try {
-      // Track login attempt
+      // Validate form first
+      const isValid = validateForm();
+      if (!isValid) return;
 
-      // Call login API
-      const response = await handleUserLogin({ email, password });
-
-      // Check if login was successful
-      if (!response.success) {
-        throw new Error(response.error || 'Login failed');
-      }
-
-      // Extract data from API response
-      const { user, accessToken, refreshToken } = response.data || {};
-
-      // Validate required fields
-      if (!user || !accessToken) {
-        throw new Error('Invalid login response: missing user data or token');
-      }
-
-      // Store user data securely
-      const storageResult = await StorageHelper.storeUserData(
-        user,
-        accessToken,
-        refreshToken,
-      );
-
-      if (!storageResult.success) {
-        throw new Error(storageResult.error || 'Failed to store user data');
-      }
-
-      // Store refresh token if available (Note: already handled in storeUserData, but keeping for extra security)
-      if (refreshToken) {
-        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-      }
-
-      // Handle remember me functionality
-      if (rememberMe) {
-        await AsyncStorage.multiSet([
-          ['savedEmail', email],
-          ['rememberMe', 'true'],
-        ]);
-      } else {
-        await AsyncStorage.multiRemove(['savedEmail', 'rememberMe']);
-      }
-
-      // Update credentials context with required email field and both token formats for compatibility
-      const credentialsToSet = {
-        ...user,
-        email: user.email || email, // Ensure email is present for CredentialsContext
-        token: accessToken, // For internal storage/helpers
-        accessToken: accessToken, // For API calls that expect accessToken
-      };
-
-      await setCredentials(credentialsToSet);
-
-      // Optional: Show success message briefly
+      setLoading(true);
       setErrorMessage('');
 
-      // Navigation will be handled automatically by RootStack
+      // Call authentication API
+      const response = await AuthHelpers.login(email, password);
+      console.log('Login response:', response);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Login failed');
+      }
+
+      // Store remember me preference
+      if (rememberMe) {
+        await AsyncStorage.setItem('savedEmail', email);
+        await AsyncStorage.setItem('rememberMe', 'true');
+      } else {
+        await AsyncStorage.removeItem('savedEmail');
+        await AsyncStorage.removeItem('rememberMe');
+      }
+
+      // Store credentials
+      const credentials = {
+        ...response.data.data.user,
+        token: response.data.data.accessToken, // Make sure token is included
+        accessToken: response.data.data.accessToken, // Include both token formats
+        rememberMe,
+      };
+
+      console.log('Storing credentials:', credentials);
+
+      // Set credentials and wait for it to complete
+      const credentialResult = await setCredentials(credentials);
+
+      if (!credentialResult || !credentialResult.success) {
+        throw new Error('Failed to store credentials');
+      }
+
+      // Clear loading state immediately after successful credential storage
+      setLoading(false);
     } catch (error) {
-      console.error('Login Error:', error);
-
-      // Handle different error types
-      let errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
-
-      if (
-        error.message?.includes('network') ||
-        error.message?.includes('Network')
-      ) {
-        errorMsg = ERROR_MESSAGES.NETWORK_ERROR;
-      } else if (error.message?.includes('server') || error.status >= 500) {
-        errorMsg = ERROR_MESSAGES.SERVER_ERROR;
-      } else if (error.status === 401) {
-        errorMsg = ERROR_MESSAGES.INVALID_CREDENTIALS;
-      }
-
-      setErrorMessage(errorMsg);
+      console.error('Login error:', error);
+      setErrorMessage(error.message || 'An error occurred during login');
       clearErrorMessage();
-
-      // Optional: Show alert for critical errors
-      if (error.message?.includes('server')) {
-        Alert.alert(
-          'Login Failed',
-          'Server error occurred. Please try again later.',
-          [{ text: 'OK' }],
-        );
-      }
     } finally {
       setLoading(false);
     }
@@ -219,9 +175,7 @@ const Login = ({ navigation }) => {
     validateForm,
     setCredentials,
     clearErrorMessage,
-  ]);
-
-  // Handle navigation to SignUp
+  ]); // Handle navigation to SignUp
   const handleSignUpNavigation = useCallback(() => {
     navigation.navigate('SignUp');
   }, [navigation]);
@@ -261,7 +215,7 @@ const Login = ({ navigation }) => {
           style={[
             styles.headerSection,
             {
-              backgroundColor: primary,
+              backgroundColor: backgroundColor,
               height: Dimensions.get('window').height * 0.4,
             },
           ]}
@@ -460,13 +414,13 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
   },
   logoImage: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     borderRadius: 60,
   },
   headerTitle: {
     fontSize: 28,
-    marginTop: 20,
+    // marginTop: 20,
   },
   headerSubtitle: {
     fontSize: 16,
@@ -476,7 +430,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     paddingHorizontal: 20,
-    marginTop: -60,
+    marginTop: 16,
     marginBottom: 20,
     flex: 1,
   },

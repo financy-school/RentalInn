@@ -11,12 +11,21 @@ import { useTheme } from 'react-native-paper';
 import { ThemeContext } from '../../context/ThemeContext';
 import StandardText from '../StandardText/StandardText';
 
-// Enable LayoutAnimation on Android
-if (
-  Platform.OS === 'android' &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
+// Enable LayoutAnimation on Android (only for legacy architecture)
+if (Platform.OS === 'android') {
+  try {
+    // Check if we're not using the new architecture (Fabric/Bridgeless)
+    const isFabric = global.RN$Bridgeless || global.__fbBatchedBridge == null;
+
+    if (!isFabric && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  } catch (error) {
+    // Silently ignore errors - likely means we're on new architecture
+    console.warn(
+      'LayoutAnimation setup skipped for new architecture compatibility',
+    );
+  }
 }
 
 const SimpleAccordion = ({

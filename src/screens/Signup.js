@@ -22,13 +22,19 @@ import StandardText from '../components/StandardText/StandardText';
 // Services and utilities
 import { handleUserSignup } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
+
 const { StorageHelper, PerformanceHelper } = helpers;
 
-import { ERROR_MESSAGES, STORAGE_KEYS } from '../navigation/constants';
+import {
+  ERROR_MESSAGES,
+  STORAGE_KEYS,
+  SCREEN_NAMES,
+} from '../navigation/constants';
 
 // Theme
 import colors from '../theme/color';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AuthHelpers from '../services/AuthHelper';
 
 const SignUp = ({ navigation }) => {
   // State management
@@ -56,12 +62,13 @@ const SignUp = ({ navigation }) => {
 
   // Theme variables
   const isDark = mode === 'dark';
+
   const backgroundColor = isDark
     ? colors.backgroundDark
     : colors.backgroundLight;
   const primary = colors.primary;
   const onPrimary = colors.onPrimary;
-  const cardBackground = isDark ? colors.backgroundDark : colors.white;
+  const cardBackground = isDark ? colors.light_black : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
 
@@ -127,16 +134,16 @@ const SignUp = ({ navigation }) => {
 
   // Handle signup process
   const handleSignup = useCallback(async () => {
-    if (!validateForm()) return;
-
-    setLoading(true);
-    setErrorMessage('');
-
     try {
-      // Track signup attempt
+      // Validate form first
+      const isValid = validateForm();
+      if (!isValid) return;
 
-      // Prepare signup data
-      const signupData = {
+      setLoading(true);
+      setErrorMessage('');
+
+      // Prepare user data
+      const userData = {
         firstName,
         lastName,
         email,
@@ -147,76 +154,28 @@ const SignUp = ({ navigation }) => {
         postalCode,
         country,
         password,
-        role: 'landlord',
       };
 
       // Call signup API
-      const response = await handleUserSignup(signupData);
+      const response = await AuthHelpers.signup(userData);
 
-      // Check if signup was successful
-      if (!response.success) {
-        throw new Error(response.error || 'Signup failed');
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Signup failed');
       }
 
-      // Extract data from API response
-      const { user, accessToken, refreshToken } = response.data || {};
-
-      // Validate required fields
-      if (!user || !accessToken) {
-        throw new Error('Invalid signup response: missing user data or token');
-      }
-
-      // Update credentials context with both token formats for compatibility
-      const credentialsToSet = {
-        ...user,
-        email: user.email || email, // Ensure email is present
-        token: accessToken, // For internal storage/helpers
-        accessToken: accessToken, // For API calls that expect accessToken
+      // Store credentials
+      const credentials = {
+        ...response.data,
+        ...userData,
+        password: undefined, // Don't store password
       };
 
-      const storageResult = await StorageHelper.storeUserData(
-        user,
-        accessToken,
-        refreshToken,
-      );
+      await setCredentials(credentials);
 
-      if (!storageResult.success) {
-        throw new Error(storageResult.error || 'Failed to store user data');
-      }
-
-      // Store refresh token if available (Note: already handled in storeUserData, but keeping for extra security)
-      if (refreshToken) {
-        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-      }
-      await setCredentials(credentialsToSet);
-
-      // Optional: Show success message briefly
-      setErrorMessage('');
-
-      // Navigation will be handled automatically by RootStack
+      // Navigation will be handled by RootStack based on auth state
     } catch (error) {
-      console.error('Signup Error:', error);
-
-      // Handle different error types
-      let errorMsg =
-        ERROR_MESSAGES.SIGNUP_FAILED || 'Signup failed. Please try again.';
-
-      if (
-        error.message?.includes('network') ||
-        error.message?.includes('Network')
-      ) {
-        errorMsg =
-          ERROR_MESSAGES.NETWORK_ERROR ||
-          'Network error. Please check your connection.';
-      } else if (error.message?.includes('server') || error.status >= 500) {
-        errorMsg =
-          ERROR_MESSAGES.SERVER_ERROR ||
-          'Server error. Please try again later.';
-      } else if (error.status === 409 || error.message?.includes('exists')) {
-        errorMsg = 'An account with this email already exists.';
-      }
-
-      setErrorMessage(errorMsg);
+      console.error('Signup error:', error);
+      setErrorMessage(error.message || 'An error occurred during signup');
       clearErrorMessage();
     } finally {
       setLoading(false);
@@ -251,7 +210,7 @@ const SignUp = ({ navigation }) => {
           style={[
             styles.headerSection,
             {
-              backgroundColor: primary,
+              backgroundColor: backgroundColor,
               height: Dimensions.get('window').height * 0.35,
             },
           ]}
@@ -666,11 +625,11 @@ const styles = StyleSheet.create({
   headerSection: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
+    // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
   },
   logoImage: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     borderRadius: 50,
   },
   headerTitle: {
@@ -685,7 +644,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     paddingHorizontal: 20,
-    marginTop: -50,
+    marginTop: 16,
     paddingBottom: 20,
     flex: 1,
   },

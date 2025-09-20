@@ -23,10 +23,11 @@ const SplashScreen = ({
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   const loadingOpacity = useRef(new Animated.Value(0)).current;
+  const dotBounce = useRef(new Animated.Value(0)).current;
 
   // Determine theme colors
   const backgroundColor =
@@ -72,19 +73,55 @@ const SplashScreen = ({
         }),
       ]),
 
-      // Subtle rotation animation
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
+      // Double pulsing animation - gradually increase then decrease (twice for effect)
+      Animated.sequence([
+        // First pulse
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        // Second pulse (slightly bigger)
+        Animated.timing(pulseAnim, {
+          toValue: 1.3,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
 
-      // Show loading text
-      Animated.timing(loadingOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
+      // Show loading text and start dot animation
+      Animated.parallel([
+        Animated.timing(loadingOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        // Continuous bouncing dots
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(dotBounce, {
+              toValue: 1,
+              duration: 600,
+              useNativeDriver: true,
+            }),
+            Animated.timing(dotBounce, {
+              toValue: 0,
+              duration: 600,
+              useNativeDriver: true,
+            }),
+          ]),
+        ),
+      ]),
     ]);
 
     animationSequence.start(() => {
@@ -104,18 +141,13 @@ const SplashScreen = ({
     fadeAnim,
     scaleAnim,
     slideAnim,
-    rotateAnim,
+    pulseAnim,
     loadingOpacity,
+    dotBounce,
     backgroundColor,
     mode,
     onAnimationComplete,
   ]);
-
-  // Interpolate rotation
-  const rotateInterpolate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
@@ -132,9 +164,8 @@ const SplashScreen = ({
           {
             opacity: fadeAnim,
             transform: [
-              { scale: scaleAnim },
+              { scale: Animated.multiply(scaleAnim, pulseAnim) },
               { translateY: slideAnim },
-              { rotate: rotateInterpolate },
             ],
           },
         ]}
@@ -177,6 +208,22 @@ const SplashScreen = ({
                   {
                     backgroundColor: textColor,
                     opacity: loadingOpacity,
+                    transform: [
+                      {
+                        translateY: dotBounce.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -8],
+                          extrapolate: 'clamp',
+                        }),
+                      },
+                      {
+                        scale: dotBounce.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [1, 1.3, 1],
+                          extrapolate: 'clamp',
+                        }),
+                      },
+                    ],
                   },
                 ]}
               />
@@ -186,7 +233,7 @@ const SplashScreen = ({
       )}
 
       {/* Background pattern (optional) */}
-      <View style={[styles.backgroundPattern, { opacity: 0.05 }]}>
+      <View style={styles.backgroundPattern}>
         <Image
           source={require('../assets/rentalinn-without-bg.png')}
           style={styles.backgroundImage}
@@ -244,6 +291,7 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: width * 0.8,
     zIndex: -1,
+    opacity: 0.05,
   },
   backgroundImage: {
     width: '100%',

@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  StatusBar,
   Platform,
   Alert,
 } from 'react-native';
@@ -14,6 +13,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
 import colors from '../theme/color';
@@ -54,6 +54,7 @@ const RecordPayment = ({ navigation, route }) => {
     { id: 'phonepe', name: 'Phone Pe', icon: 'phone' },
     { id: 'paytm', name: 'Paytm', icon: 'wallet' },
     { id: 'upi', name: 'UPI', icon: 'bank-transfer' },
+    { id: 'other', name: 'Other', icon: 'credit-card' },
   ];
 
   // Mock tenant data for demo (replace with actual data)
@@ -74,8 +75,8 @@ const RecordPayment = ({ navigation, route }) => {
   const formatDateForDisplay = date => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2);
-    return `${day} ${month}' ${year}`;
+    const year = String(date.getFullYear()).slice();
+    return `${day}-${month}-${year}`;
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -141,34 +142,12 @@ const RecordPayment = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundColor}
-        translucent={Platform.OS === 'android'}
+    <View style={[styles.container, { backgroundColor }]}>
+      <StandardHeader
+        navigation={navigation}
+        title="Record Payment"
+        loading={loading}
       />
-
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: cardBackground }]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.closeButton}
-        >
-          <MaterialCommunityIcons
-            name="close"
-            size={24}
-            color={textSecondary}
-          />
-        </TouchableOpacity>
-        <StandardText
-          fontWeight="bold"
-          style={[styles.headerTitle, { color: textPrimary }]}
-        >
-          Record Payment
-        </StandardText>
-        <View style={styles.placeholder} />
-      </View>
-
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -417,7 +396,7 @@ const RecordPayment = ({ navigation, route }) => {
           maximumDate={new Date()}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -533,8 +512,9 @@ const styles = StyleSheet.create({
   },
   paymentModeItem: {
     flex: 1,
-    minWidth: (screenWidth - 80) / 3,
-    maxWidth: (screenWidth - 80) / 2.5,
+
+    minWidth: (screenWidth - 100) / 3,
+    maxWidth: (screenWidth - 100) / 3,
     flexDirection: 'column',
     alignItems: 'center',
     paddingVertical: 16,

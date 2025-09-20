@@ -8,6 +8,7 @@ export const SCREEN_NAMES = {
   FORGOT_PASSWORD: 'ForgotPassword',
   RESET_PASSWORD: 'ResetPassword',
   VERIFY_OTP: 'VerifyOTP',
+  ONBOARDING: 'Onboarding',
 
   // Main navigation
   DRAWER_STACK: 'DrawerStack',
@@ -109,6 +110,8 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refreshToken',
   USER_DATA: 'userData',
   USER_CREDENTIALS: 'pgOwnerCredentials',
+  DATA_VERSION: 'dataVersion',
+  ACCESS_TOKEN: 'pgOwnerCredentials',
 
   // App preferences
   USER_PREFERENCES: 'userPreferences',

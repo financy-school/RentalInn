@@ -233,6 +233,16 @@ export const propertyRooms = async (accessToken, propertyId) => {
   );
 };
 
+export const getRoom = async (accessToken, propertyId, roomId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/properties/${propertyId}/rooms/${roomId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_ROOM',
+  );
+};
+
 export const createRoom = async (accessToken, propertyId, roomData) => {
   return handleApiResponse(
     () =>
@@ -283,6 +293,16 @@ export const addTenant = async (accessToken, propertyId, tenantData) => {
   );
 };
 
+export const updateTenant = async (accessToken, tenantId, tenantData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.put(`/tenants/${tenantId}`, tenantData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_TENANT',
+  );
+};
+
 export const fetchTenants = async (accessToken, propertyId) => {
   return handleApiResponse(
     () =>
@@ -306,6 +326,16 @@ export const getTenants = async (accessToken, propertyId, roomId) => {
         },
       }),
     'GET_TENANTS_BY_ROOM',
+  );
+};
+
+export const getTenant = async (accessToken, tenantId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/tenants/${tenantId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_TENANT',
   );
 };
 

@@ -11,9 +11,9 @@ import {
 import { useTheme, ProgressBar } from 'react-native-paper';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 import GradientCard from '../components/GradientCard/GradientCard';
 import StyledButton from '../components/StyledButton/StyledButton';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 
 const { height } = Dimensions.get('window');
@@ -408,16 +408,16 @@ const AppTutorial = ({ navigation }) => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <StandardText size="lg" fontWeight="600" style={styles.headerTitle}>
-          App Tutorial
-        </StandardText>
-        <TouchableOpacity onPress={skipTutorial}>
-          <StandardText style={styles.skipButton}>Skip</StandardText>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <StandardHeader
+        navigation={navigation}
+        title="App Tutorial"
+        rightComponent={
+          <TouchableOpacity onPress={skipTutorial}>
+            <StandardText style={styles.skipButton}>Skip</StandardText>
+          </TouchableOpacity>
+        }
+      />
 
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
@@ -544,7 +544,7 @@ const AppTutorial = ({ navigation }) => {
           />
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

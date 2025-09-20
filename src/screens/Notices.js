@@ -7,13 +7,14 @@ import {
   Alert,
   FlatList,
   StyleSheet,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Components
 import StandardText from '../components/StandardText/StandardText';
+import StandardHeader from '../components/StandardHeader/StandardHeader';
 
 // Context
 import { ThemeContext } from '../context/ThemeContext';
@@ -999,32 +1000,12 @@ const Notices = ({ navigation }) => {
   });
 
   return (
-    <SafeAreaView style={componentStyles.container}>
-      {/* Header */}
-      <View style={componentStyles.header}>
-        <View style={componentStyles.headerRow}>
-          <View>
-            <StandardText
-              fontWeight="bold"
-              size="large"
-              style={componentStyles.headerTitle}
-            >
-              Notices
-            </StandardText>
-            <StandardText style={componentStyles.headerSubtitle}>
-              {filteredNotices.length}{' '}
-              {filteredNotices.length === 1 ? 'notice' : 'notices'}
-            </StandardText>
-          </View>
-          <TouchableOpacity
-            onPress={() => Alert.alert('Create Notice', 'Feature coming soon!')}
-            style={componentStyles.addButton}
-            activeOpacity={0.8}
-          >
-            <Icon name="add" size={20} color={colors.white} />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={componentStyles.container}>
+      <StandardHeader
+        navigation={navigation}
+        title="Notices"
+        showBackButton={true}
+      />
 
       {/* Filters */}
       <ScrollView
@@ -1052,7 +1033,7 @@ const Notices = ({ navigation }) => {
         ListEmptyComponent={EmptyComponent}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
