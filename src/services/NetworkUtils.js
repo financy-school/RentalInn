@@ -319,6 +319,16 @@ export const getTenants = async (accessToken, propertyId, roomId) => {
   );
 };
 
+export const getTenant = async (accessToken, tenantId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/tenants/${tenantId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_TENANT',
+  );
+};
+
 export const putTenantOnNotice = async (accessToken, tenantId, noticeData) => {
   return handleApiResponse(
     () =>

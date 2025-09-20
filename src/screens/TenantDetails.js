@@ -1,4 +1,4 @@
-import React, { useContext, useState, useRef } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -8,16 +8,23 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  FlatList,
 } from 'react-native';
-import { Button, Chip, Card, Divider } from 'react-native-paper';
+import { Button, Chip, Card, Divider, Checkbox } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
-import StandardInformationAccordion from '../components/StandardInformationAccordion/StandardInformationAccordion';
 import colors from '../theme/color';
-import { deleteTenant, putTenantOnNotice } from '../services/NetworkUtils';
+import {
+  deleteTenant,
+  putTenantOnNotice,
+  getTenant,
+} from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import Share from 'react-native-share';
 
@@ -26,11 +33,25 @@ const screenWidth = Dimensions.get('window').width;
 const TenantDetails = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
-  const { tenant } = route.params;
+  const { tenant: routeTenant, tenantId } = route.params;
 
+  const [tenant, setTenant] = useState(routeTenant || null);
+  const [loading, setLoading] = useState(!routeTenant && !!tenantId);
+  const [error, setError] = useState(null);
   const [activeMenu, setActiveMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
   const anchorRef = useRef(null);
+
+  // Modal states
+  const [ledgerModalVisible, setLedgerModalVisible] = useState(false);
+  const [ledgerType, setLedgerType] = useState(''); // 'dues', 'collection', 'deposit'
+  const [
+    backgroundVerificationModalVisible,
+    setBackgroundVerificationModalVisible,
+  ] = useState(false);
+  const [verificationDocument, setVerificationDocument] = useState(null);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(false);
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -40,6 +61,59 @@ const TenantDetails = ({ navigation, route }) => {
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
+
+  // Fetch tenant details if tenantId is provided but no tenant data
+  useEffect(() => {
+    const fetchTenantDetails = async () => {
+      if (!tenantId || tenant) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await getTenant(
+          credentials?.token || credentials?.accessToken,
+          tenantId,
+        );
+
+        if (response.success && response.data) {
+          setTenant(response.data);
+        } else {
+          const errorMessage =
+            response.error || 'Failed to fetch tenant details';
+          setError(errorMessage);
+          Alert.alert('Error', errorMessage, [
+            {
+              text: 'Go Back',
+              onPress: () => navigation.goBack(),
+            },
+            {
+              text: 'Retry',
+              onPress: () => fetchTenantDetails(),
+            },
+          ]);
+        }
+      } catch (err) {
+        const errorMessage =
+          'Network error. Please check your connection and try again.';
+        setError(errorMessage);
+        Alert.alert('Network Error', errorMessage, [
+          {
+            text: 'Go Back',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'Retry',
+            onPress: () => fetchTenantDetails(),
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTenantDetails();
+  }, [tenantId, credentials, navigation, tenant]);
 
   const openMenu = () => {
     if (!anchorRef.current || !anchorRef.current.measureInWindow) {
@@ -58,29 +132,31 @@ const TenantDetails = ({ navigation, route }) => {
     setMenuPosition(null);
   };
 
-  const handleShareTenant = async tenant => {
+  const handleShareTenant = async tenantData => {
     try {
       const message =
         `👤 Tenant Details\n` +
-        `Name: ${tenant.name || 'N/A'}\n` +
-        `Phone: ${tenant.phone || 'N/A'}\n` +
-        (tenant.alternate_phone
-          ? `Alternate Phone: ${tenant.alternate_phone}\n`
+        `Name: ${tenantData.name || 'N/A'}\n` +
+        `Phone: ${tenantData.phone || 'N/A'}\n` +
+        (tenantData.alternate_phone
+          ? `Alternate Phone: ${tenantData.alternate_phone}\n`
           : '') +
-        `Email: ${tenant.email || 'N/A'}\n` +
-        `Room: ${tenant?.room?.name || 'No room assigned'}\n` +
-        `Rent: ₹${tenant?.room?.rentAmount || 'N/A'}\n` +
-        `Check-in Date: ${tenant.check_in_date || 'N/A'}\n` +
-        `Check-out Date: ${tenant.check_out_date || 'N/A'}\n` +
-        (tenant.lock_in_period
-          ? `Lock-in Period: ${tenant.lock_in_period} months\n`
+        `Email: ${tenantData.email || 'N/A'}\n` +
+        `Room: ${tenantData?.room?.name || 'No room assigned'}\n` +
+        `Rent: ₹${tenantData?.room?.rentAmount || 'N/A'}\n` +
+        `Check-in Date: ${tenantData.check_in_date || 'N/A'}\n` +
+        `Check-out Date: ${tenantData.check_out_date || 'N/A'}\n` +
+        (tenantData.lock_in_period
+          ? `Lock-in Period: ${tenantData.lock_in_period} months\n`
           : '') +
-        (tenant.agreement_period
-          ? `Agreement Period: ${tenant.agreement_period} months\n`
+        (tenantData.agreement_period
+          ? `Agreement Period: ${tenantData.agreement_period} months\n`
           : '') +
-        (tenant.tenant_type ? `Tenant Type: ${tenant.tenant_type}\n` : '') +
-        (tenant.has_dues ? `⚠️ Has outstanding dues\n` : '✅ No dues\n') +
-        (tenant.is_on_notice ? `⚠️ On notice period\n` : '');
+        (tenantData.tenant_type
+          ? `Tenant Type: ${tenantData.tenant_type}\n`
+          : '') +
+        (tenantData.has_dues ? `⚠️ Has outstanding dues\n` : '✅ No dues\n') +
+        (tenantData.is_on_notice ? `⚠️ On notice period\n` : '');
 
       await Share.open({
         title: 'Share Tenant Details',
@@ -92,8 +168,195 @@ const TenantDetails = ({ navigation, route }) => {
     }
   };
 
+  // Modal functions
+  const openLedgerModal = type => {
+    setLedgerType(type);
+    setLedgerModalVisible(true);
+  };
+
+  const closeLedgerModal = () => {
+    setLedgerModalVisible(false);
+    setLedgerType('');
+  };
+
+  const openBackgroundVerificationModal = () => {
+    setBackgroundVerificationModalVisible(true);
+  };
+
+  const closeBackgroundVerificationModal = () => {
+    setBackgroundVerificationModalVisible(false);
+    setVerificationDocument(null);
+    setConsentChecked(false);
+  };
+
+  const handleDocumentPicker = () => {
+    // Mock document picker - in real app use react-native-document-picker
+    Alert.alert('Select Document', 'Choose document type', [
+      {
+        text: 'Camera',
+        onPress: () =>
+          setVerificationDocument({
+            type: 'photo',
+            name: 'background_check.jpg',
+          }),
+      },
+      {
+        text: 'Gallery',
+        onPress: () =>
+          setVerificationDocument({ type: 'image', name: 'document.jpg' }),
+      },
+      {
+        text: 'Files',
+        onPress: () =>
+          setVerificationDocument({
+            type: 'pdf',
+            name: 'verification_doc.pdf',
+          }),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleBackgroundVerification = async () => {
+    if (!verificationDocument || !consentChecked) {
+      Alert.alert(
+        'Error',
+        'Please upload a document and provide consent to proceed.',
+      );
+      return;
+    }
+
+    try {
+      setVerificationLoading(true);
+
+      // Mock API call - replace with actual background verification API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      Alert.alert(
+        'Success',
+        'Background verification request has been submitted successfully. You will be notified once the verification is complete.',
+        [{ text: 'OK', onPress: closeBackgroundVerificationModal }],
+      );
+    } catch (verificationError) {
+      Alert.alert(
+        'Error',
+        'Failed to submit background verification request. Please try again.',
+      );
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  // Mock ledger data
+  const getLedgerData = type => {
+    const baseData = [
+      {
+        id: 1,
+        date: '2025-01-15',
+        description: 'Monthly Rent',
+        amount: 6000,
+        type: 'debit',
+        status: 'paid',
+      },
+      {
+        id: 2,
+        date: '2025-01-10',
+        description: 'Security Deposit',
+        amount: 12000,
+        type: 'credit',
+        status: 'received',
+      },
+      {
+        id: 3,
+        date: '2024-12-15',
+        description: 'Monthly Rent',
+        amount: 6000,
+        type: 'debit',
+        status: 'paid',
+      },
+      {
+        id: 4,
+        date: '2024-12-05',
+        description: 'Late Fee',
+        amount: 500,
+        type: 'debit',
+        status: 'pending',
+      },
+      {
+        id: 5,
+        date: '2024-11-15',
+        description: 'Monthly Rent',
+        amount: 6000,
+        type: 'debit',
+        status: 'paid',
+      },
+    ];
+
+    switch (type) {
+      case 'dues':
+        return baseData.filter(
+          item => item.type === 'debit' && item.status === 'pending',
+        );
+      case 'collection':
+        return baseData.filter(
+          item => item.status === 'paid' || item.status === 'received',
+        );
+      case 'deposit':
+        return baseData.filter(item =>
+          item.description.toLowerCase().includes('deposit'),
+        );
+      default:
+        return baseData;
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor }]}>
+        <StandardHeader navigation={navigation} title="Tenant Details" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <StandardText style={[styles.loadingText, { color: textSecondary }]}>
+            Loading tenant details...
+          </StandardText>
+        </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error || !tenant) {
+    return (
+      <View style={[styles.container, { backgroundColor }]}>
+        <StandardHeader navigation={navigation} title="Tenant Details" />
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle-outline"
+            size={80}
+            color={colors.error}
+          />
+          <StandardText style={[styles.errorTitle, { color: textPrimary }]}>
+            Unable to Load Tenant
+          </StandardText>
+          <StandardText style={[styles.errorMessage, { color: textSecondary }]}>
+            {error || 'Tenant data not found'}
+          </StandardText>
+          <Button
+            mode="contained"
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            labelStyle={{ color: colors.white }}
+            onPress={() => navigation.goBack()}
+          >
+            Go Back
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={styles.container}>
       <StandardHeader navigation={navigation} title="Tenant Details" />
       <ScrollView
         style={styles.scrollContainer}
@@ -105,10 +368,30 @@ const TenantDetails = ({ navigation, route }) => {
           {/* Header Row: Avatar + Name + Menu */}
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
-              <MaterialCommunityIcons
-                name="account-circle"
-                size={80}
-                color={colors.primary}
+              {tenant.profileImage ? (
+                <Image
+                  source={{ uri: tenant.profileImage }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <View style={styles.defaultAvatar}>
+                  <MaterialCommunityIcons
+                    name="account"
+                    size={40}
+                    color={colors.white}
+                  />
+                </View>
+              )}
+              {/* Status indicator */}
+              <View
+                style={[
+                  styles.statusIndicator,
+                  {
+                    backgroundColor: tenant.is_on_notice
+                      ? colors.warning
+                      : colors.success,
+                  },
+                ]}
               />
             </View>
 
@@ -130,8 +413,8 @@ const TenantDetails = ({ navigation, route }) => {
                 >
                   <MaterialCommunityIcons
                     name="dots-vertical"
-                    size={24}
-                    color={textSecondary}
+                    size={20}
+                    color={colors.primary}
                   />
                 </TouchableOpacity>
               </View>
@@ -163,234 +446,246 @@ const TenantDetails = ({ navigation, route }) => {
           {/* Divider */}
           <Divider style={styles.profileDivider} />
 
-          {/* Contact Info */}
-          <View style={styles.contactSection}>
+          {/* Tenant Details Grid */}
+          <View style={styles.detailsGrid}>
             <DetailRow
-              icon="phone"
-              label="Mobile"
-              value={tenant.phone_number}
+              label="Room"
+              value={tenant.room?.name || 'smart'}
               isDark={isDark}
             />
             <DetailRow
-              icon="email"
-              label="Email"
-              value={tenant.email || 'N/A'}
+              label="Date of Joining"
+              value={tenant.check_in_date || '23 Mar 2025'}
               isDark={isDark}
             />
             <DetailRow
-              icon="calendar"
-              label="Joined"
-              value={tenant.check_in_date}
+              label="Move Out Date"
+              value={tenant.check_out_date || 'N/A'}
               isDark={isDark}
             />
+            <DetailRow
+              label="Staying Since"
+              value={tenant.staying_duration || '5 months & 18 days'}
+              isDark={isDark}
+            />
+            <DetailRow
+              label="Rent Amount"
+              value={`₹${tenant.rent_amount || '6,000'}`}
+              isDark={isDark}
+            />
+            <DetailRow
+              label="Add Rent On"
+              value={tenant.rent_due_date || '1st of every month'}
+              isDark={isDark}
+            />
+            <DetailRow
+              label="Food"
+              value={tenant.food_included ? 'Included' : 'N/A'}
+              isDark={isDark}
+            />
+            <DetailRow label="Assigned Packages" value="View" isDark={isDark} />
           </View>
         </Card>
 
         <Gap size="lg" />
 
-        {/* Information Sections */}
-        <View style={styles.sectionsContainer}>
-          {/* Room & Rent Details */}
-          <StandardInformationAccordion
-            icon={'home'}
-            heading="Room & Rent Details"
-            content={
-              <View style={styles.accordionContent}>
-                <DetailRow
-                  label="Room"
-                  value={tenant.room?.name}
-                  isDark={isDark}
-                />
-                <DetailRow
-                  label="Rent Amount"
-                  value={`₹${tenant.rent_amount}`}
-                  isDark={isDark}
-                />
-                <DetailRow
-                  label="Deposit"
-                  value={`₹${tenant.room?.securityAmount || 'N/A'}`}
-                  isDark={isDark}
-                />
-                <DetailRow
-                  label="Rent Due"
-                  value={tenant.rent_due_date || 'No Dues'}
-                  isDark={isDark}
-                />
-                <DetailRow
-                  label="Lease End"
-                  value={tenant.check_out_date || 'N/A'}
-                  isDark={isDark}
-                />
-              </View>
-            }
-          />
+        {/* Financial Summary Card */}
+        <Card style={[styles.profileCard, { backgroundColor: cardBackground }]}>
+          <View style={styles.sectionHeader}>
+            <StandardText
+              fontWeight="bold"
+              style={[styles.sectionTitle, { color: textPrimary }]}
+            >
+              Financial Summary
+            </StandardText>
+          </View>
 
-          <Gap size="md" />
+          <View style={styles.financialGrid}>
+            <View style={styles.financialItem}>
+              <StandardText
+                style={[styles.financialLabel, { color: textSecondary }]}
+              >
+                Total Dues
+              </StandardText>
+              <TouchableOpacity
+                style={styles.viewButton}
+                onPress={() => openLedgerModal('dues')}
+              >
+                <StandardText style={styles.viewButtonText}>View</StandardText>
+              </TouchableOpacity>
+              <StandardText
+                style={[styles.financialAmount, { color: colors.error }]}
+              >
+                ₹{tenant.total_dues || '38,742'}
+              </StandardText>
+            </View>
 
-          {/* Family & Emergency */}
-          <StandardInformationAccordion
-            icon={'account-group'}
-            heading="Family & Emergency Contacts"
-            content={
-              <View style={styles.accordionContent}>
-                {tenant.emergency_contact && (
-                  <DetailRow
-                    label="Emergency Contact"
-                    value={`${tenant.emergency_contact.name} (${tenant.emergency_contact.phone})`}
-                    isDark={isDark}
-                  />
-                )}
-                {tenant.guardian && (
-                  <DetailRow
-                    label="Guardian"
-                    value={`${tenant.guardian.name} (${tenant.guardian.phone})`}
-                    isDark={isDark}
-                  />
-                )}
-                {!tenant.emergency_contact && !tenant.guardian && (
-                  <StandardText style={{ color: textSecondary }}>
-                    No emergency contacts added
-                  </StandardText>
-                )}
-              </View>
-            }
-          />
+            <View style={styles.financialItem}>
+              <StandardText
+                style={[styles.financialLabel, { color: textSecondary }]}
+              >
+                Total Collection
+              </StandardText>
+              <TouchableOpacity
+                style={styles.viewButton}
+                onPress={() => openLedgerModal('collection')}
+              >
+                <StandardText style={styles.viewButtonText}>View</StandardText>
+              </TouchableOpacity>
+              <StandardText
+                style={[styles.financialAmount, { color: colors.success }]}
+              >
+                ₹{tenant.total_collection || '0'}
+              </StandardText>
+            </View>
 
-          <Gap size="md" />
+            <View style={styles.financialItem}>
+              <StandardText
+                style={[styles.financialLabel, { color: textSecondary }]}
+              >
+                Total Deposit
+              </StandardText>
+              <TouchableOpacity
+                style={styles.viewButton}
+                onPress={() => openLedgerModal('deposit')}
+              >
+                <StandardText style={styles.viewButtonText}>View</StandardText>
+              </TouchableOpacity>
+              <StandardText
+                style={[styles.financialAmount, { color: textPrimary }]}
+              >
+                ₹{tenant.security_deposit || '0'} / ₹
+                {tenant.total_deposit || '0'}
+              </StandardText>
+            </View>
+          </View>
+        </Card>
 
-          {/* Payment History */}
-          <StandardInformationAccordion
-            icon={'credit-card'}
-            heading="Payment History"
-            content={
-              <View style={styles.accordionContent}>
-                {tenant.payments && tenant.payments.length > 0 ? (
-                  tenant.payments
-                    .slice(0, 3)
-                    .map((p, idx) => (
-                      <DetailRow
-                        key={idx}
-                        label={`${p.date}`}
-                        value={`₹${p.amount} (${p.status})`}
-                        isDark={isDark}
-                      />
-                    ))
-                ) : (
-                  <StandardText style={{ color: textSecondary }}>
-                    No payments recorded
-                  </StandardText>
-                )}
-              </View>
-            }
-          />
+        <Gap size="lg" />
 
-          <Gap size="md" />
-
-          {/* KYC Documents */}
-          <Card style={[styles.kycCard, { backgroundColor: cardBackground }]}>
-            <View style={styles.kycHeader}>
-              <View style={styles.kycTitleRow}>
-                <MaterialCommunityIcons
-                  name="shield-check"
-                  size={24}
-                  color={colors.primary}
-                  style={styles.kycIcon}
-                />
+        {/* Verification Status Card */}
+        <Card style={[styles.profileCard, { backgroundColor: cardBackground }]}>
+          <View style={styles.verificationGrid}>
+            <View style={styles.verificationRow}>
+              <StandardText
+                style={[styles.verificationLabel, { color: textSecondary }]}
+              >
+                Web Check-in:
+              </StandardText>
+              <TouchableOpacity
+                style={[styles.checkInButton, { borderColor: colors.primary }]}
+              >
                 <StandardText
-                  fontWeight="bold"
-                  style={[styles.kycTitle, { color: textPrimary }]}
+                  style={[styles.checkInButtonText, { color: colors.primary }]}
                 >
-                  KYC Documents
+                  Check-in
                 </StandardText>
-              </View>
+                <MaterialCommunityIcons
+                  name="link"
+                  size={16}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.verificationRow}>
+              <StandardText
+                style={[styles.verificationLabel, { color: textSecondary }]}
+              >
+                Renting Terms:
+              </StandardText>
               <Chip
                 style={[
                   styles.verificationChip,
-                  {
-                    backgroundColor: tenant.kyc_verified
-                      ? colors.success + '20'
-                      : colors.warning + '20',
-                  },
+                  { backgroundColor: colors.success + '20' },
                 ]}
                 textStyle={[
-                  styles.verificationText,
-                  {
-                    color: tenant.kyc_verified
-                      ? colors.success
-                      : colors.warning,
-                  },
+                  styles.verificationChipText,
+                  { color: colors.success },
                 ]}
               >
-                {tenant.kyc_verified ? 'Verified' : 'Pending'}
+                Approved
               </Chip>
             </View>
 
-            <View style={styles.documentsGrid}>
-              {tenant.kyc_docs && tenant.kyc_docs.length > 0 ? (
-                tenant.kyc_docs.map((doc, idx) => (
-                  <View key={idx} style={styles.documentCard}>
-                    <Image
-                      source={{ uri: doc.url }}
-                      style={styles.documentImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.documentInfo}>
-                      <StandardText
-                        style={[styles.documentType, { color: textPrimary }]}
-                        fontWeight="medium"
-                      >
-                        {doc.type}
-                      </StandardText>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <StandardText style={{ color: textSecondary }}>
-                  No documents uploaded
-                </StandardText>
-              )}
+            <View style={styles.verificationRow}>
+              <StandardText
+                style={[styles.verificationLabel, { color: textSecondary }]}
+              >
+                ID Verification:
+              </StandardText>
+              <Chip
+                style={[
+                  styles.verificationChip,
+                  { backgroundColor: colors.error + '20' },
+                ]}
+                textStyle={[
+                  styles.verificationChipText,
+                  { color: colors.error },
+                ]}
+              >
+                Not Verified
+              </Chip>
             </View>
-          </Card>
 
-          <Gap size="lg" />
+            <View style={styles.verificationRow}>
+              <StandardText
+                style={[styles.verificationLabel, { color: textSecondary }]}
+              >
+                Rental Agreement:
+              </StandardText>
+              <Chip
+                style={[
+                  styles.verificationChip,
+                  { backgroundColor: colors.warning + '20' },
+                ]}
+                textStyle={[
+                  styles.verificationChipText,
+                  { color: colors.warning },
+                ]}
+              >
+                Pending
+              </Chip>
+            </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actionButtonsContainer}>
-            <Button
-              mode="outlined"
-              style={[
-                styles.actionButton,
-                styles.editButton,
-                { borderColor: colors.primary },
-              ]}
-              labelStyle={[styles.buttonLabel, { color: colors.primary }]}
-              onPress={() => {
-                navigation.navigate('AddTenant', {
-                  tenant: tenant,
-                  isEdit: true,
-                });
-              }}
-            >
-              Edit Details
-            </Button>
-            <Button
-              mode="contained"
-              style={[
-                styles.actionButton,
-                styles.paymentButton,
-                { backgroundColor: colors.primary },
-              ]}
-              labelStyle={[styles.buttonLabel, { color: colors.white }]}
-              onPress={() =>
-                navigation.navigate('RecordPayment', { tenant: tenant })
-              }
-            >
-              Record Payment
-            </Button>
+            <View style={styles.verificationRow}>
+              <StandardText
+                style={[styles.verificationLabel, { color: textSecondary }]}
+              >
+                Background Verification
+              </StandardText>
+              <TouchableOpacity
+                style={styles.verifyButton}
+                onPress={openBackgroundVerificationModal}
+              >
+                <StandardText
+                  style={[styles.verifyButtonText, { color: colors.primary }]}
+                >
+                  Verify
+                </StandardText>
+              </TouchableOpacity>
+            </View>
           </View>
+        </Card>
 
-          <Gap size="xxl" />
+        <View style={styles.actionButtonsContainer}>
+          <Button
+            mode="contained"
+            style={[
+              styles.actionButton,
+              styles.paymentButton,
+              { backgroundColor: colors.primary },
+            ]}
+            labelStyle={[styles.buttonLabel, { color: colors.white }]}
+            onPress={() =>
+              navigation.navigate('RecordPayment', { tenant: tenant })
+            }
+          >
+            Record Payment
+          </Button>
         </View>
+
+        <Gap size="xxl" />
       </ScrollView>
 
       {/* CUSTOM MENU OVERLAY */}
@@ -488,18 +783,287 @@ const TenantDetails = ({ navigation, route }) => {
           </View>
         </TouchableOpacity>
       )}
+
+      {/* Ledger Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={ledgerModalVisible}
+        onRequestClose={closeLedgerModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContainer, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.modalHeader}>
+              <StandardText
+                fontWeight="bold"
+                style={[styles.modalTitle, { color: textPrimary }]}
+              >
+                {ledgerType === 'dues' && 'Outstanding Dues'}
+                {ledgerType === 'collection' && 'Payment Collection'}
+                {ledgerType === 'deposit' && 'Security Deposit'}
+              </StandardText>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={closeLedgerModal}
+              >
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={getLedgerData(ledgerType)}
+              keyExtractor={item => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <View
+                  style={[
+                    styles.ledgerItem,
+                    { backgroundColor: colors.accent },
+                  ]}
+                >
+                  <View style={styles.ledgerLeft}>
+                    <StandardText
+                      fontWeight="600"
+                      style={[styles.ledgerDescription, { color: textPrimary }]}
+                    >
+                      {item.description}
+                    </StandardText>
+                    <StandardText
+                      style={[styles.ledgerDate, { color: textSecondary }]}
+                    >
+                      {item.date}
+                    </StandardText>
+                  </View>
+                  <View style={styles.ledgerRight}>
+                    <StandardText
+                      fontWeight="bold"
+                      style={[
+                        styles.ledgerAmount,
+                        {
+                          color:
+                            item.type === 'debit'
+                              ? item.status === 'pending'
+                                ? colors.error
+                                : colors.warning
+                              : colors.success,
+                        },
+                      ]}
+                    >
+                      {item.type === 'debit' ? '-' : '+'}₹
+                      {item.amount.toLocaleString()}
+                    </StandardText>
+                    <Chip
+                      style={[
+                        styles.ledgerStatusChip,
+                        {
+                          backgroundColor:
+                            item.status === 'paid' || item.status === 'received'
+                              ? colors.success + '20'
+                              : colors.warning + '20',
+                        },
+                      ]}
+                      textStyle={[
+                        styles.chipText,
+                        {
+                          color:
+                            item.status === 'paid' || item.status === 'received'
+                              ? colors.success
+                              : colors.warning,
+                        },
+                      ]}
+                    >
+                      {item.status.toUpperCase()}
+                    </Chip>
+                  </View>
+                </View>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Background Verification Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={backgroundVerificationModalVisible}
+        onRequestClose={closeBackgroundVerificationModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContainer, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.modalHeader}>
+              <StandardText
+                fontWeight="bold"
+                style={[styles.modalTitle, { color: textPrimary }]}
+              >
+                Background Verification
+              </StandardText>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={closeBackgroundVerificationModal}
+              >
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.modalContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <StandardText
+                style={[
+                  styles.verificationDescription,
+                  { color: textSecondary },
+                ]}
+              >
+                Upload a government-issued ID or background check document to
+                verify the tenant's background.
+              </StandardText>
+
+              <Gap size="lg" />
+
+              {/* Document Upload Section */}
+              <View style={styles.uploadSection}>
+                <StandardText
+                  fontWeight="600"
+                  style={[styles.uploadTitle, { color: textPrimary }]}
+                >
+                  Upload Document
+                </StandardText>
+
+                <TouchableOpacity
+                  style={[styles.uploadButton, { borderColor: colors.primary }]}
+                  onPress={handleDocumentPicker}
+                >
+                  <MaterialCommunityIcons
+                    name="cloud-upload"
+                    size={32}
+                    color={colors.primary}
+                  />
+                  <StandardText
+                    style={[styles.uploadButtonText, { color: colors.primary }]}
+                  >
+                    {verificationDocument
+                      ? 'Document Selected'
+                      : 'Select Document'}
+                  </StandardText>
+                  <StandardText
+                    style={[styles.uploadSubtext, { color: textSecondary }]}
+                  >
+                    PDF, JPG, PNG files accepted
+                  </StandardText>
+                </TouchableOpacity>
+
+                {verificationDocument && (
+                  <View
+                    style={[
+                      styles.documentPreview,
+                      { backgroundColor: colors.accent },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={
+                        verificationDocument.type === 'pdf'
+                          ? 'file-pdf-box'
+                          : 'image'
+                      }
+                      size={24}
+                      color={colors.primary}
+                    />
+                    <StandardText
+                      style={[styles.documentName, { color: textPrimary }]}
+                    >
+                      {verificationDocument.name}
+                    </StandardText>
+                    <TouchableOpacity
+                      onPress={() => setVerificationDocument(null)}
+                    >
+                      <MaterialCommunityIcons
+                        name="close-circle"
+                        size={20}
+                        color={colors.error}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              <Gap size="lg" />
+
+              {/* Consent Section */}
+              <View style={styles.consentSection}>
+                <TouchableOpacity
+                  style={styles.consentRow}
+                  onPress={() => setConsentChecked(!consentChecked)}
+                >
+                  <Checkbox
+                    status={consentChecked ? 'checked' : 'unchecked'}
+                    color={colors.primary}
+                  />
+                  <StandardText
+                    style={[styles.consentText, { color: textPrimary }]}
+                  >
+                    I hereby consent and approve to verify the background of
+                    this tenant using the uploaded document.
+                  </StandardText>
+                </TouchableOpacity>
+              </View>
+
+              <Gap size="xl" />
+
+              {/* Action Buttons */}
+              <View style={styles.modalActions}>
+                <Button
+                  mode="outlined"
+                  style={[styles.modalButton, { borderColor: colors.primary }]}
+                  labelStyle={{ color: colors.primary }}
+                  onPress={closeBackgroundVerificationModal}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  mode="contained"
+                  style={[
+                    styles.modalButton,
+                    { backgroundColor: colors.primary },
+                  ]}
+                  labelStyle={{ color: colors.white }}
+                  onPress={handleBackgroundVerification}
+                  loading={verificationLoading}
+                  disabled={
+                    !verificationDocument ||
+                    !consentChecked ||
+                    verificationLoading
+                  }
+                >
+                  {verificationLoading
+                    ? 'Submitting...'
+                    : 'Submit Verification'}
+                </Button>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 // Small reusable row component
 const DetailRow = ({ icon, label, value, isMultiline, isDark }) => (
-  <View
-    style={[
-      styles.detailRow,
-      isMultiline && { flexDirection: 'column', alignItems: 'flex-start' },
-    ]}
-  >
+  <View style={[styles.detailRow, isMultiline && styles.detailRowMultiline]}>
     <View style={styles.detailLabelContainer}>
       {icon && (
         <MaterialCommunityIcons
@@ -522,10 +1086,8 @@ const DetailRow = ({ icon, label, value, isMultiline, isDark }) => (
     <StandardText
       style={[
         styles.detailValue,
-        {
-          marginLeft: isMultiline ? 0 : 8,
-          color: isDark ? colors.white : colors.textPrimary,
-        },
+        isMultiline ? styles.detailValueMultiline : styles.detailValueSingle,
+        { color: isDark ? colors.white : colors.textPrimary },
       ]}
     >
       {value}
@@ -536,6 +1098,7 @@ const DetailRow = ({ icon, label, value, isMultiline, isDark }) => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   headerBanner: {
     height: 120,
@@ -637,7 +1200,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     flex: 1,
   },
-  verificationChip: {
+  verificationChipOld: {
     alignSelf: 'flex-start',
     borderRadius: 12,
   },
@@ -670,6 +1233,7 @@ const styles = StyleSheet.create({
   actionButtonsContainer: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 8,
   },
   actionButton: {
     flex: 1,
@@ -708,6 +1272,16 @@ const styles = StyleSheet.create({
     flex: 1,
     flexWrap: 'wrap',
   },
+  detailRowMultiline: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  detailValueMultiline: {
+    marginLeft: 0,
+  },
+  detailValueSingle: {
+    marginLeft: 8,
+  },
   menuOverlay: {
     position: 'absolute',
     top: 0,
@@ -738,6 +1312,294 @@ const styles = StyleSheet.create({
   },
   menuDivider: {
     marginVertical: 4,
+  },
+
+  // Loading and Error states
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  loadingText: {
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorTitle: {
+    fontSize: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  retryButton: {
+    borderRadius: 12,
+    paddingVertical: 4,
+  },
+
+  // Profile Image styles
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  defaultAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusIndicator: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+
+  // Details Grid
+  detailsGrid: {
+    gap: 12,
+  },
+
+  // Section styles
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+  },
+
+  // Financial Summary styles
+  financialGrid: {
+    gap: 16,
+  },
+  financialItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  financialLabel: {
+    fontSize: 14,
+    flex: 1,
+  },
+  financialAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  viewButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  viewButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+  },
+
+  // Verification styles
+  verificationGrid: {
+    gap: 12,
+  },
+  verificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  verificationLabel: {
+    fontSize: 14,
+    flex: 1,
+  },
+  verificationChip: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  verificationChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  checkInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
+  },
+  checkInButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  verifyButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  verifyButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    maxHeight: '80%',
+    borderRadius: 16,
+    padding: 0,
+    elevation: 5,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    flex: 1,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalContent: {
+    padding: 20,
+  },
+  // Ledger Modal Styles
+  ledgerItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    marginVertical: 6,
+    borderRadius: 12,
+    marginHorizontal: 20,
+  },
+  ledgerLeft: {
+    flex: 1,
+  },
+  ledgerDescription: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  ledgerDate: {
+    fontSize: 12,
+  },
+  ledgerRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  ledgerAmount: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  ledgerStatusChip: {
+    height: 28,
+    paddingVertical: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 14,
+  },
+  // Background Verification Modal Styles
+  verificationDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  uploadSection: {
+    alignItems: 'center',
+  },
+  uploadTitle: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  uploadButton: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    minHeight: 120,
+  },
+  uploadButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  uploadSubtext: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  documentPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    width: '100%',
+  },
+  documentName: {
+    flex: 1,
+    fontSize: 14,
+    marginLeft: 12,
+  },
+  consentSection: {
+    width: '100%',
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  consentText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    marginLeft: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 8,
   },
 });
 

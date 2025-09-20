@@ -462,6 +462,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     fontFamily: 'Metropolis-Medium',
   },
+  filterContainer: { flexDirection: 'row', marginBottom: 16 },
   chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
   card: {
     backgroundColor: '#fff',
