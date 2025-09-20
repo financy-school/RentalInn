@@ -16,6 +16,7 @@ import AddRoom from '../screens/AddRoom';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
 import RecordPayment from '../screens/RecordPayment';
+import AddInvoice from '../screens/AddInvoice';
 import OnboardingScreen, {
   ONBOARDING_STORAGE_KEY,
 } from '../screens/OnboardingScreen';
@@ -342,6 +343,24 @@ const RootStack = () => {
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Record Payment',
+            headerTintColor: colors.black,
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="AddInvoice"
+          component={AddInvoice}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Add Invoice',
             headerTintColor: colors.black,
             headerShown: false,
             presentation: 'modal',

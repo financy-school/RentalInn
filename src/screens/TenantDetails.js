@@ -670,6 +670,20 @@ const TenantDetails = ({ navigation, route }) => {
 
         <View style={styles.actionButtonsContainer}>
           <Button
+            mode="outlined"
+            style={[
+              styles.actionButton,
+              styles.editButton,
+              { borderColor: colors.primary },
+            ]}
+            labelStyle={[styles.buttonLabel, { color: colors.primary }]}
+            onPress={() =>
+              navigation.navigate('AddInvoice', { tenant: tenant })
+            }
+          >
+            Add Invoice
+          </Button>
+          <Button
             mode="contained"
             style={[
               styles.actionButton,
