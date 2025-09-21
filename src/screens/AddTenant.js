@@ -12,12 +12,14 @@ import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
 import { addTenant, updateTenant } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const AddTenant = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const theme = useTheme();
   const { credentials } = useContext(CredentialsContext);
+  const { selectedProperty } = useProperty();
 
   // Check if in edit mode
   const params = route?.params;
@@ -149,15 +151,19 @@ const AddTenant = ({ navigation, route }) => {
   const submitTenant = async () => {
     setLoading(true);
     setErrorMsg('');
+
+    // Check if property is selected
+    if (!selectedProperty || selectedProperty.id === 'all') {
+      setErrorMsg('Please select a specific property to add a tenant.');
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isEdit) {
         await updateTenant(credentials.accessToken, editTenant.id, tenant);
       } else {
-        await addTenant(
-          credentials.accessToken,
-          credentials.property_id,
-          tenant,
-        );
+        await addTenant(credentials.accessToken, selectedProperty.id, tenant);
       }
       navigation.goBack({ refresh: true });
     } catch (error) {

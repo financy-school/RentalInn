@@ -26,6 +26,7 @@ import {
 import StandardText from '../components/StandardText/StandardText';
 import { ThemeContext } from '../context/ThemeContext';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { width } = Dimensions.get('window');
@@ -36,6 +37,7 @@ import PropertySelector from '../components/PropertySelector/PropertySelector';
 const AddRoom = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
+  const { selectedProperty, isAllPropertiesSelected } = useProperty();
   const theme = useTheme();
 
   // Check if in edit mode
@@ -245,7 +247,7 @@ const AddRoom = ({ navigation, route }) => {
 
         const documentResponse = await createDocument(
           credentials.accessToken,
-          credentials.property_id,
+          selectedProperty.id,
           imageDetails,
         );
 
@@ -268,6 +270,13 @@ const AddRoom = ({ navigation, route }) => {
 
   const submitRoom = async () => {
     setLoading(true);
+
+    // Check if property is selected
+    if (!selectedProperty || selectedProperty.id === 'all') {
+      console.error('Please select a specific property to add a room.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Upload new images
@@ -297,11 +306,7 @@ const AddRoom = ({ navigation, route }) => {
       if (isEdit) {
         await updateRoom(credentials.accessToken, editRoom.id, payload);
       } else {
-        await createRoom(
-          credentials.accessToken,
-          credentials.property_id,
-          payload,
-        );
+        await createRoom(credentials.accessToken, selectedProperty.id, payload);
       }
 
       resetForm();

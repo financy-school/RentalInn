@@ -11,6 +11,7 @@ import { TextInput as PaperInput, useTheme } from 'react-native-paper';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
 import {
   createDocument,
   createTicket,
@@ -30,6 +31,7 @@ const AddTicket = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
   const theme = useTheme();
   const { credentials } = useContext(CredentialsContext);
+  const { selectedProperty } = useProperty();
   const [form, setForm] = useState({
     issue: '',
     description: '',
@@ -69,6 +71,13 @@ const AddTicket = ({ navigation }) => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+
+    // Check if property is selected
+    if (!selectedProperty || selectedProperty.id === 'all') {
+      setError('Please select a specific property to add a ticket.');
+      return;
+    }
+
     submitTicket();
   };
 
@@ -92,7 +101,7 @@ const AddTicket = ({ navigation }) => {
 
         const room_document_res = await createDocument(
           credentials.accessToken,
-          credentials.property_id,
+          selectedProperty.id,
           imagedetails,
         );
 
@@ -102,7 +111,7 @@ const AddTicket = ({ navigation }) => {
 
       const payload = {
         ...form,
-        propertyId: credentials.property_id,
+        propertyId: selectedProperty.id,
         status: 'PENDING',
         roomId: parseInt(form.roomId, 10),
         image_document_id_list: imageDocumentIds,
