@@ -19,6 +19,7 @@ import {
 } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { ThemeContext } from '../context/ThemeContext';
 import { useProperty } from '../context/PropertyContext';
 import { analyticsDashBoard } from '../services/NetworkUtils';
 import StandardText from '../components/StandardText/StandardText';
@@ -52,7 +53,13 @@ const createMessageRightChip = matched => () =>
 
 const Home = ({ navigation }) => {
   const { credentials } = useContext(CredentialsContext);
+  const { theme: mode } = useContext(ThemeContext);
   const { selectedProperty, isAllPropertiesSelected } = useProperty();
+
+  // Theme variables
+  const isDark = mode === 'dark';
+  const chartBackgroundColor = isDark ? colors.backgroundDark : colors.white;
+  const chartTextColor = isDark ? colors.white : colors.textPrimary;
 
   const [analyticsData, setAnalyticsData] = useState(null);
   const [scope] = useState('property'); // property | unit | tenant
@@ -572,29 +579,96 @@ const Home = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Chart */}
-          <StackedBarChart
-            data={{
-              labels: months,
-              legend: ['Revenue (₹k)', 'Vacancy Loss (₹k)'],
-              data: revenueByMonth.map((rev, i) => [
-                rev,
-                vacancyLossByMonth[i],
-              ]),
-              barColors: [colors.primary, colors.error],
-            }}
-            width={screenWidth - 64}
-            height={220}
-            chartConfig={{
-              backgroundColor: '#fff',
-              backgroundGradientFrom: '#fff',
-              backgroundGradientTo: '#fff',
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-              labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-            }}
-            style={styles.chartStyle}
-          />
+          {/* Enhanced Chart with Theme Support */}
+          <View style={styles.chartContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chartScrollContainer}
+            >
+              <StackedBarChart
+                data={{
+                  labels: months,
+                  data: revenueByMonth.map((rev, i) => [
+                    rev,
+                    vacancyLossByMonth[i],
+                  ]),
+                  barColors: ['#4CAF50', '#FF7043'],
+                }}
+                width={Math.max(screenWidth - 64, months.length * 80)}
+                height={240}
+                chartConfig={{
+                  backgroundColor: chartBackgroundColor,
+                  backgroundGradientFrom: chartBackgroundColor,
+                  backgroundGradientTo: chartBackgroundColor,
+                  backgroundGradientFromOpacity: 1,
+                  backgroundGradientToOpacity: 1,
+                  decimalPlaces: 0,
+                  color: (opacity = 1) =>
+                    `${chartTextColor}${Math.round(opacity * 255)
+                      .toString(16)
+                      .padStart(2, '0')}`,
+                  labelColor: (opacity = 1) =>
+                    `${chartTextColor}${Math.round(opacity * 255)
+                      .toString(16)
+                      .padStart(2, '0')}`,
+                  strokeWidth: 2,
+                  barPercentage: 0.7,
+                  useShadowColorFromDataset: false,
+                  propsForLabels: {
+                    fontSize: 12,
+                    fontWeight: '600',
+                    color: chartTextColor,
+                  },
+                  propsForVerticalLabels: {
+                    fontSize: 11,
+                    fontWeight: '500',
+                    color: chartTextColor,
+                  },
+                  propsForHorizontalLabels: {
+                    fontSize: 11,
+                    fontWeight: '500',
+                    color: chartTextColor,
+                  },
+                }}
+                style={[
+                  styles.chartStyle,
+                  { backgroundColor: chartBackgroundColor },
+                ]}
+                withHorizontalLabels={true}
+                withVerticalLabels={true}
+                showValuesOnTopOfBars={true}
+                fromZero={true}
+                segments={4}
+              />
+            </ScrollView>
+
+            {/* Custom Enhanced Legend */}
+            <View style={styles.chartLegend}>
+              <View style={styles.chartLegendItem}>
+                <View
+                  style={[
+                    styles.chartLegendDot,
+                    { backgroundColor: '#4CAF50' },
+                  ]}
+                />
+                <StandardText size="sm" style={styles.chartLegendText}>
+                  Revenue (₹k)
+                </StandardText>
+              </View>
+              <View style={styles.chartLegendItem}>
+                <View
+                  style={[
+                    styles.chartLegendDot,
+                    { backgroundColor: '#FF7043' },
+                  ]}
+                />
+                <StandardText size="sm" style={styles.chartLegendText}>
+                  Vacancy Loss (₹k)
+                </StandardText>
+              </View>
+            </View>
+          </View>
         </StandardCard>
 
         <Gap size="md" />
@@ -1994,6 +2068,61 @@ const styles = StyleSheet.create({
   chartStyle: {
     borderRadius: 12,
     marginTop: 8,
+    elevation: 2,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  chartContainer: {
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    padding: 8,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+
+  chartScrollContainer: {
+    alignItems: 'center',
+  },
+
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 16,
+    paddingHorizontal: 16,
+    width: '100%',
+  },
+
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.light_gray + '30',
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+
+  chartLegendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+
+  chartLegendText: {
+    flex: 1,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+
+  chartLegendValue: {
+    fontSize: 11,
+    marginLeft: 4,
   },
 
   // P&L styles
