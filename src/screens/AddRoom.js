@@ -491,6 +491,7 @@ const AddRoom = ({ navigation, route }) => {
             mode === 'dark' ? ['#2a2a2a', '#1f1f1f'] : ['#ffffff', '#f8f9fa']
           }
         >
+          <Gap size="md" />
           {/* Property Selection */}
           <PropertySelector
             navigation={navigation}

@@ -197,7 +197,6 @@ const AddTenant = ({ navigation, route }) => {
     },
     scrollContainer: {
       flexGrow: 1,
-      paddingTop: 10,
     },
     headerContainer: {
       alignItems: 'center',
@@ -211,6 +210,7 @@ const AddTenant = ({ navigation, route }) => {
     },
     formSection: {
       marginBottom: 16,
+      marginTop: 16,
     },
     sectionTitle: {
       marginBottom: 12,
@@ -293,6 +293,7 @@ const AddTenant = ({ navigation, route }) => {
             mode === 'dark' ? ['#2a2a2a', '#1f1f1f'] : ['#ffffff', '#f8f9fa']
           }
         >
+          <Gap size="md" />
           {/* Property Selection */}
           <PropertySelector
             navigation={navigation}

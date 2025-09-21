@@ -23,9 +23,7 @@ const AddProperty = ({ navigation }) => {
 
   // Theme variables
   const isDark = mode === 'dark';
-  const backgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
+
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
@@ -38,14 +36,11 @@ const AddProperty = ({ navigation }) => {
     state: '',
     postalCode: '', // Updated from pincode to match DTO
     country: 'India', // Default country
-    description: '',
     totalArea: '',
     yearBuilt: '',
     propertyType: 'Residential', // Updated field name to match DTO
     isParkingAvailable: false,
     isElevatorAvailable: false,
-    propertyTaxId: '',
-    insuranceDetails: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -113,7 +108,7 @@ const AddProperty = ({ navigation }) => {
         state: formData.state.trim() || undefined,
         postalCode: formData.postalCode.trim() || undefined,
         country: formData.country.trim() || undefined,
-        description: formData.description.trim() || undefined,
+
         totalArea: formData.totalArea
           ? parseFloat(formData.totalArea)
           : undefined,
@@ -123,8 +118,6 @@ const AddProperty = ({ navigation }) => {
         propertyType: formData.propertyType || undefined,
         isParkingAvailable: formData.isParkingAvailable,
         isElevatorAvailable: formData.isElevatorAvailable,
-        propertyTaxId: formData.propertyTaxId.trim() || undefined,
-        insuranceDetails: formData.insuranceDetails.trim() || undefined,
       };
 
       // Remove undefined values to avoid sending empty fields
@@ -194,19 +187,6 @@ const AddProperty = ({ navigation }) => {
               error={errors.name}
               placeholder="Enter property name"
               leftIcon="home-outline"
-            />
-
-            <Gap size="md" />
-
-            <StyledTextInput
-              label="Description"
-              value={formData.description}
-              onChangeText={value => handleInputChange('description', value)}
-              error={errors.description}
-              placeholder="Brief description of the property (optional)"
-              leftIcon="text-outline"
-              multiline
-              numberOfLines={3}
             />
 
             <Gap size="md" />
@@ -484,32 +464,6 @@ const AddProperty = ({ navigation }) => {
                 </View>
               </Card>
             </View>
-
-            <Gap size="md" />
-
-            <StyledTextInput
-              label="Property Tax ID"
-              value={formData.propertyTaxId}
-              onChangeText={value => handleInputChange('propertyTaxId', value)}
-              error={errors.propertyTaxId}
-              placeholder="Tax identification number (optional)"
-              leftIcon="file-document-outline"
-            />
-
-            <Gap size="md" />
-
-            <StyledTextInput
-              label="Insurance Details"
-              value={formData.insuranceDetails}
-              onChangeText={value =>
-                handleInputChange('insuranceDetails', value)
-              }
-              error={errors.insuranceDetails}
-              placeholder="Insurance information (optional)"
-              leftIcon="shield-outline"
-              multiline
-              numberOfLines={2}
-            />
           </View>
         </Card>
 
@@ -594,7 +548,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     backgroundColor: colors.white,
-    minWidth: 100,
+    minWidth: 90,
+    borderColor: colors.white,
   },
   selectedTypeCard: {
     borderWidth: 1,
@@ -655,6 +610,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minWidth: 100,
     backgroundColor: colors.white,
+    borderColor: colors.white,
   },
   amenityContent: {
     padding: 12,

@@ -172,7 +172,6 @@ const AddTicket = ({ navigation }) => {
     },
     scrollContainer: {
       flexGrow: 1,
-      paddingTop: 10,
     },
     headerContainer: {
       alignItems: 'center',
@@ -185,6 +184,7 @@ const AddTicket = ({ navigation }) => {
       alignItems: 'center',
     },
     formSection: {
+      marginTop: 16,
       marginBottom: 16,
     },
     sectionTitle: {
@@ -263,6 +263,8 @@ const AddTicket = ({ navigation }) => {
           ]}
         >
           {/* Property Selection */}
+
+          <Gap size="md" />
           <PropertySelector
             navigation={navigation}
             requireSpecificProperty={true}
@@ -270,7 +272,6 @@ const AddTicket = ({ navigation }) => {
             showAddButton={true}
             showTitle={true}
           />
-          <Gap height={16} />
 
           {/* Issue Details Section */}
           <View style={styles.formSection}>

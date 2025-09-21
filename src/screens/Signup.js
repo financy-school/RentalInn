@@ -206,7 +206,7 @@ const SignUp = ({ navigation }) => {
             styles.headerSection,
             {
               backgroundColor: backgroundColor,
-              height: Dimensions.get('window').height * 0.35,
+              height: Dimensions.get('window').height * 0.25,
             },
           ]}
         >
@@ -620,31 +620,31 @@ const styles = StyleSheet.create({
   headerSection: {
     justifyContent: 'center',
     alignItems: 'center',
-    // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
   },
   logoImage: {
-    width: 150,
-    height: 150,
+    width: 120,
+    height: 120,
     borderRadius: 50,
   },
   headerTitle: {
     fontSize: 28,
-    marginTop: 20,
+    marginTop: 12,
   },
   headerSubtitle: {
     fontSize: 16,
-    marginTop: 8,
+    marginTop: 4,
     textAlign: 'center',
     paddingHorizontal: 40,
   },
   formContainer: {
     paddingHorizontal: 20,
-    marginTop: 16,
+    marginTop: 8,
     paddingBottom: 20,
     flex: 1,
   },
   card: {
-    padding: 24,
+    padding: 20,
     borderRadius: 16,
     elevation: 8,
     shadowColor: '#000',
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   input: {
-    marginBottom: 16,
+    marginBottom: 12,
     fontFamily: 'Metropolis-Medium',
   },
   inputContent: {
