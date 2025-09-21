@@ -1,24 +1,26 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
-  Modal,
   ScrollView,
-  Alert,
+  Animated,
 } from 'react-native';
-import { Divider } from 'react-native-paper';
+import { Card } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import StandardText from '../StandardText/StandardText';
 import colors from '../../theme/color';
 import { ThemeContext } from '../../context/ThemeContext';
 import { useProperty } from '../../context/PropertyContext';
+import { SCREEN_NAMES } from '../../navigation/constants';
 
 const PropertySelector = ({
   navigation,
   showAddButton = true,
   showTitle = true,
+  requireSpecificProperty = false, // New prop for action screens
+  actionContext = null, // Context like 'add-room', 'add-tenant', etc.
 }) => {
   const { theme: mode } = useContext(ThemeContext);
   const {
@@ -26,253 +28,343 @@ const PropertySelector = ({
     selectedProperty,
     switchProperty,
     isAllPropertiesSelected,
-    hasProperties,
   } = useProperty();
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [animatedHeight] = useState(new Animated.Value(0));
+
+  // Filter properties based on context
+  const availableProperties = requireSpecificProperty
+    ? properties.filter(property => property.id !== 'all')
+    : properties;
+
+  // Get specific properties (non-'all') for count
+  const specificProperties = properties.filter(
+    property => property.id !== 'all',
+  );
 
   // Theme variables
   const isDark = mode === 'dark';
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
-  const modalBackgroundColor = isDark
-    ? 'rgba(0, 0, 0, 0.8)'
-    : 'rgba(0, 0, 0, 0.5)';
+
+  // Check if we need to show a warning for "All Properties" selection
+  const showAllPropertiesWarning =
+    requireSpecificProperty && isAllPropertiesSelected;
+
+  // Auto-select first specific property if "All Properties" is selected on action screens
+  useEffect(() => {
+    if (
+      requireSpecificProperty &&
+      isAllPropertiesSelected &&
+      specificProperties.length > 0
+    ) {
+      // Auto-switch to the first specific property
+      switchProperty(specificProperties[0]);
+    }
+  }, [
+    requireSpecificProperty,
+    isAllPropertiesSelected,
+    specificProperties,
+    switchProperty,
+  ]);
 
   // Handle property selection
   const handlePropertySelect = async property => {
     try {
       await switchProperty(property);
-      setModalVisible(false);
+      toggleDropdown();
     } catch (error) {
-      Alert.alert('Error', 'Failed to switch property');
       console.error('Property switch error:', error);
     }
   };
 
   // Handle add property
   const handleAddProperty = () => {
-    setModalVisible(false);
-    navigation.navigate('AddProperty');
+    toggleDropdown();
+    if (navigation) {
+      navigation.navigate(SCREEN_NAMES.ADD_PROPERTY);
+    }
+  };
+
+  // Toggle dropdown with animation
+  const toggleDropdown = () => {
+    const toValue = isExpanded ? 0 : 1;
+    setIsExpanded(!isExpanded);
+
+    Animated.timing(animatedHeight, {
+      toValue,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  // Calculate dropdown height
+  const propertyCount = availableProperties.length;
+  const dropdownBaseHeight = propertyCount * 60 + (showAddButton ? 70 : 20);
+  const warningHeight = showAllPropertiesWarning ? 80 : 0;
+
+  const dropdownHeight = animatedHeight.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.min(dropdownBaseHeight + warningHeight, 350)],
+  });
+
+  // Get action context display text
+  const getActionContextText = () => {
+    switch (actionContext) {
+      case 'add-room':
+        return 'to add a room';
+      case 'add-tenant':
+        return 'to add a tenant';
+      case 'add-ticket':
+        return 'to create a ticket';
+      default:
+        return 'for this action';
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Property Selector Button */}
-      <TouchableOpacity
-        style={[styles.selectorButton, { backgroundColor: cardBackground }]}
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.7}
+      {/* Main Property Selector Card */}
+      <Card
+        style={[styles.selectorCard, { backgroundColor: cardBackground }]}
+        elevation={2}
       >
-        <View style={styles.selectorContent}>
-          <View style={styles.propertyInfo}>
-            <MaterialCommunityIcons
-              name={isAllPropertiesSelected ? 'view-dashboard' : 'home'}
-              size={20}
-              color={colors.primary}
-            />
-            <View style={styles.textContainer}>
-              {showTitle && (
-                <StandardText
-                  style={[styles.selectorLabel, { color: textSecondary }]}
-                  fontWeight="medium"
-                >
-                  Property
-                </StandardText>
-              )}
-              <StandardText
-                style={[styles.selectorText, { color: textPrimary }]}
-                fontWeight="bold"
-                numberOfLines={1}
-              >
-                {selectedProperty?.name || 'All Properties'}
-              </StandardText>
-            </View>
-          </View>
-          <MaterialCommunityIcons
-            name="chevron-down"
-            size={20}
-            color={textSecondary}
-          />
-        </View>
-      </TouchableOpacity>
-
-      {/* Property Selection Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View
-          style={[
-            styles.modalOverlay,
-            { backgroundColor: modalBackgroundColor },
-          ]}
+        <TouchableOpacity
+          style={styles.selectorButton}
+          onPress={toggleDropdown}
+          activeOpacity={0.7}
         >
-          <View
-            style={[styles.modalContent, { backgroundColor: cardBackground }]}
-          >
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
-              <StandardText
-                style={[styles.modalTitle, { color: textPrimary }]}
-                fontWeight="bold"
-              >
-                Select Property
-              </StandardText>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={styles.closeButton}
+          <View style={styles.selectorContent}>
+            <View style={styles.propertyInfo}>
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: colors.primary + '15' },
+                ]}
               >
                 <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={textSecondary}
+                  name={isAllPropertiesSelected ? 'view-dashboard' : 'home'}
+                  size={22}
+                  color={colors.primary}
                 />
-              </TouchableOpacity>
-            </View>
-
-            <Divider style={{ backgroundColor: colors.border }} />
-
-            {/* Property List */}
-            <ScrollView
-              style={styles.propertyList}
-              showsVerticalScrollIndicator={false}
-            >
-              {properties.map((property, index) => {
-                const isSelected = selectedProperty?.id === property.id;
-                const itemBackgroundColor = isSelected
-                  ? colors.primary + '10'
-                  : 'transparent';
-
-                return (
-                  <TouchableOpacity
-                    key={property.id}
-                    style={[
-                      styles.propertyItem,
-                      isSelected && styles.selectedPropertyItem,
-                      { backgroundColor: itemBackgroundColor },
-                    ]}
-                    onPress={() => handlePropertySelect(property)}
-                  >
-                    <View style={styles.propertyItemContent}>
-                      <MaterialCommunityIcons
-                        name={property.id === 'all' ? 'view-dashboard' : 'home'}
-                        size={24}
-                        color={
-                          selectedProperty?.id === property.id
-                            ? colors.primary
-                            : textSecondary
-                        }
-                      />
-                      <View style={styles.propertyDetails}>
-                        <StandardText
-                          style={[
-                            styles.propertyName,
-                            {
-                              color:
-                                selectedProperty?.id === property.id
-                                  ? colors.primary
-                                  : textPrimary,
-                            },
-                          ]}
-                          fontWeight={
-                            selectedProperty?.id === property.id
-                              ? 'bold'
-                              : 'medium'
-                          }
-                        >
-                          {property.name}
-                        </StandardText>
-                        {property.id !== 'all' && (
-                          <StandardText
-                            style={[
-                              styles.propertyAddress,
-                              { color: textSecondary },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {property.city
-                              ? `${property.city}, ${property.state}`
-                              : property.address}
-                          </StandardText>
-                        )}
-                        {property.id === 'all' && (
-                          <StandardText
-                            style={[
-                              styles.propertyAddress,
-                              { color: textSecondary },
-                            ]}
-                          >
-                            Combined analytics for all properties
-                          </StandardText>
-                        )}
-                      </View>
-                      {selectedProperty?.id === property.id && (
-                        <MaterialCommunityIcons
-                          name="check-circle"
-                          size={20}
-                          color={colors.primary}
-                        />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-
-              {/* No Properties Message */}
-              {!hasProperties && (
-                <View style={styles.noPropertiesContainer}>
-                  <MaterialCommunityIcons
-                    name="home-plus-outline"
-                    size={48}
-                    color={textSecondary}
-                  />
+              </View>
+              <View style={styles.textContainer}>
+                {showTitle && (
                   <StandardText
-                    style={[styles.noPropertiesText, { color: textSecondary }]}
+                    style={[styles.selectorLabel, { color: textSecondary }]}
+                    fontWeight="medium"
+                    size="xs"
+                  >
+                    {requireSpecificProperty
+                      ? `Select Property ${getActionContextText()}`
+                      : 'Current Property'}
+                  </StandardText>
+                )}
+                <StandardText
+                  style={[
+                    styles.selectorText,
+                    {
+                      color: showAllPropertiesWarning
+                        ? colors.warning
+                        : textPrimary,
+                    },
+                  ]}
+                  fontWeight="bold"
+                  numberOfLines={1}
+                >
+                  {selectedProperty?.name || 'All Properties'}
+                </StandardText>
+                {selectedProperty && selectedProperty.id !== 'all' && (
+                  <StandardText
+                    style={[styles.addressText, { color: textSecondary }]}
+                    size="xs"
+                    numberOfLines={1}
+                  >
+                    {selectedProperty.city
+                      ? `${selectedProperty.city}, ${selectedProperty.state}`
+                      : 'No location'}
+                  </StandardText>
+                )}
+                {showAllPropertiesWarning && (
+                  <StandardText
+                    style={[styles.warningText, { color: colors.warning }]}
+                    size="xs"
                     fontWeight="medium"
                   >
-                    No properties added yet
+                    Please select a specific property
                   </StandardText>
-                  <StandardText
-                    style={[
-                      styles.noPropertiesSubtext,
-                      { color: textSecondary },
-                    ]}
-                  >
-                    Add your first property to get started
-                  </StandardText>
-                </View>
-              )}
-            </ScrollView>
+                )}
+              </View>
+            </View>
+            <View style={styles.actionContainer}>
+              <StandardText
+                style={[styles.actionText, { color: colors.primary }]}
+                fontWeight="medium"
+                size="sm"
+              >
+                {isExpanded ? 'Close' : 'Switch'}
+              </StandardText>
+              <MaterialCommunityIcons
+                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={colors.primary}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Dropdown Content */}
+        <Animated.View
+          style={[
+            styles.dropdownContainer,
+            {
+              height: dropdownHeight,
+              backgroundColor: cardBackground,
+            },
+          ]}
+        >
+          <ScrollView
+            style={styles.dropdownScroll}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+          >
+            {/* Warning message for action screens when "All Properties" is selected */}
+            {showAllPropertiesWarning && (
+              <View style={styles.warningContainer}>
+                <MaterialCommunityIcons
+                  name="alert-circle"
+                  size={16}
+                  color={colors.warning}
+                />
+                <StandardText
+                  style={[styles.warningMessage, { color: colors.warning }]}
+                  size="xs"
+                  fontWeight="medium"
+                >
+                  You need to select a specific property{' '}
+                  {getActionContextText()}
+                </StandardText>
+              </View>
+            )}
+
+            {availableProperties.map(property => {
+              const isSelected = selectedProperty?.id === property.id;
+              return (
+                <TouchableOpacity
+                  key={property.id}
+                  style={[
+                    styles.propertyItem,
+                    isSelected && styles.selectedPropertyItem,
+                  ]}
+                  onPress={() => handlePropertySelect(property)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.propertyItemContent}>
+                    <MaterialCommunityIcons
+                      name={property.id === 'all' ? 'view-dashboard' : 'home'}
+                      size={20}
+                      color={isSelected ? colors.primary : textSecondary}
+                    />
+                    <View style={styles.propertyDetails}>
+                      <StandardText
+                        style={[
+                          styles.propertyName,
+                          { color: isSelected ? colors.primary : textPrimary },
+                        ]}
+                        fontWeight={isSelected ? 'bold' : 'medium'}
+                      >
+                        {property.name}
+                      </StandardText>
+                      {property.id !== 'all' ? (
+                        <StandardText
+                          style={[
+                            styles.propertyAddress,
+                            { color: textSecondary },
+                          ]}
+                          size="xs"
+                          numberOfLines={1}
+                        >
+                          {property.city
+                            ? `${property.city}, ${property.state}`
+                            : property.address || 'No address'}
+                        </StandardText>
+                      ) : (
+                        <StandardText
+                          style={[
+                            styles.propertyAddress,
+                            { color: textSecondary },
+                          ]}
+                          size="xs"
+                        >
+                          View combined analytics
+                        </StandardText>
+                      )}
+                    </View>
+                    {isSelected && (
+                      <MaterialCommunityIcons
+                        name="check-circle"
+                        size={18}
+                        color={colors.primary}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
 
             {/* Add Property Button */}
             {showAddButton && (
-              <>
-                <Divider style={{ backgroundColor: colors.border }} />
-                <TouchableOpacity
-                  style={styles.addPropertyButton}
-                  onPress={handleAddProperty}
-                >
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={20}
-                    color={colors.primary}
-                  />
-                  <StandardText
-                    style={[styles.addPropertyText, { color: colors.primary }]}
-                    fontWeight="bold"
+              <TouchableOpacity
+                style={styles.addPropertyButton}
+                onPress={handleAddProperty}
+                activeOpacity={0.7}
+              >
+                <View style={styles.addPropertyContent}>
+                  <View
+                    style={[
+                      styles.addIconContainer,
+                      { backgroundColor: colors.success + '15' },
+                    ]}
                   >
-                    Add New Property
-                  </StandardText>
-                </TouchableOpacity>
-              </>
+                    <MaterialCommunityIcons
+                      name="plus"
+                      size={20}
+                      color={colors.success}
+                    />
+                  </View>
+                  <View style={styles.addPropertyDetails}>
+                    <StandardText
+                      style={[
+                        styles.addPropertyText,
+                        { color: colors.success },
+                      ]}
+                      fontWeight="bold"
+                    >
+                      Add New Property
+                    </StandardText>
+                    <StandardText
+                      style={[
+                        styles.addPropertySubtext,
+                        { color: textSecondary },
+                      ]}
+                      size="xs"
+                    >
+                      Create a new property to manage
+                    </StandardText>
+                  </View>
+                  <MaterialCommunityIcons
+                    name="arrow-right"
+                    size={18}
+                    color={colors.success}
+                  />
+                </View>
+              </TouchableOpacity>
             )}
-          </View>
-        </View>
-      </Modal>
+          </ScrollView>
+        </Animated.View>
+      </Card>
     </View>
   );
 };
@@ -280,16 +372,14 @@ const PropertySelector = ({
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
+    zIndex: 1000,
+  },
+  selectorCard: {
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   selectorButton: {
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    elevation: 1,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    padding: 16,
   },
   selectorContent: {
     flexDirection: 'row',
@@ -301,58 +391,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   textContainer: {
-    marginLeft: 8,
     flex: 1,
   },
   selectorLabel: {
     fontSize: 11,
     lineHeight: 14,
+    marginBottom: 2,
   },
   selectorText: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 16,
+    lineHeight: 20,
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+  addressText: {
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 2,
   },
-  modalContent: {
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '80%',
-    borderRadius: 12,
-    elevation: 5,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+  warningText: {
+    fontSize: 10,
+    lineHeight: 12,
+    marginTop: 2,
   },
-  modalHeader: {
+  actionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    paddingBottom: 16,
+    marginLeft: 12,
   },
-  modalTitle: {
-    fontSize: 18,
+  actionText: {
+    marginRight: 6,
   },
-  closeButton: {
-    padding: 4,
+  dropdownContainer: {
+    overflow: 'hidden',
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  propertyList: {
-    maxHeight: 400,
+  dropdownScroll: {
+    flex: 1,
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.warning + '10',
+    margin: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.warning + '30',
+  },
+  warningMessage: {
+    marginLeft: 8,
+    flex: 1,
   },
   propertyItem: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   selectedPropertyItem: {
-    borderRadius: 0,
+    backgroundColor: colors.primary + '08',
   },
   propertyItemContent: {
     flexDirection: 'row',
@@ -363,36 +467,46 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   propertyName: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
   },
   propertyAddress: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
     marginTop: 2,
   },
-  noPropertiesContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  noPropertiesText: {
-    fontSize: 16,
-    marginTop: 12,
-  },
-  noPropertiesSubtext: {
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: 'center',
-  },
   addPropertyButton: {
+    margin: 12,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: colors.success + '08',
+    borderWidth: 1,
+    borderColor: colors.success + '20',
+    borderStyle: 'dashed',
+  },
+  addPropertyContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  addIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
-    padding: 16,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  addPropertyDetails: {
+    flex: 1,
   },
   addPropertyText: {
-    fontSize: 16,
-    marginLeft: 8,
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  addPropertySubtext: {
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 2,
   },
 });
 

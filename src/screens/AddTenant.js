@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInput as PaperInput, useTheme } from 'react-native-paper';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
+import PropertySelector from '../components/PropertySelector/PropertySelector';
 import Gap from '../components/Gap/Gap';
 import StandardText from '../components/StandardText/StandardText';
 import GradientCard from '../components/GradientCard/GradientCard';
@@ -286,6 +287,16 @@ const AddTenant = ({ navigation, route }) => {
             mode === 'dark' ? ['#2a2a2a', '#1f1f1f'] : ['#ffffff', '#f8f9fa']
           }
         >
+          {/* Property Selection */}
+          <PropertySelector
+            navigation={navigation}
+            requireSpecificProperty={true}
+            actionContext="add-tenant"
+            showAddButton={true}
+            showTitle={true}
+          />
+          <Gap height={16} />
+
           {/* Personal Information Section */}
           <View style={styles.formSection}>
             <StandardText

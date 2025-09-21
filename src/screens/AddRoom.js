@@ -31,6 +31,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const { width } = Dimensions.get('window');
 
 import StandardHeader from '../components/StandardHeader/StandardHeader';
+import PropertySelector from '../components/PropertySelector/PropertySelector';
 
 const AddRoom = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -485,6 +486,16 @@ const AddRoom = ({ navigation, route }) => {
             mode === 'dark' ? ['#2a2a2a', '#1f1f1f'] : ['#ffffff', '#f8f9fa']
           }
         >
+          {/* Property Selection */}
+          <PropertySelector
+            navigation={navigation}
+            requireSpecificProperty={true}
+            actionContext="add-room"
+            showAddButton={true}
+            showTitle={true}
+          />
+          <Gap height={16} />
+
           {/* Basic Information */}
           <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
             🏠 Basic Information

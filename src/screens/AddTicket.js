@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { TextInput as PaperInput, useTheme } from 'react-native-paper';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
+import PropertySelector from '../components/PropertySelector/PropertySelector';
 import { CredentialsContext } from '../context/CredentialsContext';
 import {
   createDocument,
@@ -252,6 +253,16 @@ const AddTicket = ({ navigation }) => {
             mode === 'dark' ? '#1f1f1f' : '#f8f9fa',
           ]}
         >
+          {/* Property Selection */}
+          <PropertySelector
+            navigation={navigation}
+            requireSpecificProperty={true}
+            actionContext="add-ticket"
+            showAddButton={true}
+            showTitle={true}
+          />
+          <Gap height={16} />
+
           {/* Issue Details Section */}
           <View style={styles.formSection}>
             <StandardText

@@ -30,15 +30,22 @@ const AddProperty = ({ navigation }) => {
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
 
-  // Form state
+  // Form state - Updated to match CreatePropertyDto
   const [formData, setFormData] = useState({
     name: '',
     address: '',
     city: '',
     state: '',
-    pincode: '',
+    postalCode: '', // Updated from pincode to match DTO
+    country: 'India', // Default country
     description: '',
-    type: 'Residential', // Residential, Commercial, Mixed
+    totalArea: '',
+    yearBuilt: '',
+    propertyType: 'Residential', // Updated field name to match DTO
+    isParkingAvailable: false,
+    isElevatorAvailable: false,
+    propertyTaxId: '',
+    insuranceDetails: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -65,18 +72,25 @@ const AddProperty = ({ navigation }) => {
       newErrors.address = 'Address is required';
     }
 
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
+    // Optional fields validation with proper formatting
+    if (formData.postalCode && !/^\d{6}$/.test(formData.postalCode)) {
+      newErrors.postalCode = 'Please enter a valid 6-digit postal code';
     }
 
-    if (!formData.state.trim()) {
-      newErrors.state = 'State is required';
+    if (
+      formData.totalArea &&
+      (isNaN(formData.totalArea) || parseFloat(formData.totalArea) <= 0)
+    ) {
+      newErrors.totalArea = 'Please enter a valid area in square feet';
     }
 
-    if (!formData.pincode.trim()) {
-      newErrors.pincode = 'PIN code is required';
-    } else if (!/^\d{6}$/.test(formData.pincode)) {
-      newErrors.pincode = 'Please enter a valid 6-digit PIN code';
+    if (
+      formData.yearBuilt &&
+      (isNaN(formData.yearBuilt) ||
+        parseInt(formData.yearBuilt, 10) < 1800 ||
+        parseInt(formData.yearBuilt, 10) > new Date().getFullYear())
+    ) {
+      newErrors.yearBuilt = 'Please enter a valid year';
     }
 
     setErrors(newErrors);
@@ -91,36 +105,62 @@ const AddProperty = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const newProperty = await addProperty(formData);
+      // Format data to match API expectations
+      const propertyData = {
+        name: formData.name.trim(),
+        address: formData.address.trim(),
+        city: formData.city.trim() || undefined,
+        state: formData.state.trim() || undefined,
+        postalCode: formData.postalCode.trim() || undefined,
+        country: formData.country.trim() || undefined,
+        description: formData.description.trim() || undefined,
+        totalArea: formData.totalArea
+          ? parseFloat(formData.totalArea)
+          : undefined,
+        yearBuilt: formData.yearBuilt
+          ? parseInt(formData.yearBuilt, 10)
+          : undefined,
+        propertyType: formData.propertyType || undefined,
+        isParkingAvailable: formData.isParkingAvailable,
+        isElevatorAvailable: formData.isElevatorAvailable,
+        propertyTaxId: formData.propertyTaxId.trim() || undefined,
+        insuranceDetails: formData.insuranceDetails.trim() || undefined,
+      };
 
-      Alert.alert(
-        'Success',
-        `Property "${newProperty.name}" has been added successfully!`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ],
-      );
+      // Remove undefined values to avoid sending empty fields
+      Object.keys(propertyData).forEach(key => {
+        if (propertyData[key] === undefined) {
+          delete propertyData[key];
+        }
+      });
+
+      const newProperty = await addProperty(propertyData);
+
+      navigation.goBack();
     } catch (error) {
-      Alert.alert('Error', 'Failed to add property. Please try again.');
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to add property. Please try again.',
+      );
       console.error('Add property error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Property type options
+  // Property type options - Updated to match common property types
   const propertyTypes = [
     { label: 'Residential', value: 'Residential', icon: 'home' },
     { label: 'Commercial', value: 'Commercial', icon: 'office-building' },
-    { label: 'Mixed Use', value: 'Mixed', icon: 'domain' },
+    { label: 'Industrial', value: 'Industrial', icon: 'factory' },
+    // { label: 'Mixed Use', value: 'Mixed Use', icon: 'domain' },
+    // { label: 'Retail', value: 'Retail', icon: 'store' },
+    // { label: 'Office', value: 'Office', icon: 'briefcase' },
   ];
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor }]}
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StandardHeader navigation={navigation} title="Add Property" />
@@ -187,28 +227,19 @@ const AddProperty = ({ navigation }) => {
                   key={type.value}
                   style={[
                     styles.typeCard,
-                    {
-                      backgroundColor:
-                        formData.type === type.value
-                          ? colors.primary + '20'
-                          : cardBackground,
-                      borderColor:
-                        formData.type === type.value
-                          ? colors.primary
-                          : colors.border,
-                    },
-                    formData.type === type.value
+
+                    formData.propertyType === type.value
                       ? styles.selectedTypeCard
                       : styles.unselectedTypeCard,
                   ]}
-                  onPress={() => handleInputChange('type', type.value)}
+                  onPress={() => handleInputChange('propertyType', type.value)}
                 >
                   <View style={styles.typeContent}>
                     <MaterialCommunityIcons
                       name={type.icon}
                       size={24}
                       color={
-                        formData.type === type.value
+                        formData.propertyType === type.value
                           ? colors.primary
                           : textSecondary
                       }
@@ -218,13 +249,13 @@ const AddProperty = ({ navigation }) => {
                         styles.typeLabel,
                         {
                           color:
-                            formData.type === type.value
+                            formData.propertyType === type.value
                               ? colors.primary
                               : textSecondary,
                         },
                       ]}
                       fontWeight={
-                        formData.type === type.value ? 'bold' : 'medium'
+                        formData.propertyType === type.value ? 'bold' : 'medium'
                       }
                     >
                       {type.label}
@@ -294,15 +325,190 @@ const AddProperty = ({ navigation }) => {
 
             <Gap size="md" />
 
+            <View style={styles.rowInputs}>
+              <View style={styles.halfInput}>
+                <StyledTextInput
+                  label="Postal Code"
+                  value={formData.postalCode}
+                  onChangeText={value => handleInputChange('postalCode', value)}
+                  error={errors.postalCode}
+                  placeholder="PIN code"
+                  leftIcon="mailbox-outline"
+                  keyboardType="numeric"
+                  maxLength={6}
+                />
+              </View>
+              <Gap size="md" horizontal />
+              <View style={styles.halfInput}>
+                <StyledTextInput
+                  label="Country"
+                  value={formData.country}
+                  onChangeText={value => handleInputChange('country', value)}
+                  error={errors.country}
+                  placeholder="Country"
+                  leftIcon="flag-outline"
+                />
+              </View>
+            </View>
+          </View>
+        </Card>
+
+        <Gap size="lg" />
+
+        {/* Property Details */}
+        <Card style={[styles.formCard, { backgroundColor: cardBackground }]}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="information-outline"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              style={[styles.sectionTitle, { color: textPrimary }]}
+              fontWeight="bold"
+            >
+              Additional Details
+            </StandardText>
+          </View>
+
+          <View style={styles.formSection}>
+            <View style={styles.rowInputs}>
+              <View style={styles.halfInput}>
+                <StyledTextInput
+                  label="Total Area (sq ft)"
+                  value={formData.totalArea}
+                  onChangeText={value => handleInputChange('totalArea', value)}
+                  error={errors.totalArea}
+                  placeholder="Area in sq ft"
+                  leftIcon="ruler-square"
+                  keyboardType="numeric"
+                />
+              </View>
+              <Gap size="md" horizontal />
+              <View style={styles.halfInput}>
+                <StyledTextInput
+                  label="Year Built"
+                  value={formData.yearBuilt}
+                  onChangeText={value => handleInputChange('yearBuilt', value)}
+                  error={errors.yearBuilt}
+                  placeholder="e.g., 2020"
+                  leftIcon="calendar-outline"
+                  keyboardType="numeric"
+                  maxLength={4}
+                />
+              </View>
+            </View>
+
+            <Gap size="md" />
+
+            {/* Amenities */}
+            <StandardText
+              style={[styles.fieldLabel, { color: textPrimary }]}
+              fontWeight="medium"
+            >
+              Available Amenities
+            </StandardText>
+
+            <Gap size="sm" />
+
+            <View style={styles.amenityContainer}>
+              <Card
+                style={[styles.amenityCard]}
+                onPress={() =>
+                  handleInputChange(
+                    'isParkingAvailable',
+                    !formData.isParkingAvailable,
+                  )
+                }
+              >
+                <View style={styles.amenityContent}>
+                  <MaterialCommunityIcons
+                    name="car"
+                    size={20}
+                    color={
+                      formData.isParkingAvailable
+                        ? colors.primary
+                        : textSecondary
+                    }
+                  />
+                  <StandardText
+                    style={[
+                      styles.amenityLabel,
+                      {
+                        color: formData.isParkingAvailable
+                          ? colors.primary
+                          : textSecondary,
+                      },
+                    ]}
+                    fontWeight={formData.isParkingAvailable ? 'bold' : 'medium'}
+                  >
+                    Parking
+                  </StandardText>
+                </View>
+              </Card>
+
+              <Card
+                style={[styles.amenityCard]}
+                onPress={() =>
+                  handleInputChange(
+                    'isElevatorAvailable',
+                    !formData.isElevatorAvailable,
+                  )
+                }
+              >
+                <View style={styles.amenityContent}>
+                  <MaterialCommunityIcons
+                    name="elevator"
+                    size={20}
+                    color={
+                      formData.isElevatorAvailable
+                        ? colors.primary
+                        : textSecondary
+                    }
+                  />
+                  <StandardText
+                    style={[
+                      styles.amenityLabel,
+                      {
+                        color: formData.isElevatorAvailable
+                          ? colors.primary
+                          : textSecondary,
+                      },
+                    ]}
+                    fontWeight={
+                      formData.isElevatorAvailable ? 'bold' : 'medium'
+                    }
+                  >
+                    Elevator
+                  </StandardText>
+                </View>
+              </Card>
+            </View>
+
+            <Gap size="md" />
+
             <StyledTextInput
-              label="PIN Code"
-              value={formData.pincode}
-              onChangeText={value => handleInputChange('pincode', value)}
-              error={errors.pincode}
-              placeholder="Enter 6-digit PIN code"
-              leftIcon="mailbox-outline"
-              keyboardType="numeric"
-              maxLength={6}
+              label="Property Tax ID"
+              value={formData.propertyTaxId}
+              onChangeText={value => handleInputChange('propertyTaxId', value)}
+              error={errors.propertyTaxId}
+              placeholder="Tax identification number (optional)"
+              leftIcon="file-document-outline"
+            />
+
+            <Gap size="md" />
+
+            <StyledTextInput
+              label="Insurance Details"
+              value={formData.insuranceDetails}
+              onChangeText={value =>
+                handleInputChange('insuranceDetails', value)
+              }
+              error={errors.insuranceDetails}
+              placeholder="Insurance information (optional)"
+              leftIcon="shield-outline"
+              multiline
+              numberOfLines={2}
             />
           </View>
         </Card>
@@ -341,12 +547,14 @@ const AddProperty = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16,
   },
   formCard: {
+    marginTop: 16,
     borderRadius: 12,
     elevation: 2,
     shadowColor: colors.black,
@@ -385,6 +593,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
+    backgroundColor: colors.white,
+    minWidth: 100,
   },
   selectedTypeCard: {
     borderWidth: 1,
@@ -429,6 +639,33 @@ const styles = StyleSheet.create({
   buttonLabel: {
     fontSize: 16,
     fontFamily: 'Metropolis-Medium',
+  },
+  amenityContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  amenityCard: {
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    borderWidth: 1,
+    minWidth: 100,
+    backgroundColor: colors.white,
+  },
+  amenityContent: {
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  amenityLabel: {
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
 

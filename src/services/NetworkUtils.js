@@ -221,6 +221,61 @@ export const analyticsPerformance = async (accessToken, startDate, endDate) => {
 };
 
 /**
+ *
+ * Property Management API calls
+ */
+
+export const fetchProperties = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.get('/properties', {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'FETCH_PROPERTIES',
+  );
+};
+
+export const getProperty = async (accessToken, propertyId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/properties/${propertyId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_PROPERTY',
+  );
+};
+
+export const createProperty = async (accessToken, propertyData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post('/properties', propertyData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'CREATE_PROPERTY',
+  );
+};
+
+export const updateProperty = async (accessToken, propertyId, propertyData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.put(`/properties/${propertyId}`, propertyData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_PROPERTY',
+  );
+};
+
+export const deleteProperty = async (accessToken, propertyId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.delete(`/properties/${propertyId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'DELETE_PROPERTY',
+  );
+};
+
+/**
  * Room Management API calls
  */
 export const propertyRooms = async (accessToken, propertyId) => {
