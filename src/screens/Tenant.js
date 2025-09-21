@@ -180,17 +180,19 @@ const Tenants = ({ navigation }) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={styles.container}>
       {/* Property Selector */}
-      <PropertySelector
-        navigation={navigation}
-        requireSpecificProperty={true}
-        actionContext="manage-tenants"
-      />
+
+      <View style={styles.propertySelectorContainer}>
+        <PropertySelector
+          navigation={navigation}
+          requireSpecificProperty={true}
+          actionContext="manage-tenants"
+        />
+      </View>
 
       {/* Main content */}
       <ScrollView
-        contentContainerStyle={{ padding: 16 }}
         onScrollBeginDrag={() => {
           // hide menu on scroll to avoid stale position
           closeMenu();
@@ -566,6 +568,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 16,
+  },
+  propertySelectorContainer: {
+    marginBottom: 16,
   },
 });
 

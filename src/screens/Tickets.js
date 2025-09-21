@@ -184,11 +184,13 @@ const Tickets = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Property Selector */}
-      <PropertySelector
-        navigation={navigation}
-        requireSpecificProperty={true}
-        actionContext="manage-tickets"
-      />
+      <View style={styles.propertySelectorContainer}>
+        <PropertySelector
+          navigation={navigation}
+          requireSpecificProperty={true}
+          actionContext="manage-tickets"
+        />
+      </View>
 
       {/* Image Modal */}
       {modalVisible && (
@@ -214,7 +216,7 @@ const Tickets = ({ navigation }) => {
           </View>
         </View>
       )}
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView>
         {/* Show SelectPropertyPrompt if no property is selected */}
         {isAllPropertiesSelected ? (
           <SelectPropertyPrompt
@@ -461,6 +463,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingHorizontal: 16,
+  },
+  propertySelectorContainer: {
+    marginBottom: 16,
   },
   filterContainer: {
     flexDirection: 'row',

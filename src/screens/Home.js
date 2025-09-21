@@ -1597,7 +1597,6 @@ const styles = StyleSheet.create({
   },
 
   propertySelectorContainer: {
-    marginHorizontal: -16,
     marginBottom: 16,
   },
 

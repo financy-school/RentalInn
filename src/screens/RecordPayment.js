@@ -50,7 +50,7 @@ const RecordPayment = ({ navigation, route }) => {
   // Payment modes with icons
   const paymentModes = [
     { id: 'cash', name: 'Cash', icon: 'cash' },
-    { id: 'gpay', name: 'GPay', icon: 'google-pay' },
+    { id: 'gpay', name: 'GPay', icon: 'google' },
     { id: 'phonepe', name: 'Phone Pe', icon: 'phone' },
     { id: 'paytm', name: 'Paytm', icon: 'wallet' },
     { id: 'upi', name: 'UPI', icon: 'bank-transfer' },
@@ -142,7 +142,7 @@ const RecordPayment = ({ navigation, route }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={styles.container}>
       <StandardHeader
         navigation={navigation}
         title="Record Payment"
@@ -403,6 +403,7 @@ const RecordPayment = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',

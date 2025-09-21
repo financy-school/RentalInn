@@ -205,15 +205,23 @@ const Rooms = ({ navigation }) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.background,
+        paddingHorizontal: 16,
+      }}
+    >
       {/* Property Selector */}
-      <PropertySelector
-        navigation={navigation}
-        requireSpecificProperty={true}
-        actionContext="manage-rooms"
-      />
+      <View style={styles.propertySelectorContainer}>
+        <PropertySelector
+          navigation={navigation}
+          requireSpecificProperty={true}
+          actionContext="manage-rooms"
+        />
+      </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView>
         {/* Show SelectPropertyPrompt if no property is selected */}
         {isAllPropertiesSelected ? (
           <SelectPropertyPrompt
@@ -585,6 +593,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  propertySelectorContainer: {
+    marginBottom: 16,
   },
 });
 
