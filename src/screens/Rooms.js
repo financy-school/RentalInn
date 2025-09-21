@@ -22,6 +22,7 @@ import { useProperty } from '../context/PropertyContext';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
+import SelectPropertyPrompt from '../components/SelectPropertyPrompt/SelectPropertyPrompt';
 import Share from 'react-native-share';
 import {
   getDocument,
@@ -86,7 +87,9 @@ const Rooms = ({ navigation }) => {
       : null;
 
     if (!accessToken || !currentPropertyId) {
-      setError('Missing access token or property ID');
+      // Don't show error when no property is selected - just clear data
+      setRooms([]);
+      setError(null);
       setLoading(false);
       return;
     }
@@ -204,201 +207,222 @@ const Rooms = ({ navigation }) => {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Property Selector */}
-      <PropertySelector navigation={navigation} />
+      <PropertySelector
+        navigation={navigation}
+        requireSpecificProperty={true}
+        actionContext="manage-rooms"
+      />
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Search */}
-        <PaperInput
-          mode="flat"
-          placeholder="Search Rooms..."
-          value={search}
-          onChangeText={setSearch}
-          style={styles.searchBar}
-          left={<PaperInput.Icon icon="magnify" />}
-          underlineColor="transparent"
-          activeUnderlineColor="transparent"
-          contentStyle={{ fontFamily: 'Metropolis-Medium' }}
-          theme={{
-            roundness: 25,
-            colors: {
-              background: '#fff',
-              text: '#000',
-              placeholder: '#888',
-            },
-          }}
-        />
-
-        <Gap size="md" />
-
-        {/* Filters */}
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterContainer}
-        >
-          {filterOptions.map(option => (
-            <Chip
-              key={option.key}
-              selected={selectedFilter === option.key}
-              selectedColor="#fff"
-              onPress={() => setSelectedFilter(option.key)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor:
-                    selectedFilter === option.key
-                      ? colors.secondary
-                      : '#f5f5f5',
+        {/* Show SelectPropertyPrompt if no property is selected */}
+        {isAllPropertiesSelected ? (
+          <SelectPropertyPrompt
+            title="Select a Property"
+            description="Please select a specific property to view and manage rooms. Rooms are organized by property."
+            onSelectProperty={() => {
+              // Scroll to top to show PropertySelector
+              // You could also add navigation to property selection if needed
+            }}
+          />
+        ) : (
+          <>
+            {/* Search */}
+            <PaperInput
+              mode="flat"
+              placeholder="Search Rooms..."
+              value={search}
+              onChangeText={setSearch}
+              style={styles.searchBar}
+              left={<PaperInput.Icon icon="magnify" />}
+              underlineColor="transparent"
+              activeUnderlineColor="transparent"
+              contentStyle={{ fontFamily: 'Metropolis-Medium' }}
+              theme={{
+                roundness: 25,
+                colors: {
+                  background: '#fff',
+                  text: '#000',
+                  placeholder: '#888',
                 },
-              ]}
-              textStyle={{
-                color: selectedFilter === option.key ? '#fff' : '#000',
-                fontFamily: 'Metropolis-Medium',
-                fontWeight: selectedFilter === option.key ? '600' : '400',
               }}
+            />
+
+            <Gap size="md" />
+
+            {/* Filters */}
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterContainer}
             >
-              {option.label} ({option.value})
-            </Chip>
-          ))}
-        </ScrollView>
+              {filterOptions.map(option => (
+                <Chip
+                  key={option.key}
+                  selected={selectedFilter === option.key}
+                  selectedColor="#fff"
+                  onPress={() => setSelectedFilter(option.key)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor:
+                        selectedFilter === option.key
+                          ? colors.secondary
+                          : '#f5f5f5',
+                    },
+                  ]}
+                  textStyle={{
+                    color: selectedFilter === option.key ? '#fff' : '#000',
+                    fontFamily: 'Metropolis-Medium',
+                    fontWeight: selectedFilter === option.key ? '600' : '400',
+                  }}
+                >
+                  {option.label} ({option.value})
+                </Chip>
+              ))}
+            </ScrollView>
 
-        {/* Loader / Error / Empty */}
-        {loading && (
-          <StandardText style={{ textAlign: 'center' }}>
-            Loading rooms...
-          </StandardText>
+            {/* Loader / Error / Empty */}
+            {loading && (
+              <StandardText style={{ textAlign: 'center' }}>
+                Loading rooms...
+              </StandardText>
+            )}
+            {error && (
+              <View style={{ alignItems: 'center' }}>
+                <StandardText style={{ color: 'red' }}>{error}</StandardText>
+                <Button
+                  mode="contained"
+                  onPress={fetchRooms}
+                  style={{ marginTop: 8 }}
+                >
+                  Retry
+                </Button>
+              </View>
+            )}
+            {!loading && !error && filteredRooms.length === 0 && (
+              <StandardText style={{ textAlign: 'center' }}>
+                No rooms found
+              </StandardText>
+            )}
+
+            {/* Rooms */}
+            {!loading &&
+              filteredRooms.map(room => (
+                <StandardCard key={room.id} style={styles.card}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('RoomDetails', { room })}
+                  >
+                    {/* Image */}
+                    {room.imageUrl ? (
+                      <Image
+                        source={{ uri: room.imageUrl }}
+                        style={{ width: '100%', height: 150 }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.imagePlaceholder}>
+                        <MaterialCommunityIcons
+                          name="image-off"
+                          size={40}
+                          color="#aaa"
+                        />
+                      </View>
+                    )}
+
+                    {/* Content */}
+                    <View style={{ padding: 12 }}>
+                      <View style={styles.titleRow}>
+                        <StandardText
+                          fontWeight="bold"
+                          style={styles.roomTitle}
+                        >
+                          {room.name || `Room ${room.id}`}
+                        </StandardText>
+                        <View
+                          style={[
+                            styles.statusBadge,
+                            {
+                              backgroundColor:
+                                room.status === 'VACANT'
+                                  ? 'rgba(62, 219, 26, 0.1)' // #3EDB1A with 0.1 opacity
+                                  : 'rgba(255, 226, 226, 0.1)', // #FFE2E2 with 0.1 opacity
+                            },
+                          ]}
+                        >
+                          <StandardText
+                            style={{
+                              color:
+                                room.status === 'VACANT'
+                                  ? '#3EDB1A' // Full opacity for text
+                                  : '#D9534F',
+                            }}
+                          >
+                            {room.status}
+                          </StandardText>
+                        </View>
+
+                        {/* Custom Menu Trigger */}
+                        <TouchableOpacity
+                          ref={ref => (iconRefs.current[room.id] = ref)}
+                          onPress={() => openMenu(room, room.id)}
+                        >
+                          <MaterialCommunityIcons
+                            name="dots-vertical"
+                            size={22}
+                            color="#555"
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+                      <StandardText style={{ marginTop: 4 }}>
+                        Rent:{' '}
+                        <StandardText
+                          fontWeight="bold"
+                          style={{ color: colors.primary }}
+                        >
+                          ₹{room.rentAmount}
+                        </StandardText>
+                      </StandardText>
+
+                      <View style={styles.infoRow}>
+                        <View style={styles.infoItem}>
+                          <MaterialCommunityIcons
+                            name="bed"
+                            size={18}
+                            color="#666"
+                          />
+                          <StandardText style={styles.infoText}>
+                            {room.bedCount} Beds
+                          </StandardText>
+                        </View>
+                        <View style={styles.infoItem}>
+                          <MaterialCommunityIcons
+                            name="shower"
+                            size={18}
+                            color="#666"
+                          />
+                          <StandardText style={styles.infoText}>
+                            {room.bathroomCount} Baths
+                          </StandardText>
+                        </View>
+                        <View style={styles.infoItem}>
+                          <MaterialCommunityIcons
+                            name="stairs"
+                            size={18}
+                            color="#666"
+                          />
+                          <StandardText style={styles.infoText}>
+                            Floor {room.floorNumber}
+                          </StandardText>
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </StandardCard>
+              ))}
+          </>
         )}
-        {error && (
-          <View style={{ alignItems: 'center' }}>
-            <StandardText style={{ color: 'red' }}>{error}</StandardText>
-            <Button
-              mode="contained"
-              onPress={fetchRooms}
-              style={{ marginTop: 8 }}
-            >
-              Retry
-            </Button>
-          </View>
-        )}
-        {!loading && !error && filteredRooms.length === 0 && (
-          <StandardText style={{ textAlign: 'center' }}>
-            No rooms found
-          </StandardText>
-        )}
-
-        {/* Rooms */}
-        {!loading &&
-          filteredRooms.map(room => (
-            <StandardCard key={room.id} style={styles.card}>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('RoomDetails', { room })}
-              >
-                {/* Image */}
-                {room.imageUrl ? (
-                  <Image
-                    source={{ uri: room.imageUrl }}
-                    style={{ width: '100%', height: 150 }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.imagePlaceholder}>
-                    <MaterialCommunityIcons
-                      name="image-off"
-                      size={40}
-                      color="#aaa"
-                    />
-                  </View>
-                )}
-
-                {/* Content */}
-                <View style={{ padding: 12 }}>
-                  <View style={styles.titleRow}>
-                    <StandardText fontWeight="bold" style={styles.roomTitle}>
-                      {room.name || `Room ${room.id}`}
-                    </StandardText>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        {
-                          backgroundColor:
-                            room.status === 'VACANT'
-                              ? 'rgba(62, 219, 26, 0.1)' // #3EDB1A with 0.1 opacity
-                              : 'rgba(255, 226, 226, 0.1)', // #FFE2E2 with 0.1 opacity
-                        },
-                      ]}
-                    >
-                      <StandardText
-                        style={{
-                          color:
-                            room.status === 'VACANT'
-                              ? '#3EDB1A' // Full opacity for text
-                              : '#D9534F',
-                        }}
-                      >
-                        {room.status}
-                      </StandardText>
-                    </View>
-
-                    {/* Custom Menu Trigger */}
-                    <TouchableOpacity
-                      ref={ref => (iconRefs.current[room.id] = ref)}
-                      onPress={() => openMenu(room, room.id)}
-                    >
-                      <MaterialCommunityIcons
-                        name="dots-vertical"
-                        size={22}
-                        color="#555"
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  <StandardText style={{ marginTop: 4 }}>
-                    Rent:{' '}
-                    <StandardText
-                      fontWeight="bold"
-                      style={{ color: colors.primary }}
-                    >
-                      ₹{room.rentAmount}
-                    </StandardText>
-                  </StandardText>
-
-                  <View style={styles.infoRow}>
-                    <View style={styles.infoItem}>
-                      <MaterialCommunityIcons
-                        name="bed"
-                        size={18}
-                        color="#666"
-                      />
-                      <StandardText style={styles.infoText}>
-                        {room.bedCount} Beds
-                      </StandardText>
-                    </View>
-                    <View style={styles.infoItem}>
-                      <MaterialCommunityIcons
-                        name="shower"
-                        size={18}
-                        color="#666"
-                      />
-                      <StandardText style={styles.infoText}>
-                        {room.bathroomCount} Baths
-                      </StandardText>
-                    </View>
-                    <View style={styles.infoItem}>
-                      <MaterialCommunityIcons
-                        name="stairs"
-                        size={18}
-                        color="#666"
-                      />
-                      <StandardText style={styles.infoText}>
-                        Floor {room.floorNumber}
-                      </StandardText>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </StandardCard>
-          ))}
       </ScrollView>
 
       {/* FAB */}

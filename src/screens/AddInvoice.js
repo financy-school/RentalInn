@@ -410,12 +410,13 @@ const AddInvoice = ({ navigation, route }) => {
                         styles.dateText,
                         { color: bill.selected ? textPrimary : textSecondary },
                       ]}
+                      numberOfLines={1}
                     >
-                      {bill.dueDate.getDate()}{' '}
-                      {bill.dueDate.toLocaleDateString('en-US', {
-                        month: 'short',
-                      })}
-                      ' {bill.dueDate.getFullYear().toString().slice(-2)}
+                      {bill.dueDate.getDate().toString().padStart(2, '0')}-
+                      {(bill.dueDate.getMonth() + 1)
+                        .toString()
+                        .padStart(2, '0')}
+                      -{bill.dueDate.getFullYear().toString().slice(-2)}
                     </StandardText>
                     {bill.selected && (
                       <MaterialCommunityIcons
@@ -568,7 +569,7 @@ const styles = StyleSheet.create({
     flex: 0.8,
   },
   tableHeaderDate: {
-    flex: 0.8,
+    flex: 1,
   },
   tableRow: {
     flexDirection: 'row',
@@ -628,7 +629,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   dueDateContainer: {
-    flex: 0.8,
+    flex: 1,
     paddingHorizontal: 4,
   },
   dateButton: {
@@ -637,15 +638,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 6,
     alignItems: 'center',
+    minWidth: 80,
+    width: '100%',
   },
   dateContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
   },
   dateText: {
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
+    flexShrink: 0,
+    minWidth: 60,
   },
   calendarIcon: {
     marginLeft: 4,

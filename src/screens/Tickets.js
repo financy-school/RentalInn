@@ -13,6 +13,7 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
+import SelectPropertyPrompt from '../components/SelectPropertyPrompt/SelectPropertyPrompt';
 import {
   fetchTickets,
   getDocument,
@@ -54,6 +55,7 @@ const Tickets = ({ navigation }) => {
         : null;
 
       if (!currentPropertyId) {
+        // Don't show error when no property is selected - just clear data
         setAllTickets([]);
         setTickets([]);
         setLoading(false);
@@ -182,7 +184,11 @@ const Tickets = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Property Selector */}
-      <PropertySelector navigation={navigation} />
+      <PropertySelector
+        navigation={navigation}
+        requireSpecificProperty={true}
+        actionContext="manage-tickets"
+      />
 
       {/* Image Modal */}
       {modalVisible && (
@@ -209,194 +215,214 @@ const Tickets = ({ navigation }) => {
         </View>
       )}
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Search Bar */}
-        <PaperInput
-          mode="flat"
-          placeholder="Search Tickets..."
-          value={search}
-          onChangeText={setSearch}
-          style={styles.searchBar}
-          left={<PaperInput.Icon icon="magnify" />}
-          underlineColor="transparent"
-          activeUnderlineColor="transparent"
-          contentStyle={{ fontFamily: 'Metropolis-Medium' }}
-          theme={{
-            roundness: 25,
-            colors: {
-              background: '#fff',
-              text: '#000',
-              placeholder: '#888',
-              fontFamily: 'Metropolis-Medium',
-            },
-          }}
-        />
-
-        <Gap size="md" />
-
-        {/* Filters */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterContainer}
-        >
-          {filterOptions.map(option => (
-            <Chip
-              key={option.key}
-              selected={selectedFilter === option.key}
-              selectedColor="#fff"
-              onPress={() => setSelectedFilter(option.key)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor:
-                    selectedFilter === option.key
-                      ? colors.secondary
-                      : '#f5f5f5',
-                },
-              ]}
-              textStyle={{
-                color: selectedFilter === option.key ? '#fff' : '#000',
-                fontFamily: 'Metropolis-Medium',
-                fontWeight: selectedFilter === option.key ? '600' : '400',
-              }}
-            >
-              {option.label} ({option.value})
-            </Chip>
-          ))}
-        </ScrollView>
-
-        {/* Loading Indicator or Ticket List */}
-        {loading ? (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
+        {/* Show SelectPropertyPrompt if no property is selected */}
+        {isAllPropertiesSelected ? (
+          <SelectPropertyPrompt
+            title="Select a Property"
+            description="Please select a specific property to view and manage tickets. Tickets are organized by property."
+            onSelectProperty={() => {
+              // Scroll to top to show PropertySelector
             }}
-          >
-            <StandardText>Loading tickets...</StandardText>
-          </View>
+          />
         ) : (
           <>
-            {/* Ticket List */}
-            {tickets.map(ticket => (
-              <StandardCard style={styles.card} id={ticket.id} key={ticket.id}>
-                {/* Header */}
-                <View style={styles.header}>
-                  <StandardText fontWeight="semibold" style={styles.ticketId}>
-                    #{ticket.id}
-                  </StandardText>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor:
-                          ticket.status === 'PENDING'
-                            ? 'rgba(255, 152, 0, 0.2)'
-                            : ticket.status === 'ACTIVE'
-                            ? 'rgba(76, 175, 80, 0.2)'
-                            : 'rgba(158, 158, 158, 0.2)',
-                      },
-                    ]}
-                  >
-                    <StandardText
-                      fontWeight="semibold"
-                      size="sm"
-                      style={{ color: colors.primary }}
-                    >
-                      {ticket.status}
-                    </StandardText>
-                  </View>
-                </View>
+            {/* Search Bar */}
+            <PaperInput
+              mode="flat"
+              placeholder="Search Tickets..."
+              value={search}
+              onChangeText={setSearch}
+              style={styles.searchBar}
+              left={<PaperInput.Icon icon="magnify" />}
+              underlineColor="transparent"
+              activeUnderlineColor="transparent"
+              contentStyle={{ fontFamily: 'Metropolis-Medium' }}
+              theme={{
+                roundness: 25,
+                colors: {
+                  background: '#fff',
+                  text: '#000',
+                  placeholder: '#888',
+                  fontFamily: 'Metropolis-Medium',
+                },
+              }}
+            />
 
-                {/* Raised By + Room */}
-                <View style={styles.infoRow}>
-                  <StandardText
-                    size="sm"
-                    fontWeight="semibold"
-                    color="default_gray"
-                  >
-                    👤 {ticket.raisedBy}
-                  </StandardText>
-                  <StandardText size="sm" color="default_gray">
-                    🏠 Room {ticket.roomId}
-                  </StandardText>
-                </View>
+            <Gap size="md" />
 
-                {/* Time */}
-                <StandardText
-                  size="xs"
-                  color="default_gray"
-                  style={styles.timeText}
+            {/* Filters */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterContainer}
+            >
+              {filterOptions.map(option => (
+                <Chip
+                  key={option.key}
+                  selected={selectedFilter === option.key}
+                  selectedColor="#fff"
+                  onPress={() => setSelectedFilter(option.key)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor:
+                        selectedFilter === option.key
+                          ? colors.secondary
+                          : '#f5f5f5',
+                    },
+                  ]}
+                  textStyle={{
+                    color: selectedFilter === option.key ? '#fff' : '#000',
+                    fontFamily: 'Metropolis-Medium',
+                    fontWeight: selectedFilter === option.key ? '600' : '400',
+                  }}
                 >
-                  {new Date(ticket.createdAt).toLocaleString()}
-                </StandardText>
+                  {option.label} ({option.value})
+                </Chip>
+              ))}
+            </ScrollView>
 
-                {/* Images */}
-                {ticketImages[ticket.id] &&
-                  ticketImages[ticket.id].length > 0 && (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.imageScroll}
-                    >
-                      {ticketImages[ticket.id].map((imgUrl, idx) => (
-                        <TouchableOpacity
-                          key={idx}
-                          style={{ marginRight: 8 }}
-                          onPress={() => {
-                            setSelectedImageUrl(imgUrl);
-                            setModalVisible(true);
-                          }}
-                        >
-                          <Image
-                            key={idx}
-                            source={{ uri: imgUrl }}
-                            style={styles.image}
-                          />
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  )}
-
-                {/* Issue + Description */}
-                <View style={{ marginTop: 6 }}>
-                  <StandardText fontWeight="semibold" style={styles.issue}>
-                    {ticket.issue}
-                  </StandardText>
-                  {ticket.description ? (
-                    <StandardText
-                      size="sm"
-                      color="default_gray"
-                      numberOfLines={3}
-                      style={styles.description}
-                    >
-                      {ticket.description}
-                    </StandardText>
-                  ) : null}
-                </View>
-
-                {/* Close Button */}
-                {ticket.status === 'PENDING' && (
-                  <View style={styles.actionRow}>
-                    <Button
-                      mode="contained"
-                      style={styles.actionButton}
-                      onPress={() => handleCloseTicket(ticket.id)}
-                    >
+            {/* Loading Indicator or Ticket List */}
+            {loading ? (
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <StandardText>Loading tickets...</StandardText>
+              </View>
+            ) : (
+              <>
+                {/* Ticket List */}
+                {tickets.map(ticket => (
+                  <StandardCard
+                    style={styles.card}
+                    id={ticket.id}
+                    key={ticket.id}
+                  >
+                    {/* Header */}
+                    <View style={styles.header}>
                       <StandardText
                         fontWeight="semibold"
-                        style={{ color: '#fff' }}
+                        style={styles.ticketId}
                       >
-                        Close Ticket
+                        #{ticket.id}
                       </StandardText>
-                    </Button>
-                  </View>
-                )}
-              </StandardCard>
-            ))}
-            <Gap size="xl" />
-            <Gap size="xl" />
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor:
+                              ticket.status === 'PENDING'
+                                ? 'rgba(255, 152, 0, 0.2)'
+                                : ticket.status === 'ACTIVE'
+                                ? 'rgba(76, 175, 80, 0.2)'
+                                : 'rgba(158, 158, 158, 0.2)',
+                          },
+                        ]}
+                      >
+                        <StandardText
+                          fontWeight="semibold"
+                          size="sm"
+                          style={{ color: colors.primary }}
+                        >
+                          {ticket.status}
+                        </StandardText>
+                      </View>
+                    </View>
+
+                    {/* Raised By + Room */}
+                    <View style={styles.infoRow}>
+                      <StandardText
+                        size="sm"
+                        fontWeight="semibold"
+                        color="default_gray"
+                      >
+                        👤 {ticket.raisedBy}
+                      </StandardText>
+                      <StandardText size="sm" color="default_gray">
+                        🏠 Room {ticket.roomId}
+                      </StandardText>
+                    </View>
+
+                    {/* Time */}
+                    <StandardText
+                      size="xs"
+                      color="default_gray"
+                      style={styles.timeText}
+                    >
+                      {new Date(ticket.createdAt).toLocaleString()}
+                    </StandardText>
+
+                    {/* Images */}
+                    {ticketImages[ticket.id] &&
+                      ticketImages[ticket.id].length > 0 && (
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          style={styles.imageScroll}
+                        >
+                          {ticketImages[ticket.id].map((imgUrl, idx) => (
+                            <TouchableOpacity
+                              key={idx}
+                              style={{ marginRight: 8 }}
+                              onPress={() => {
+                                setSelectedImageUrl(imgUrl);
+                                setModalVisible(true);
+                              }}
+                            >
+                              <Image
+                                key={idx}
+                                source={{ uri: imgUrl }}
+                                style={styles.image}
+                              />
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      )}
+
+                    {/* Issue + Description */}
+                    <View style={{ marginTop: 6 }}>
+                      <StandardText fontWeight="semibold" style={styles.issue}>
+                        {ticket.issue}
+                      </StandardText>
+                      {ticket.description ? (
+                        <StandardText
+                          size="sm"
+                          color="default_gray"
+                          numberOfLines={3}
+                          style={styles.description}
+                        >
+                          {ticket.description}
+                        </StandardText>
+                      ) : null}
+                    </View>
+
+                    {/* Close Button */}
+                    {ticket.status === 'PENDING' && (
+                      <View style={styles.actionRow}>
+                        <Button
+                          mode="contained"
+                          style={styles.actionButton}
+                          onPress={() => handleCloseTicket(ticket.id)}
+                        >
+                          <StandardText
+                            fontWeight="semibold"
+                            style={{ color: '#fff' }}
+                          >
+                            Close Ticket
+                          </StandardText>
+                        </Button>
+                      </View>
+                    )}
+                  </StandardCard>
+                ))}
+                <Gap size="xl" />
+                <Gap size="xl" />
+              </>
+            )}
           </>
         )}
       </ScrollView>

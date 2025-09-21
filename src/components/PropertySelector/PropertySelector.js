@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -38,11 +38,6 @@ const PropertySelector = ({
     ? properties.filter(property => property.id !== 'all')
     : properties;
 
-  // Get specific properties (non-'all') for count
-  const specificProperties = properties.filter(
-    property => property.id !== 'all',
-  );
-
   // Theme variables
   const isDark = mode === 'dark';
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
@@ -53,22 +48,8 @@ const PropertySelector = ({
   const showAllPropertiesWarning =
     requireSpecificProperty && isAllPropertiesSelected;
 
-  // Auto-select first specific property if "All Properties" is selected on action screens
-  useEffect(() => {
-    if (
-      requireSpecificProperty &&
-      isAllPropertiesSelected &&
-      specificProperties.length > 0
-    ) {
-      // Auto-switch to the first specific property
-      switchProperty(specificProperties[0]);
-    }
-  }, [
-    requireSpecificProperty,
-    isAllPropertiesSelected,
-    specificProperties,
-    switchProperty,
-  ]);
+  // Don't auto-switch properties - let user manually switch when needed
+  // This preserves the ability to use "All Properties" on the Home screen
 
   // Handle property selection
   const handlePropertySelect = async property => {
@@ -119,6 +100,12 @@ const PropertySelector = ({
         return 'to add a tenant';
       case 'add-ticket':
         return 'to create a ticket';
+      case 'manage-rooms':
+        return 'to manage rooms';
+      case 'manage-tenants':
+        return 'to manage tenants';
+      case 'manage-tickets':
+        return 'to manage tickets';
       default:
         return 'for this action';
     }
