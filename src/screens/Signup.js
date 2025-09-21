@@ -148,11 +148,11 @@ const SignUp = ({ navigation }) => {
         lastName,
         email,
         phone,
-        address,
-        city,
-        state,
-        postalCode,
-        country,
+        // address,
+        // city,
+        // state,
+        // postalCode,
+        // country,
         password,
       };
 
@@ -186,11 +186,6 @@ const SignUp = ({ navigation }) => {
     lastName,
     email,
     phone,
-    address,
-    city,
-    state,
-    postalCode,
-    country,
     password,
     setCredentials,
     clearErrorMessage,
@@ -355,7 +350,7 @@ const SignUp = ({ navigation }) => {
             />
 
             {/* Address */}
-            <TextInput
+            {/* <TextInput
               label="Address"
               value={address}
               onChangeText={setAddress}
@@ -379,10 +374,10 @@ const SignUp = ({ navigation }) => {
               }}
               style={styles.input}
               contentStyle={styles.inputContent}
-            />
+            /> */}
 
             {/* City */}
-            <TextInput
+            {/* <TextInput
               label="City"
               value={city}
               onChangeText={setCity}
@@ -405,10 +400,10 @@ const SignUp = ({ navigation }) => {
               }}
               style={styles.input}
               contentStyle={styles.inputContent}
-            />
+            /> */}
 
             {/* State */}
-            <TextInput
+            {/* <TextInput
               label="State"
               value={state}
               onChangeText={setState}
@@ -432,10 +427,10 @@ const SignUp = ({ navigation }) => {
               }}
               style={styles.input}
               contentStyle={styles.inputContent}
-            />
+            /> */}
 
             {/* Postal Code */}
-            <TextInput
+            {/* <TextInput
               label="Postal Code"
               value={postalCode}
               onChangeText={setPostalCode}
@@ -459,10 +454,10 @@ const SignUp = ({ navigation }) => {
               }}
               style={styles.input}
               contentStyle={styles.inputContent}
-            />
+            /> */}
 
             {/* Country */}
-            <TextInput
+            {/* <TextInput
               label="Country"
               value={country}
               onChangeText={setCountry}
@@ -486,7 +481,7 @@ const SignUp = ({ navigation }) => {
               }}
               style={styles.input}
               contentStyle={styles.inputContent}
-            />
+            /> */}
 
             {/* Password */}
             <TextInput

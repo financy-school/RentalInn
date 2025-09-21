@@ -23,7 +23,10 @@ const KeyBoardAvoidingWrapper = ({ children }) => {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: backgroundColor }}>
-      <ScrollView keyboardShouldPersistTaps="handled">
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <TouchableWithoutFeedback onPress={dismissKeyboard}>
           {children}
         </TouchableWithoutFeedback>
