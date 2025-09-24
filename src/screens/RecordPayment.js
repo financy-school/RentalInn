@@ -16,6 +16,8 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
+import { recordPayment } from '../services/NetworkUtils';
+import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/color';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -23,6 +25,7 @@ const screenWidth = Dimensions.get('window').width;
 
 const RecordPayment = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
+  const { credentials } = useContext(CredentialsContext);
   const { tenant } = route.params || {};
 
   // Theme variables
@@ -79,6 +82,19 @@ const RecordPayment = ({ navigation, route }) => {
     return `${day}-${month}-${year}`;
   };
 
+  // Map payment mode IDs to API-friendly format
+  const mapPaymentMode = paymentModeId => {
+    const modeMap = {
+      cash: 'Cash',
+      gpay: 'GPay',
+      phonepe: 'PhonePe',
+      paytm: 'Paytm',
+      upi: 'UPI',
+      other: 'Other',
+    };
+    return modeMap[paymentModeId] || paymentModeId;
+  };
+
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
@@ -118,24 +134,37 @@ const RecordPayment = ({ navigation, route }) => {
 
     setLoading(true);
     try {
-      // TODO: Implement actual payment recording API call
-      // const response = await recordPayment(credentials.accessToken, {
-      //   tenantId,
-      //   amount: parseFloat(formData.collectedAmount),
-      //   paymentDate: formData.paymentDate.toISOString(),
-      //   paymentMode: formData.paymentMode,
-      //   description: formData.description,
-      //   adjustFromDeposit: formData.adjustFromDeposit,
-      // });
+      // Prepare payment data according to API format
+      const paymentPayload = {
+        invoiceId: tenant?.invoice_id || tenant?.id, // Use invoice_id or fallback to tenant id
+        amount: parseFloat(formData.collectedAmount),
+        paymentDate: formData.paymentDate.toISOString(),
+        paymentMethod: mapPaymentMode(formData.paymentMode),
+        transactionId: `TXN${Date.now()}`, // Generate a transaction ID
+        notes: formData.description || 'Payment recorded via mobile app',
+      };
 
-      Alert.alert('Success', 'Payment recorded successfully!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      const response = await recordPayment(
+        credentials.accessToken,
+        paymentPayload,
+      );
+
+      if (response.success) {
+        Alert.alert('Success', 'Payment recorded successfully!', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      } else {
+        Alert.alert(
+          'Error',
+          response.error || 'Failed to record payment. Please try again.',
+        );
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to record payment. Please try again.');
+      console.error('Error recording payment:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

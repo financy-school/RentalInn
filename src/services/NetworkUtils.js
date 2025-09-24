@@ -85,6 +85,10 @@ const getErrorMessage = error => {
 
   switch (status) {
     case 400:
+      // Handle array of error messages
+      if (data?.message && Array.isArray(data.message)) {
+        return data.message.join('. ');
+      }
       return data?.message || ERROR_MESSAGES.VALIDATION_ERROR;
     case 401:
       return ERROR_MESSAGES.UNAUTHORIZED;
@@ -93,8 +97,14 @@ const getErrorMessage = error => {
     case 404:
       return 'Requested resource not found.';
     case 409:
+      if (data?.message && Array.isArray(data.message)) {
+        return data.message.join('. ');
+      }
       return data?.message || 'Resource already exists.';
     case 422:
+      if (data?.message && Array.isArray(data.message)) {
+        return data.message.join('. ');
+      }
       return data?.message || ERROR_MESSAGES.VALIDATION_ERROR;
     case 429:
       return 'Too many requests. Please try again later.';
@@ -555,5 +565,38 @@ export const updateTicket = async (accessToken, ticketId, ticketData) => {
         headers: getAuthHeaders(accessToken),
       }),
     'UPDATE_TICKET',
+  );
+};
+
+/**
+ * Invoice Management API calls
+ */
+export const getTenantInvoiceData = async (accessToken, tenantId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/invoices/tenants/${tenantId}/invoice-data`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_TENANT_INVOICE_DATA',
+  );
+};
+
+export const createInvoice = async (accessToken, invoiceData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post('/invoices', invoiceData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'CREATE_INVOICE',
+  );
+};
+
+export const recordPayment = async (accessToken, paymentData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post('/invoices/payments', paymentData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'RECORD_PAYMENT',
   );
 };
