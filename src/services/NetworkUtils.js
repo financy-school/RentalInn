@@ -137,6 +137,25 @@ const getAuthHeaders = accessToken => {
   };
 };
 
+// Helper function to build query parameters
+const buildQueryParams = (params = {}) => {
+  const validParams = Object.entries(params)
+    .filter(
+      ([key, value]) => value !== undefined && value !== null && value !== '',
+    )
+    .reduce((acc, [key, value]) => {
+      acc[key] = value;
+      return acc;
+    }, {});
+
+  if (Object.keys(validParams).length === 0) {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams(validParams);
+  return `?${searchParams.toString()}`;
+};
+
 // Helper function to handle API responses consistently
 const handleApiResponse = async (apiCall, operation = 'API_OPERATION') => {
   try {
@@ -198,35 +217,88 @@ export const getOwnerDetails = async credentials => {
 /**
  * Analytics API calls
  */
-export const analyticsDashBoard = async (accessToken, startDate, endDate) => {
-  let endpoint = '/analytics/dashboard';
 
-  if (startDate && endDate) {
-    endpoint += `?startDate=${startDate}&endDate=${endDate}`;
+// Enhanced dashboard analytics with proper query parameters
+export const getDashboardAnalytics = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getDashboardAnalytics called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
   }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/analytics/dashboard${queryString}`;
 
   return handleApiResponse(
     () =>
       apiClient.get(endpoint, {
         headers: getAuthHeaders(accessToken),
       }),
-    'ANALYTICS_DASHBOARD',
+    'GET_DASHBOARD_ANALYTICS',
   );
 };
 
-export const analyticsPerformance = async (accessToken, startDate, endDate) => {
-  let endpoint = '/analytics/performance';
-
-  if (startDate && endDate) {
-    endpoint += `?startDate=${startDate}&endDate=${endDate}`;
+// Occupancy analytics
+export const getOccupancyAnalytics = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getOccupancyAnalytics called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
   }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/analytics/occupancy${queryString}`;
 
   return handleApiResponse(
     () =>
       apiClient.get(endpoint, {
         headers: getAuthHeaders(accessToken),
       }),
-    'ANALYTICS_PERFORMANCE',
+    'GET_OCCUPANCY_ANALYTICS',
+  );
+};
+
+// Revenue trends analytics
+export const getRevenueTrends = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getRevenueTrends called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
+  }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/analytics/revenue-trends${queryString}`;
+
+  return handleApiResponse(
+    () =>
+      apiClient.get(endpoint, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_REVENUE_TRENDS',
+  );
+};
+
+// Profit & Loss analytics
+export const getProfitLossAnalytics = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getProfitLossAnalytics called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
+  }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/analytics/profit-loss${queryString}`;
+
+  return handleApiResponse(
+    () =>
+      apiClient.get(endpoint, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_PROFIT_LOSS_ANALYTICS',
   );
 };
 

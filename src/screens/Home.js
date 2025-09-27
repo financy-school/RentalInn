@@ -21,7 +21,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { CredentialsContext } from '../context/CredentialsContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { useProperty } from '../context/PropertyContext';
-import { analyticsDashBoard } from '../services/NetworkUtils';
+import { getDashboardAnalytics } from '../services/NetworkUtils';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
@@ -62,95 +62,128 @@ const Home = ({ navigation }) => {
   const chartTextColor = isDark ? colors.white : colors.textPrimary;
 
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [scope] = useState('property'); // property | unit | tenant
   const [autoRecon, setAutoRecon] = useState(true);
 
-  // const bottomSheetModalRef = useRef(null);
-  // const handleClosePress = useCallback(
-  //   () => bottomSheetModalRef.current?.close(),
-  //   [],
-  // );
-  // const handleQuickActionPress = useCallback(action => {
-  //   setSelectedAction(action);
-  //   bottomSheetModalRef.current?.present();
-  // }, []);
-
-  // Fetch analytics (plug your API later)
+  // Fetch analytics data from API
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         if (credentials?.accessToken) {
+          // Build query parameters
+          const queryParams = {};
+
           // If a specific property is selected, pass its ID to the API
-          const propertyId = !isAllPropertiesSelected
-            ? selectedProperty?.id
-            : null;
-          const response = await analyticsDashBoard(
+          if (!isAllPropertiesSelected && selectedProperty?.id) {
+            queryParams.property_id = selectedProperty.id;
+          }
+
+          // Default to current month data
+          queryParams.date_range = 'current_month';
+
+          const response = await getDashboardAnalytics(
             credentials.accessToken,
-            propertyId,
+            queryParams,
           );
-          setAnalyticsData(response.data);
+
+          if (response.success) {
+            setAnalyticsData(response.data);
+          } else {
+            setError(response.error || 'Failed to fetch analytics data');
+            console.error('Analytics API Error:', response.error);
+          }
         } else {
           // If no credentials, clear analytics data
           setAnalyticsData(null);
         }
       } catch (error) {
-        // Fallback to mock if API not ready
-        setAnalyticsData(null);
+        setError('Error fetching analytics data');
         console.error('Error fetching analytics data:', error);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchAnalyticsData();
   }, [credentials, selectedProperty, isAllPropertiesSelected]);
 
-  // ---------- MOCKS (replace with API responses) ----------
-  const paid = analyticsData?.incomeStats?.actualIncome ?? 72000;
-  const notPaid = analyticsData?.incomeStats?.overdueIncome ?? 18000;
-  const totalTenants = analyticsData?.tenantStats?.totalTenants ?? 38;
-  const vacantRooms = analyticsData?.occupancyStats?.vacantRooms ?? 6;
-  const totalRooms = analyticsData?.occupancyStats?.totalRooms ?? 48;
+  // Extract data from API response or use defaults
+  const propertyInfo = analyticsData?.property_info || {};
+  const occupancyData = analyticsData?.occupancy || {};
+  const rentData = analyticsData?.rent_collection || {};
+  const revenueData = analyticsData?.revenue_trends || {};
+  const profitLossData = analyticsData?.profit_loss || {};
+  const issuesData = analyticsData?.issues_maintenance || {};
+  const tenantData = analyticsData?.tenant_info || {};
+  const roomData = analyticsData?.room_occupancy_map || {};
 
-  const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
-  const revenueByMonth = [150, 165, 158, 172, 168, 181]; // ₹k
-  const vacancyLossByMonth = [12, 10, 14, 9, 11, 8]; // ₹k
+  // KPI calculations from API data
+  const paid = rentData.collected || 0;
+  const notPaid = rentData.overdue || 0;
+  const totalTenants = occupancyData.tenant_count || 0;
+  const vacantRooms = occupancyData.vacant_units || 0;
+  const totalRooms = occupancyData.total_units || 0;
+  const occupancyPct = occupancyData.occupancy_percentage || 0;
 
+  // Revenue trends data
+  const months = revenueData.monthly_data?.map(item => {
+    const date = new Date(item.year, item.month - 1);
+    return date.toLocaleDateString('en-US', { month: 'short' });
+  }) || ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
+
+  const revenueByMonth = revenueData.monthly_data?.map(
+    item => item.revenue / 1000,
+  ) || [150, 165, 158, 172, 168, 181];
+  const vacancyLossByMonth = revenueData.monthly_data?.map(
+    item => item.vacancy_loss / 1000,
+  ) || [12, 10, 14, 9, 11, 8];
+
+  // Expenses breakdown from API
   const expensesBreakdown = [
     {
       name: 'Electricity',
-      population: 22,
+      population:
+        profitLossData.expense_breakdown?.electricity?.percentage || 0,
       color: '#7E57C2',
       legendFontColor: '#333',
       legendFontSize: 12,
     },
     {
       name: 'Water',
-      population: 10,
+      population: profitLossData.expense_breakdown?.water?.percentage || 0,
       color: '#42A5F5',
       legendFontColor: '#333',
       legendFontSize: 12,
     },
     {
       name: 'Services',
-      population: 14,
+      population: profitLossData.expense_breakdown?.services?.percentage || 0,
       color: '#26A69A',
       legendFontColor: '#333',
       legendFontSize: 12,
     },
     {
       name: 'Repairs',
-      population: 18,
+      population: profitLossData.expense_breakdown?.repairs?.percentage || 0,
       color: '#EF5350',
       legendFontColor: '#333',
       legendFontSize: 12,
     },
     {
       name: 'Other',
-      population: 8,
+      population: profitLossData.expense_breakdown?.other?.percentage || 0,
       color: '#FFCA28',
       legendFontColor: '#333',
       legendFontSize: 12,
     },
   ];
 
+  // Mock data for features not in API (keep these until API is extended)
   const reconInbox = [
     {
       id: 'm1',
@@ -172,53 +205,33 @@ const Home = ({ navigation }) => {
     },
   ];
 
-  const maintenanceRequests = [
-    { id: '1', title: 'Leaky Faucet - 201', status: 'Open', priority: 'High' },
-    {
-      id: '2',
-      title: 'AC not cooling - 305',
-      status: 'In-progress',
-      priority: 'High',
-    },
-    {
-      id: '3',
-      title: 'WiFi intermittent - 102',
-      status: 'Open',
-      priority: 'Medium',
-    },
-    {
-      id: '4',
-      title: 'Wall paint - 402',
-      status: 'Completed',
-      priority: 'Low',
-    },
-  ];
+  // Recent maintenance requests from API
+  const maintenanceRequests = issuesData.recent_issues?.map(issue => ({
+    id: issue.issue_id,
+    title: issue.title,
+    status:
+      issue.status === 'open'
+        ? 'Open'
+        : issue.status === 'in_progress'
+        ? 'In-progress'
+        : 'Completed',
+    priority: issue.priority.charAt(0).toUpperCase() + issue.priority.slice(1),
+  }));
+  // Top tenants from API
+  const tenants = tenantData.top_tenants?.map((tenant, index) => ({
+    id: tenant.tenant_id || `t${index + 1}`,
+    name: tenant.tenant_name,
+    room: tenant.room_number,
+    status: tenant.payment_status === 'on_time' ? 'On-time' : 'Overdue',
+  }));
 
-  const tenants = [
-    { id: 't1', name: 'John Doe', room: '201', status: 'On-time' },
-    { id: 't2', name: 'Riya Sharma', room: '305', status: 'Overdue' },
-    { id: 't3', name: 'Alex Chen', room: '102', status: 'On-time' },
-  ];
-
-  const occupancyGrid = [
-    { id: '5031', room: '101', status: 'occupied' },
-    { id: '4342', room: '102', status: 'vacant' },
-    { id: '3433', room: '103', status: 'overdue' },
-    { id: '2344', room: '201', status: 'occupied' },
-    { id: '3425', room: '202', status: 'occupied' },
-    { id: '23426', room: '203', status: 'vacant' },
-    { id: '3247', room: '301', status: 'overdue' },
-    { id: '2348', room: '302', status: 'occupied' },
-    { id: '2349', room: '303', status: 'vacant' },
-    { id: '23410', room: '401', status: 'occupied' },
-    { id: '23411', room: '402', status: 'occupied' },
-    { id: '232312', room: '403', status: 'vacant' },
-  ];
-
-  // ---------- Derived ----------
-  const occupancyPct = totalRooms
-    ? Math.round(((totalRooms - vacantRooms) / totalRooms) * 100)
-    : 0;
+  // Room occupancy grid from API
+  const occupancyGrid = roomData.rooms?.map(room => ({
+    id: room.room_number.toString(),
+    room: room.room_number.toString(),
+    status: room.status,
+    hasIssues: room.has_issues,
+  }));
 
   // Colors for occupancy grid
   const getRoomColor = status => {
@@ -233,6 +246,42 @@ const Home = ({ navigation }) => {
         return '#9E9E9E';
     }
   };
+
+  // P&L data from API
+  const plData = profitLossData.property_breakdown || [
+    {
+      property_name: 'Green View',
+      revenue: 52000,
+      expenses: 17500,
+      net_profit: 34500,
+    },
+    {
+      property_name: 'City Heights',
+      revenue: 48000,
+      expenses: 16000,
+      net_profit: 32000,
+    },
+    {
+      property_name: 'Lake Shore',
+      revenue: 46000,
+      expenses: 13000,
+      net_profit: 33000,
+    },
+  ];
+
+  // Loading state
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { justifyContent: 'center', alignItems: 'center' },
+        ]}
+      >
+        <StandardText size="lg">Loading dashboard data...</StandardText>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -271,15 +320,6 @@ const Home = ({ navigation }) => {
             <Badge style={styles.badge} size={10} />
           </View>
         </TouchableOpacity>
-
-        {/* <TouchableOpacity onPress={toggleTheme} style={{ marginLeft: 10 }}>
-          <Avatar.Icon
-            size={40}
-            icon="theme-light-dark"
-            style={{ backgroundColor: colors.white }}
-            color={colors.secondary}
-          />
-        </TouchableOpacity> */}
       </View>
 
       {/* Property Selector */}
@@ -288,7 +328,7 @@ const Home = ({ navigation }) => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Pitch-aligned alerting & filters */}
+        {/* Real-time tracking banner */}
         <Card style={styles.bannerCard}>
           <MaterialCommunityIcons
             name="lightning-bolt-outline"
@@ -297,76 +337,39 @@ const Home = ({ navigation }) => {
           />
           <View style={styles.headerLeftContent}>
             <StandardText style={{ color: colors.white }} fontWeight="bold">
-              Real-time tracking enabled
+              {propertyInfo.real_time_tracking_enabled
+                ? 'Real-time tracking enabled'
+                : 'Real-time tracking disabled'}
             </StandardText>
             <StandardText style={{ color: colors.white }} size="sm">
-              Monitor rent, occupancy & issues in one place.
+              {propertyInfo.property_name || 'All Properties'} -{' '}
+              {propertyInfo.location || 'Multiple Locations'}
             </StandardText>
           </View>
         </Card>
 
-        {/* Search + scope filter */}
-
-        {/* <View>
-            <SegmentedButtons
-              value={scope}
-              onValueChange={setScope}
-              buttons={[
-                {
-                  value: 'property',
-                  label: 'Property',
-                  labelStyle: {
-                    fontSize: 16,
-                    fontWeight: '600',
-                    fontFamily: 'Metropolis-Medium',
-                    color: scope === 'property' ? '#fff' : '#000',
-                  },
-                  style: {
-                    backgroundColor:
-                      scope === 'property' ? colors.secondary : '#f0f0f0',
-                  },
-                },
-                {
-                  value: 'unit',
-                  label: 'Unit',
-                  labelStyle: {
-                    fontSize: 16,
-                    fontWeight: '600',
-                    fontFamily: 'Metropolis-Medium',
-                    color: scope === 'unit' ? '#fff' : '#000',
-                  },
-                  style: {
-                    backgroundColor:
-                      scope === 'unit' ? colors.secondary : '#f0f0f0',
-                  },
-                },
-                {
-                  value: 'tenant',
-                  label: 'Tenant',
-                  labelStyle: {
-                    fontSize: 16,
-                    fontWeight: '600',
-                    fontFamily: 'Metropolis-Medium',
-                    color: scope === 'tenant' ? '#fff' : '#000',
-                  },
-                  style: {
-                    backgroundColor:
-                      scope === 'tenant' ? colors.secondary : '#f0f0f0',
-                  },
-                },
-              ]}
-            />
-          </View> */}
-        {/* <View style={styles.searchRow}>
-          <View style={{ flex: 1, marginRight: 10 }}>
-            <TextInput
-              placeholder="Search tenants, units, or properties"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={styles.searchInput}
-            />
-          </View>
-        </View> */}
+        {/* Error state */}
+        {error && (
+          <StandardCard style={styles.fullWidthCard}>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons
+                name="alert-circle"
+                size={24}
+                color={colors.error}
+              />
+              <StandardText
+                size="lg"
+                fontWeight="bold"
+                style={[styles.sectionTitleText, { color: colors.error }]}
+              >
+                Error Loading Data
+              </StandardText>
+            </View>
+            <StandardText size="sm" style={{ color: colors.textSecondary }}>
+              {error}
+            </StandardText>
+          </StandardCard>
+        )}
 
         {/* KPI Cards */}
         <View style={styles.kpiGrid}>
@@ -447,7 +450,9 @@ const Home = ({ navigation }) => {
                 ₹{paid.toLocaleString()}
               </StandardText>
               <StandardText size="sm" style={styles.statPercentage}>
-                {Math.round((paid / (paid + notPaid)) * 100)}%
+                {rentData.collected_percentage ||
+                  Math.round((paid / (paid + notPaid || 1)) * 100)}
+                %
               </StandardText>
             </View>
 
@@ -477,7 +482,9 @@ const Home = ({ navigation }) => {
                 ₹{notPaid.toLocaleString()}
               </StandardText>
               <StandardText size="sm" style={styles.statPercentage}>
-                {Math.round((notPaid / (paid + notPaid)) * 100)}%
+                {rentData.overdue_percentage ||
+                  Math.round((notPaid / (paid + notPaid || 1)) * 100)}
+                %
               </StandardText>
             </View>
           </View>
@@ -489,14 +496,20 @@ const Home = ({ navigation }) => {
                 style={[
                   styles.progressFill,
                   {
-                    width: `${(paid / (paid + notPaid)) * 100}%`,
+                    width: `${
+                      rentData.collected_percentage ||
+                      Math.round((paid / (paid + notPaid || 1)) * 100)
+                    }%`,
                     backgroundColor: colors.success,
                   },
                 ]}
               />
             </View>
             <StandardText size="sm" style={styles.progressText}>
-              Collection Rate: {Math.round((paid / (paid + notPaid)) * 100)}%
+              Collection Rate:{' '}
+              {rentData.collection_rate ||
+                Math.round((paid / (paid + notPaid || 1)) * 100)}
+              %
             </StandardText>
           </View>
         </StandardCard>
@@ -542,10 +555,12 @@ const Home = ({ navigation }) => {
                 style={{ color: colors.success }}
               >
                 ₹
-                {Math.round(
-                  revenueByMonth.reduce((a, b) => a + b, 0) /
-                    revenueByMonth.length,
-                )}
+                {Math.round(revenueData.avg_revenue / 1000) ||
+                  Math.round(
+                    revenueByMonth.reduce((a, b) => a + b, 0) /
+                      revenueByMonth.length,
+                  ) ||
+                  0}
                 k
               </StandardText>
             </View>
@@ -570,10 +585,12 @@ const Home = ({ navigation }) => {
                 style={{ color: colors.error }}
               >
                 ₹
-                {Math.round(
-                  vacancyLossByMonth.reduce((a, b) => a + b, 0) /
-                    vacancyLossByMonth.length,
-                )}
+                {Math.round(revenueData.avg_loss / 1000) ||
+                  Math.round(
+                    vacancyLossByMonth.reduce((a, b) => a + b, 0) /
+                      vacancyLossByMonth.length,
+                  ) ||
+                  0}
                 k
               </StandardText>
             </View>
@@ -674,79 +691,22 @@ const Home = ({ navigation }) => {
         <Gap size="md" />
 
         {/* Auto-Reconciliation (Payment Inbox Preview) */}
-        {/* <StandardCard
-            style={[styles.kpiCard, { height: 400, width: '100%' }]}
-          >
-            <View style={styles.rowBetween}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialCommunityIcons
-                  name="sync"
-                  size={20}
-                  color={colors.primary}
-                />
-                <StandardText
-                  size="lg"
-                  fontWeight="bold"
-                  style={{ marginLeft: 6 }}
-                >
-                  Auto Reconciliation
-                </StandardText>
-              </View>
-              <Switch value={autoRecon} onValueChange={setAutoRecon} />
-            </View>
-            <StandardText size="sm" style={styles.messageText}>
-              Securely reads payment messages and updates records instantly.
-            </StandardText>
-
-            <Gap size="sm" />
-            {reconInbox.map(msg => (
-              <List.Item
-                key={msg.id}
-                title={`${msg.from} • ${msg.preview}`}
-                left={() => (
-                  <MaterialCommunityIcons
-                    name="message-text-outline"
-                    size={22}
-                    color={colors.primary}
-                  />
-                )}
-                right={() => (
-                  <Chip
-                    mode={msg.matched ? 'flat' : 'outlined'}
-                    icon={msg.matched ? 'check' : 'alert'}
-                  >
-                    {msg.matched ? 'Matched' : 'Review'}
-                  </Chip>
-                )}
-              />
-            ))}
-            <Button
-              mode="contained"
-              buttonColor={colors.primary}
-              style={styles.messageText}
-            >
-              Sync Now
-            </Button>
-          </StandardCard> */}
-
         <StandardCard style={[styles.kpiCard, styles.premiumCardStyle]}>
-          <View style={styles.rowBetween}>
-            <View style={styles.messageContainer}>
-              <MaterialCommunityIcons
-                name="sync"
-                size={20}
-                color={colors.primary}
-              />
-              <StandardText
-                size="lg"
-                fontWeight="bold"
-                style={styles.messageIcon}
-              >
-                Auto Reconciliation
-              </StandardText>
-            </View>
-            <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
+          <View style={styles.messageContainer}>
+            <MaterialCommunityIcons
+              name="sync"
+              size={20}
+              color={colors.primary}
+            />
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.messageIcon}
+            >
+              Auto Reconciliation
+            </StandardText>
           </View>
+          <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
           <StandardText size="sm" style={styles.messageText}>
             Securely reads payment messages and updates records instantly.
           </StandardText>
@@ -862,7 +822,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                ₹{(52000 + 48000 + 46000).toLocaleString()}
+                ₹{(profitLossData.summary?.total_revenue).toLocaleString()}
               </StandardText>
             </View>
 
@@ -885,7 +845,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                ₹{(17500 + 16000 + 13000).toLocaleString()}
+                ₹{(profitLossData.summary?.total_expenses).toLocaleString()}
               </StandardText>
             </View>
 
@@ -908,13 +868,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.primary }}
               >
-                ₹
-                {(
-                  52000 +
-                  48000 +
-                  46000 -
-                  (17500 + 16000 + 13000)
-                ).toLocaleString()}
+                ₹{(profitLossData.summary?.net_profit).toLocaleString()}
               </StandardText>
             </View>
           </View>
@@ -924,11 +878,7 @@ const Home = ({ navigation }) => {
             <DataTable>
               <DataTable.Header style={styles.tableHeader}>
                 <DataTable.Title textStyle={styles.tableHeaderText}>
-                  {scope === 'property'
-                    ? 'Property'
-                    : scope === 'unit'
-                    ? 'Unit'
-                    : 'Tenant'}
+                  Property
                 </DataTable.Title>
                 <DataTable.Title numeric textStyle={styles.tableHeaderText}>
                   Revenue
@@ -941,20 +891,12 @@ const Home = ({ navigation }) => {
                 </DataTable.Title>
               </DataTable.Header>
 
-              {[
-                { k: 'Green View / 201 / John', r: 52000, e: 17500 },
-                { k: 'City Heights / 305 / Riya', r: 48000, e: 16000 },
-                { k: 'Lake Shore / 102 / Alex', r: 46000, e: 13000 },
-              ].map((row, idx) => {
-                const net = row.r - row.e;
+              {plData.slice(0, 3).map((row, idx) => {
+                const net = row.net_profit || row.revenue - row.expenses;
                 return (
                   <DataTable.Row key={idx} style={styles.tableRow}>
                     <DataTable.Cell textStyle={styles.tableCellText}>
-                      {
-                        row.k.split(' / ')[
-                          scope === 'property' ? 0 : scope === 'unit' ? 1 : 2
-                        ]
-                      }
+                      {row.property_name}
                     </DataTable.Cell>
                     <DataTable.Cell
                       numeric
@@ -963,7 +905,7 @@ const Home = ({ navigation }) => {
                         { color: colors.success },
                       ]}
                     >
-                      ₹{row.r.toLocaleString()}
+                      ₹{(row.revenue || 0).toLocaleString()}
                     </DataTable.Cell>
                     <DataTable.Cell
                       numeric
@@ -972,7 +914,7 @@ const Home = ({ navigation }) => {
                         { color: colors.error },
                       ]}
                     >
-                      ₹{row.e.toLocaleString()}
+                      ₹{(row.expenses || 0).toLocaleString()}
                     </DataTable.Cell>
                     <DataTable.Cell
                       numeric
@@ -1023,44 +965,22 @@ const Home = ({ navigation }) => {
 
         <Gap size="md" />
 
-        {/* Forecasts */}
-        {/* <StandardCard
-            style={[styles.kpiCard, { height: 450, width: '100%' }]}
-          >
-            <StandardText size="lg" fontWeight="bold" textAlign="center">
-              Forecast — Revenue & Vacancy Loss (Next 6 Months)
-            </StandardText>
-            <LineChart
-              data={{
-                labels: months,
-                datasets: [
-                  { data: revenueByMonth.map(v => v * 1.05) }, // simple uplift forecast
-                  { data: vacancyLossByMonth.map(v => Math.max(5, v - 1)) }, // simple improvement
-                ],
-                legend: ['Revenue (₹k)', 'Vacancy Loss (₹k)'],
-              }}
-              width={screenWidth - 40}
-              height={240}
-              yAxisSuffix="k"
-              chartConfig={{
-                backgroundColor: '#fff',
-                backgroundGradientFrom: '#fff',
-                backgroundGradientTo: '#fff',
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-                labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-              }}
-            />
-          </StandardCard> */}
-
-        <Gap size="md" />
-
         {/* Issues & Maintenance Board */}
         <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.rowBetween}>
-            <StandardText size="lg" fontWeight="bold">
-              🔧 Issues & Maintenance
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="wrench"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.sectionTitleText}
+            >
+              Issues & Maintenance
             </StandardText>
+
             <TouchableOpacity
               onPress={() => navigation.navigate('Tickets')}
               style={styles.showMoreButton}
@@ -1072,6 +992,58 @@ const Home = ({ navigation }) => {
                 color={colors.primary}
               />
             </TouchableOpacity>
+          </View>
+
+          {/* Issues Summary */}
+          <View style={styles.issuesSummaryGrid}>
+            <View style={styles.issuesSummaryItem}>
+              <StandardText
+                size="xl"
+                fontWeight="bold"
+                style={{ color: colors.primary }}
+              >
+                {issuesData.total_issues || 0}
+              </StandardText>
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Total Issues
+              </StandardText>
+            </View>
+            <View style={styles.issuesSummaryItem}>
+              <StandardText
+                size="xl"
+                fontWeight="bold"
+                style={{ color: colors.error }}
+              >
+                {issuesData.open_issues || 0}
+              </StandardText>
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Open
+              </StandardText>
+            </View>
+            <View style={styles.issuesSummaryItem}>
+              <StandardText
+                size="xl"
+                fontWeight="bold"
+                style={{ color: colors.warning }}
+              >
+                {issuesData.in_progress_issues || 0}
+              </StandardText>
+              <StandardText size="sm" style={styles.summaryLabel}>
+                In Progress
+              </StandardText>
+            </View>
+            <View style={styles.issuesSummaryItem}>
+              <StandardText
+                size="xl"
+                fontWeight="bold"
+                style={{ color: colors.success }}
+              >
+                {issuesData.resolved_issues || 0}
+              </StandardText>
+              <StandardText size="sm" style={styles.summaryLabel}>
+                Resolved
+              </StandardText>
+            </View>
           </View>
 
           <View style={styles.maintenanceContainer}>
@@ -1154,9 +1126,18 @@ const Home = ({ navigation }) => {
 
         {/* Tenant Leaderboard */}
         <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.rowBetween}>
-            <StandardText size="lg" fontWeight="bold">
-              👑 Top Tenants
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="crown"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.sectionTitleText}
+            >
+              Top Tenants
             </StandardText>
             <TouchableOpacity
               onPress={() => navigation.navigate('Tenants')}
@@ -1229,12 +1210,22 @@ const Home = ({ navigation }) => {
 
         <Gap size="md" />
 
-        {/* 🪪 Tenant KYC Status */}
+        {/* Tenant KYC Status */}
         <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.rowBetween}>
-            <StandardText size="lg" fontWeight="bold">
-              🪪 Tenant KYC
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons
+              name="card-account-details"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              size="lg"
+              fontWeight="bold"
+              style={styles.sectionTitleText}
+            >
+              Tenant KYC
             </StandardText>
+
             <TouchableOpacity
               onPress={() => navigation.navigate('TenantKYC')}
               style={styles.showMoreButton}
@@ -1266,7 +1257,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                12
+                {tenantData.kyc_stats?.verified || 12}
               </StandardText>
               <StandardText size="sm" style={{ color: colors.success }}>
                 Verified
@@ -1289,7 +1280,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.warning }}
               >
-                3
+                {tenantData.kyc_stats?.pending || 3}
               </StandardText>
               <StandardText size="sm" style={{ color: colors.warning }}>
                 Pending
@@ -1312,7 +1303,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                1
+                {tenantData.kyc_stats?.rejected || 1}
               </StandardText>
               <StandardText size="sm" style={{ color: colors.error }}>
                 Rejected
@@ -1326,86 +1317,21 @@ const Home = ({ navigation }) => {
           </StandardText>
 
           <View style={styles.kycList}>
-            {[
-              {
-                name: 'Ravi Kumar',
-                status: 'verified',
-                date: '2025-08-30',
-                id: 'k1',
-              },
-              {
-                name: 'Amit Sharma',
-                status: 'pending',
-                date: '2025-08-29',
-                id: 'k2',
-              },
-              {
-                name: 'Neha Verma',
-                status: 'rejected',
-                date: '2025-08-28',
-                id: 'k3',
-              },
-            ]
-              .slice(0, 3)
-              .map(kyc => (
-                <TouchableOpacity
-                  key={kyc.id}
-                  style={styles.kycItem}
-                  onPress={() =>
-                    navigation.navigate('TenantDetails', {
-                      tenant: { name: kyc.name, id: kyc.id },
-                    })
-                  }
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.kycLeft}>
-                    <View
-                      style={[
-                        styles.kycStatusIcon,
-                        {
-                          backgroundColor:
-                            kyc.status === 'verified'
-                              ? colors.success + '20'
-                              : kyc.status === 'pending'
-                              ? colors.warning + '20'
-                              : colors.error + '20',
-                        },
-                      ]}
-                    >
-                      <MaterialCommunityIcons
-                        name={
-                          kyc.status === 'verified'
-                            ? 'check'
-                            : kyc.status === 'pending'
-                            ? 'clock'
-                            : 'close'
-                        }
-                        size={16}
-                        color={
-                          kyc.status === 'verified'
-                            ? colors.success
-                            : kyc.status === 'pending'
-                            ? colors.warning
-                            : colors.error
-                        }
-                      />
-                    </View>
-                    <View style={styles.kycContent}>
-                      <StandardText
-                        size="md"
-                        fontWeight="600"
-                        numberOfLines={1}
-                      >
-                        {kyc.name}
-                      </StandardText>
-                      <StandardText size="sm" style={styles.kycSubtext}>
-                        Submitted: {kyc.date}
-                      </StandardText>
-                    </View>
-                  </View>
+            {tenantData.recent_kyc_submissions.slice(0, 3).map((kyc, index) => (
+              <TouchableOpacity
+                key={`kyc-${index}`}
+                style={styles.kycItem}
+                onPress={() =>
+                  navigation.navigate('TenantDetails', {
+                    tenant: { name: kyc.tenant_name, id: `kyc-${index}` },
+                  })
+                }
+                activeOpacity={0.7}
+              >
+                <View style={styles.kycLeft}>
                   <View
                     style={[
-                      styles.statusChip,
+                      styles.kycStatusIcon,
                       {
                         backgroundColor:
                           kyc.status === 'verified'
@@ -1416,23 +1342,63 @@ const Home = ({ navigation }) => {
                       },
                     ]}
                   >
-                    <StandardText
-                      size="xs"
-                      fontWeight="600"
-                      style={{
-                        color:
-                          kyc.status === 'verified'
-                            ? colors.success
-                            : kyc.status === 'pending'
-                            ? colors.warning
-                            : colors.error,
-                      }}
-                    >
-                      {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
+                    <MaterialCommunityIcons
+                      name={
+                        kyc.status === 'verified'
+                          ? 'check'
+                          : kyc.status === 'pending'
+                          ? 'clock'
+                          : 'close'
+                      }
+                      size={16}
+                      color={
+                        kyc.status === 'verified'
+                          ? colors.success
+                          : kyc.status === 'pending'
+                          ? colors.warning
+                          : colors.error
+                      }
+                    />
+                  </View>
+                  <View style={styles.kycContent}>
+                    <StandardText size="md" fontWeight="600" numberOfLines={1}>
+                      {kyc.tenant_name}
+                    </StandardText>
+                    <StandardText size="sm" style={styles.kycSubtext}>
+                      Submitted: {kyc.submission_date}
                     </StandardText>
                   </View>
-                </TouchableOpacity>
-              ))}
+                </View>
+                <View
+                  style={[
+                    styles.statusChip,
+                    {
+                      backgroundColor:
+                        kyc.status === 'verified'
+                          ? colors.success + '20'
+                          : kyc.status === 'pending'
+                          ? colors.warning + '20'
+                          : colors.error + '20',
+                    },
+                  ]}
+                >
+                  <StandardText
+                    size="xs"
+                    fontWeight="600"
+                    style={{
+                      color:
+                        kyc.status === 'verified'
+                          ? colors.success
+                          : kyc.status === 'pending'
+                          ? colors.warning
+                          : colors.error,
+                    }}
+                  >
+                    {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
+                  </StandardText>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         </StandardCard>
 
@@ -1473,7 +1439,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                {totalRooms - vacantRooms}
+                {roomData.occupied_rooms || totalRooms - vacantRooms}
               </StandardText>
               <StandardText size="sm" style={styles.occupancyStatLabel}>
                 Occupied
@@ -1485,7 +1451,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                {vacantRooms}
+                {roomData.vacant_rooms || vacantRooms}
               </StandardText>
               <StandardText size="sm" style={styles.occupancyStatLabel}>
                 Vacant
@@ -1508,7 +1474,7 @@ const Home = ({ navigation }) => {
           <View style={styles.roomGrid}>
             {occupancyGrid.slice(0, 9).map((room, idx) => (
               <TouchableOpacity
-                key={idx}
+                key={room.id}
                 style={[
                   styles.roomCard,
                   { backgroundColor: getRoomColor(room.status) },
@@ -1533,6 +1499,15 @@ const Home = ({ navigation }) => {
                   color="#fff"
                   style={styles.roomIcon}
                 />
+                {room.hasIssues && (
+                  <View style={styles.issueIndicator}>
+                    <MaterialCommunityIcons
+                      name="alert-circle"
+                      size={12}
+                      color={colors.warning}
+                    />
+                  </View>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -1564,24 +1539,17 @@ const Home = ({ navigation }) => {
 
         <Gap size="xl" />
       </ScrollView>
-
-      {/* FAB */}
-      {/* <FAB
-          icon="plus"
-          color={colors.white}
-          style={styles.fab}
-          onPress={() => {}}
-        /> */}
     </View>
   );
 };
 
+// Add these new styles to your existing styles object
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 44 : 20, // Add safe area padding for proper spacing
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
   },
 
   customHeader: {
@@ -1591,7 +1559,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     height: 60,
-    // marginTop: -20,
     marginHorizontal: -16,
     marginBottom: 16,
   },
@@ -1612,27 +1579,6 @@ const styles = StyleSheet.create({
     height: 400,
     width: '100%',
     position: 'relative',
-  },
-
-  premiumHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  premiumIconMargin: {
-    marginLeft: 6,
-  },
-
-  premiumTextMargin: {
-    marginTop: 6,
-  },
-
-  premiumButtonMargin: {
-    marginTop: 6,
-  },
-
-  expenseIconMargin: {
-    marginRight: 6,
   },
 
   headerContent: {
@@ -1664,30 +1610,14 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
 
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-    marginHorizontal: 0,
-  },
-  searchInput: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    fontFamily: 'Metropolis-Regular',
-  },
-
   kpiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
+
   kpiCard: {
     width: '32%',
-    // padding: 12,
-    // borderRadius: 12,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
@@ -1699,92 +1629,19 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
-  rowBetween: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
-  // Occupancy grid
-  gridWrapper: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-    justifyContent: 'space-between',
-  },
-  roomBox: {
-    width: '31%',
-    aspectRatio: 1,
-    marginBottom: 10,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 2,
-  },
-  roomText: { color: '#fff', fontSize: 16 },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 6,
-  },
-  legendColor: { width: 16, height: 16, borderRadius: 4, marginRight: 6 },
-
-  fab: {
-    position: 'absolute',
-    bottom: 25,
-    right: 25,
-    backgroundColor: colors.primary,
-  },
-
-  sheetContent: {
-    flex: 1,
-    width: '100%',
-    padding: 16,
-    alignItems: 'flex-start',
-  },
-  kycSummary: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 8,
-  },
-  kycSummaryBox: {
-    padding: 8,
-    borderRadius: 8,
-  },
-  kycSummaryText: {
-    color: '#fff',
-  },
-  kycRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  kycBadge: {
-    borderRadius: 12,
-    paddingVertical: 4,
-  },
-  kycText: {
-    color: '#fff',
-  },
-  // Add these to your styles object
   premiumOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)', // Reduced opacity to show content
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
+
   premiumContent: {
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -1797,12 +1654,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     borderWidth: 2,
-    borderColor: 'rgba(255, 215, 0, 0.3)', // Golden border
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
+
   lockIconContainer: {
     position: 'relative',
     marginBottom: 16,
   },
+
   crownIcon: {
     position: 'absolute',
     top: -8,
@@ -1811,17 +1670,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 2,
   },
+
   premiumTitle: {
     color: '#333',
     marginBottom: 8,
     textAlign: 'center',
   },
+
   premiumDescription: {
     color: '#666',
     marginBottom: 20,
     lineHeight: 20,
     maxWidth: 250,
   },
+
   contactButton: {
     backgroundColor: '#FFD700',
     paddingVertical: 10,
@@ -1835,12 +1697,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+
   contactButtonText: {
     color: '#333',
     fontSize: 14,
   },
 
-  // New styles for improved sections
   showMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1853,6 +1715,21 @@ const styles = StyleSheet.create({
     marginRight: 4,
     fontSize: 14,
     fontWeight: '600',
+  },
+
+  // Issues Summary
+  issuesSummaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+    padding: 16,
+  },
+
+  issuesSummaryItem: {
+    alignItems: 'center',
+    flex: 1,
   },
 
   // Maintenance styles
@@ -2067,11 +1944,7 @@ const styles = StyleSheet.create({
   chartStyle: {
     borderRadius: 12,
     marginTop: 8,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    fontFamily: 'Metropolis-Regular',
   },
 
   chartContainer: {
@@ -2119,11 +1992,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
-  chartLegendValue: {
-    fontSize: 11,
-    marginLeft: 4,
-  },
-
   // P&L styles
   plSummaryGrid: {
     flexDirection: 'row',
@@ -2148,25 +2016,24 @@ const styles = StyleSheet.create({
 
   tableHeader: {
     backgroundColor: colors.accent,
+    fontFamily: 'Metropolis-Regular',
   },
 
   tableHeaderText: {
-    fontWeight: 'bold',
+    fontFamily: 'Metropolis-Bold',
     color: colors.textPrimary,
   },
 
   tableRow: {
     borderBottomWidth: 1,
     borderBottomColor: colors.accent,
+    fontFamily: 'Metropolis-Regular',
   },
 
   tableCellText: {
     fontSize: 14,
     color: colors.textPrimary,
-  },
-
-  tableCellBold: {
-    fontWeight: 'bold',
+    fontFamily: 'Metropolis-Regular',
   },
 
   expensesSection: {
@@ -2197,7 +2064,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    justifyContent: 'space-between',
   },
 
   sectionTitleText: {
@@ -2291,6 +2157,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    position: 'relative',
   },
 
   roomNumber: {
@@ -2300,6 +2167,15 @@ const styles = StyleSheet.create({
 
   roomIcon: {
     marginTop: 2,
+  },
+
+  issueIndicator: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    padding: 2,
   },
 
   roomLegend: {
@@ -2325,18 +2201,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   messageIcon: {
     marginLeft: 6,
   },
+
   messageText: {
     marginTop: 6,
   },
+
   messagesList: {
     marginTop: 6,
   },
+
   messageItemIcon: {
     marginRight: 6,
   },
+
   boldText: {
     fontWeight: 'bold',
   },
