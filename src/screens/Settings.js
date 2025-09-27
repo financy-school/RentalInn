@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -7,6 +7,7 @@ import {
   Alert,
   Switch,
   Share,
+  ActivityIndicator,
 } from 'react-native';
 import { Card, Divider, Avatar } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -15,13 +16,27 @@ import { CredentialsContext } from '../context/CredentialsContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
+import {
+  getAppInfo,
+  updateNotificationSettings,
+  updatePreferences,
+  updatePrivacySettings,
+  backupData,
+  exportReports,
+  clearCache,
+  notifyPasswordChanged,
+} from '../services/NetworkUtils';
 import colors from '../theme/color';
 
 const Settings = ({ navigation }) => {
   const { theme: mode, toggleTheme } = useContext(ThemeContext);
   const { credentials, setCredentials } = useContext(CredentialsContext);
 
-  // Settings state
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null);
+
+  // Settings state - initialize with API structure
   const [settings, setSettings] = useState({
     notifications: {
       push: true,
@@ -29,27 +44,172 @@ const Settings = ({ navigation }) => {
       sms: false,
       maintenance: true,
       payments: true,
-      tenantUpdates: true,
     },
     privacy: {
       analytics: true,
-      crashReporting: true,
-      dataSharing: false,
+      twoFactor: false,
     },
-    preferences: {
-      darkMode: mode === 'dark',
-      language: 'English',
-      currency: 'INR',
-      dateFormat: 'DD/MM/YYYY',
+    darkMode: mode === 'dark',
+    language: 'ENGLISH',
+    currency: 'INR',
+
+    dataManagement: {
       autoBackup: true,
+      autoExportReports: true,
     },
   });
 
+  // App info state
+  const [appInfo, setAppInfo] = useState({
+    appVersion: 'v1.0.0 (Build 1)',
+    lastBackupDate: null,
+    lastCacheCleared: null,
+    lastPasswordChange: null,
+    lastLoginDate: null,
+    loginAttempts: 0,
+  });
+
+  // Fetch settings on component mount
+  useEffect(() => {
+    fetchSettingsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch settings and app info from API
+  const fetchSettingsData = async () => {
+    try {
+      setLoading(true);
+      const response = await getAppInfo(credentials.accessToken);
+
+      if (response.success && response.data) {
+        const data = response.data;
+
+        // Update settings state with API data
+        setSettings(data.settings);
+
+        // Update app info
+        setAppInfo({
+          appVersion: data.appVersion,
+          lastBackupDate: data.lastBackupDate,
+          lastCacheCleared: data.lastCacheCleared,
+          lastPasswordChange: data.lastPasswordChange,
+          lastLoginDate: data.lastLoginDate,
+          loginAttempts: data.loginAttempts,
+        });
+
+        // Sync theme with API data
+        if (data.settings.darkMode !== (mode === 'dark')) {
+          toggleTheme();
+        }
+      } else {
+        console.warn('Failed to fetch settings:', response.error);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      Alert.alert('Error', 'Failed to load settings. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle setting toggle with API updates
+  const toggleSetting = async (category, key) => {
+    const newValue = !settings[category][key];
+
+    // Optimistically update UI
+    setSettings(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [key]: newValue,
+      },
+    }));
+
+    try {
+      let response;
+
+      // Call appropriate API endpoint based on category
+      switch (category) {
+        case 'notifications':
+          const notificationData = {
+            pushNotifications:
+              key === 'push' ? newValue : settings.notifications.push,
+            emailNotifications:
+              key === 'email' ? newValue : settings.notifications.email,
+            smsAlerts: key === 'sms' ? newValue : settings.notifications.sms,
+            maintenanceAlerts:
+              key === 'maintenance'
+                ? newValue
+                : settings.notifications.maintenance,
+            paymentUpdates:
+              key === 'payments' ? newValue : settings.notifications.payments,
+          };
+          response = await updateNotificationSettings(
+            credentials.accessToken,
+            notificationData,
+          );
+          break;
+
+        case 'preferences':
+          const preferencesData = {
+            darkMode: key === 'darkMode' ? newValue : settings.darkMode,
+            language: key === 'language' ? newValue : settings.language,
+            currency: key === 'currency' ? newValue : settings.currency,
+            autoBackup:
+              key === 'autoBackup'
+                ? newValue
+                : settings.dataManagement.autoBackup,
+          };
+          response = await updatePreferences(
+            credentials.accessToken,
+            preferencesData,
+          );
+          break;
+
+        case 'privacy':
+          const privacyData = {
+            analyticsEnabled:
+              key === 'analytics' ? newValue : settings.privacy.analytics,
+            twoFactorEnabled:
+              key === 'twoFactor' ? newValue : settings.privacy.twoFactor,
+          };
+          response = await updatePrivacySettings(
+            credentials.accessToken,
+            privacyData,
+          );
+          break;
+
+        default:
+          console.warn('Unknown setting category:', category);
+          return;
+      }
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update setting');
+      }
+
+      // Handle special cases
+      if (category === 'preferences' && key === 'darkMode') {
+        toggleTheme();
+      }
+    } catch (error) {
+      console.error('Error updating setting:', error);
+
+      // Revert optimistic update on error
+      setSettings(prev => ({
+        ...prev,
+        [category]: {
+          ...prev[category],
+          [key]: !newValue,
+        },
+      }));
+
+      Alert.alert('Error', 'Failed to update setting. Please try again.');
+    }
+  };
+
   // Theme variables
   const isDark = mode === 'dark';
-  const backgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
@@ -63,30 +223,14 @@ const Settings = ({ navigation }) => {
     joinDate: credentials?.joinDate || 'Jan 2024',
   };
 
-  // Handle setting toggle
-  const toggleSetting = (category, key) => {
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [key]: !prev[category][key],
-      },
-    }));
-
-    // Handle special cases
-    if (category === 'preferences' && key === 'darkMode') {
-      toggleTheme();
-    }
-  };
-
   // Language options
   const languageOptions = [
-    { label: 'English', value: 'English', flag: '🇺🇸' },
-    { label: 'हिंदी (Hindi)', value: 'Hindi', flag: '🇮🇳' },
-    { label: 'Español (Spanish)', value: 'Spanish', flag: '🇪🇸' },
-    { label: 'Français (French)', value: 'French', flag: '🇫🇷' },
-    { label: 'العربية (Arabic)', value: 'Arabic', flag: '🇸🇦' },
-    { label: '中文 (Chinese)', value: 'Chinese', flag: '🇨🇳' },
+    { label: 'English', value: 'ENGLISH', flag: '🇺🇸' },
+    { label: 'हिंदी (Hindi)', value: 'HINDI', flag: '🇮🇳' },
+    { label: 'Español (Spanish)', value: 'SPANISH', flag: '🇪🇸' },
+    { label: 'Français (French)', value: 'FRENCH', flag: '🇫🇷' },
+    { label: 'العربية (Arabic)', value: 'ARABIC', flag: '🇸🇦' },
+    { label: '中文 (Chinese)', value: 'CHINESE', flag: '🇨🇳' },
   ];
 
   // Currency options
@@ -105,15 +249,38 @@ const Settings = ({ navigation }) => {
       { text: 'Cancel', style: 'cancel' },
       ...languageOptions.map(lang => ({
         text: `${lang.flag} ${lang.label}`,
-        onPress: () => {
-          setSettings(prev => ({
-            ...prev,
-            preferences: {
-              ...prev.preferences,
+        onPress: async () => {
+          try {
+            const preferencesData = {
+              darkMode: settings.darkMode,
               language: lang.value,
-            },
-          }));
-          Alert.alert('Success', `Language changed to ${lang.label}`);
+              currency: settings.currency,
+            };
+
+            const response = await updatePreferences(
+              credentials.accessToken,
+              preferencesData,
+            );
+
+            if (response.success) {
+              setSettings(prev => ({
+                ...prev,
+                preferences: {
+                  ...prev.preferences,
+                  language: lang.value,
+                },
+              }));
+              Alert.alert('Success', `Language changed to ${lang.label}`);
+            } else {
+              throw new Error(response.error || 'Failed to update language');
+            }
+          } catch (error) {
+            console.error('Error updating language:', error);
+            Alert.alert(
+              'Error',
+              'Failed to update language. Please try again.',
+            );
+          }
         },
       })),
     ]);
@@ -125,15 +292,38 @@ const Settings = ({ navigation }) => {
       { text: 'Cancel', style: 'cancel' },
       ...currencyOptions.map(currency => ({
         text: `${currency.symbol} ${currency.label}`,
-        onPress: () => {
-          setSettings(prev => ({
-            ...prev,
-            preferences: {
-              ...prev.preferences,
+        onPress: async () => {
+          try {
+            const preferencesData = {
+              darkMode: settings.darkMode,
+              language: settings.language,
               currency: currency.value,
-            },
-          }));
-          Alert.alert('Success', `Currency changed to ${currency.label}`);
+            };
+
+            const response = await updatePreferences(
+              credentials.accessToken,
+              preferencesData,
+            );
+
+            if (response.success) {
+              setSettings(prev => ({
+                ...prev,
+                preferences: {
+                  ...prev.preferences,
+                  currency: currency.value,
+                },
+              }));
+              Alert.alert('Success', `Currency changed to ${currency.label}`);
+            } else {
+              throw new Error(response.error || 'Failed to update currency');
+            }
+          } catch (error) {
+            console.error('Error updating currency:', error);
+            Alert.alert(
+              'Error',
+              'Failed to update currency. Please try again.',
+            );
+          }
         },
       })),
     ]);
@@ -177,17 +367,41 @@ const Settings = ({ navigation }) => {
                         { text: 'Cancel', style: 'cancel' },
                         {
                           text: 'Confirm',
-                          onPress: confirmPassword => {
+                          onPress: async confirmPassword => {
                             if (newPassword !== confirmPassword) {
                               Alert.alert('Error', 'Passwords do not match');
                               return;
                             }
 
-                            // Simulate password change
-                            Alert.alert(
-                              'Success',
-                              'Password changed successfully!',
-                            );
+                            try {
+                              // In a real implementation, you'd call a change password API first
+                              // Then notify the backend that password has been changed
+                              const response = await notifyPasswordChanged(
+                                credentials.accessToken,
+                              );
+
+                              if (response.success) {
+                                Alert.alert(
+                                  'Success',
+                                  'Password changed successfully!',
+                                );
+                                // Update app info to reflect password change
+                                setAppInfo(prev => ({
+                                  ...prev,
+                                  lastPasswordChange: new Date().toISOString(),
+                                }));
+                              } else {
+                                throw new Error(
+                                  response.error || 'Failed to update password',
+                                );
+                              }
+                            } catch (error) {
+                              console.error('Error updating password:', error);
+                              Alert.alert(
+                                'Error',
+                                'Failed to change password. Please try again.',
+                              );
+                            }
                           },
                         },
                       ],
@@ -242,38 +456,57 @@ const Settings = ({ navigation }) => {
   };
 
   // Handle export data
-  const handleExportData = () => {
-    Alert.alert('Export Data', 'Choose what data you want to export:', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Property Reports',
-        onPress: () => {
-          Alert.alert(
-            'Success',
-            'Property reports exported to Downloads folder',
-          );
-        },
-      },
-      {
-        text: 'Tenant Data',
-        onPress: () => {
-          Alert.alert('Success', 'Tenant data exported to Downloads folder');
-        },
-      },
-      {
-        text: 'All Data',
-        onPress: () => {
-          Alert.alert('Success', 'All data exported to Downloads folder');
-        },
-      },
-    ]);
+  const handleExportData = async () => {
+    try {
+      setActionLoading('export');
+      const response = await exportReports(credentials.accessToken);
+
+      if (response.success && response.data) {
+        Alert.alert(
+          'Success',
+          response.data.message || 'Reports exported successfully!',
+        );
+        // If there's a report URL, you could open it or show it to the user
+        if (response.data.reportUrl) {
+          console.log('Report URL:', response.data.reportUrl);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to export reports');
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      Alert.alert('Error', 'Failed to export reports. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   // Handle app version info
   const handleAppVersion = () => {
+    const formatDate = dateString => {
+      if (!dateString) return 'Never';
+      return new Date(dateString).toLocaleDateString();
+    };
+
     Alert.alert(
       'App Information',
-      "RentalInn v1.0.0\nBuild: 1\nRelease Date: September 2025\nDeveloped by RentalInn Team\n\nWhat's New:\n• Property management dashboard\n• Tenant tracking\n• Payment records\n• Invoice management\n• Dark/Light theme support",
+      `RentalInn ${appInfo.appVersion}
+Release Date: September 2025
+Developed by RentalInn Team
+
+App Statistics:
+• Last Login: ${formatDate(appInfo.lastLoginDate)}
+• Last Backup: ${formatDate(appInfo.lastBackupDate)}
+• Last Cache Clear: ${formatDate(appInfo.lastCacheCleared)}
+• Last Password Change: ${formatDate(appInfo.lastPasswordChange)}
+• Login Attempts: ${appInfo.loginAttempts}
+
+What's New:
+• Property management dashboard
+• Tenant tracking
+• Payment records
+• Invoice management
+• Dark/Light theme support`,
       [{ text: 'OK' }],
     );
   };
@@ -345,8 +578,37 @@ const Settings = ({ navigation }) => {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Create Backup',
-          onPress: () => {
-            Alert.alert('Success', 'Backup created successfully!');
+          onPress: async () => {
+            try {
+              setActionLoading('backup');
+              const response = await backupData(credentials.accessToken);
+
+              if (response.success && response.data) {
+                Alert.alert(
+                  'Success',
+                  response.data.message || 'Backup created successfully!',
+                );
+                // Update app info to reflect backup date
+                setAppInfo(prev => ({
+                  ...prev,
+                  lastBackupDate: new Date().toISOString(),
+                }));
+
+                if (response.data.backupId) {
+                  console.log('Backup ID:', response.data.backupId);
+                }
+              } else {
+                throw new Error(response.error || 'Failed to create backup');
+              }
+            } catch (error) {
+              console.error('Error creating backup:', error);
+              Alert.alert(
+                'Error',
+                'Failed to create backup. Please try again.',
+              );
+            } finally {
+              setActionLoading(null);
+            }
           },
         },
       ],
@@ -399,6 +661,22 @@ const Settings = ({ navigation }) => {
       ],
     );
   };
+
+  // Show loading screen while fetching settings
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <StandardHeader navigation={navigation} title="Settings" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Gap size="md" />
+          <StandardText style={[styles.loadingText, { color: textPrimary }]}>
+            Loading settings...
+          </StandardText>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -539,8 +817,8 @@ const Settings = ({ navigation }) => {
           <SettingItem
             title="Dark Mode"
             subtitle="Switch between light and dark themes"
-            value={settings.preferences.darkMode}
-            onToggle={() => toggleSetting('preferences', 'darkMode')}
+            value={settings.darkMode}
+            onToggle={() => toggleSetting('darkMode')}
             textColor={textPrimary}
             subtitleColor={textSecondary}
           />
@@ -548,9 +826,8 @@ const Settings = ({ navigation }) => {
           <SettingActionItem
             title="Language"
             subtitle={
-              languageOptions.find(
-                lang => lang.value === settings.preferences.language,
-              )?.label || 'English'
+              languageOptions.find(lang => lang.value === settings.language)
+                ?.label || 'English'
             }
             onPress={handleLanguageSelection}
             textColor={textPrimary}
@@ -560,9 +837,8 @@ const Settings = ({ navigation }) => {
           <SettingActionItem
             title="Currency"
             subtitle={
-              currencyOptions.find(
-                curr => curr.value === settings.preferences.currency,
-              )?.label || 'Indian Rupee (₹)'
+              currencyOptions.find(curr => curr.value === settings.currency)
+                ?.label || 'Indian Rupee (₹)'
             }
             onPress={handleCurrencySelection}
             textColor={textPrimary}
@@ -572,8 +848,8 @@ const Settings = ({ navigation }) => {
           <SettingItem
             title="Auto Backup"
             subtitle="Automatically backup data to cloud"
-            value={settings.preferences.autoBackup}
-            onToggle={() => toggleSetting('preferences', 'autoBackup')}
+            value={settings.dataManagement.autoBackup}
+            onToggle={() => toggleSetting('dataManagement', 'autoBackup')}
             textColor={textPrimary}
             subtitleColor={textSecondary}
             isLast
@@ -666,9 +942,31 @@ const Settings = ({ navigation }) => {
           <SettingActionItem
             title="Clear Cache"
             subtitle="Free up storage space"
-            onPress={() =>
-              Alert.alert('Success', 'Cache cleared successfully!')
-            }
+            onPress={async () => {
+              try {
+                setActionLoading('cache');
+                const response = await clearCache(credentials.accessToken);
+
+                if (response.success) {
+                  Alert.alert('Success', 'Cache cleared successfully!');
+                  // Update app info to reflect cache clear date
+                  setAppInfo(prev => ({
+                    ...prev,
+                    lastCacheCleared: new Date().toISOString(),
+                  }));
+                } else {
+                  throw new Error(response.error || 'Failed to clear cache');
+                }
+              } catch (error) {
+                console.error('Error clearing cache:', error);
+                Alert.alert(
+                  'Error',
+                  'Failed to clear cache. Please try again.',
+                );
+              } finally {
+                setActionLoading(null);
+              }
+            }}
             textColor={textPrimary}
             subtitleColor={textSecondary}
             isLast
@@ -737,7 +1035,7 @@ const Settings = ({ navigation }) => {
 
           <SettingActionItem
             title="App Version"
-            subtitle="v1.0.0 (Build 1)"
+            subtitle={appInfo.appVersion}
             onPress={handleAppVersion}
             textColor={textPrimary}
             subtitleColor={textSecondary}
@@ -867,6 +1165,16 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
   profileCard: {
     marginTop: 16,

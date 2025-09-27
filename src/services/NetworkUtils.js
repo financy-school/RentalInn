@@ -600,3 +600,139 @@ export const recordPayment = async (accessToken, paymentData) => {
     'RECORD_PAYMENT',
   );
 };
+
+/**
+ * Settings Management API calls
+ */
+export const getSettings = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.get('/settings', {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_SETTINGS',
+  );
+};
+
+export const getAppInfo = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.get('/settings/app-info', {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_APP_INFO',
+  );
+};
+
+export const updateSettings = async (accessToken, settingsData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch('/settings', settingsData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_SETTINGS',
+  );
+};
+
+export const updateNotificationSettings = async (
+  accessToken,
+  notificationData,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch('/settings/notifications', notificationData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_NOTIFICATION_SETTINGS',
+  );
+};
+
+export const updatePreferences = async (accessToken, preferencesData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch('/settings/preferences', preferencesData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_PREFERENCES',
+  );
+};
+
+export const updatePrivacySettings = async (accessToken, privacyData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch('/settings/privacy', privacyData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_PRIVACY_SETTINGS',
+  );
+};
+
+export const resetSettings = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/settings/reset',
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'RESET_SETTINGS',
+  );
+};
+
+export const backupData = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/settings/backup',
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'BACKUP_DATA',
+  );
+};
+
+export const exportReports = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/settings/export-reports',
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'EXPORT_REPORTS',
+  );
+};
+
+export const clearCache = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/settings/clear-cache',
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'CLEAR_CACHE',
+  );
+};
+
+export const notifyPasswordChanged = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/settings/password-changed',
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'PASSWORD_CHANGED',
+  );
+};
