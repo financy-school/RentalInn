@@ -32,6 +32,54 @@ import PropertySelector from '../components/PropertySelector/PropertySelector';
 
 const screenWidth = Dimensions.get('window').width;
 
+// Expense category configuration for UI properties
+const EXPENSE_CATEGORY_CONFIG = {
+  electricity: {
+    name: 'Electricity',
+    color: '#7E57C2',
+    icon: 'lightning-bolt',
+    order: 1,
+  },
+  water: {
+    name: 'Water',
+    color: '#42A5F5',
+    icon: 'water',
+    order: 2,
+  },
+  services: {
+    name: 'Services',
+    color: '#26A69A',
+    icon: 'account-group',
+    order: 3,
+  },
+  repairs: {
+    name: 'Repairs',
+    color: '#EF5350',
+    icon: 'tools',
+    order: 4,
+  },
+  other: {
+    name: 'Other',
+    color: '#FFCA28',
+    icon: 'dots-horizontal',
+    order: 5,
+  },
+};
+
+// Fallback colors for unknown expense categories
+const FALLBACK_COLORS = [
+  '#7E57C2',
+  '#42A5F5',
+  '#26A69A',
+  '#EF5350',
+  '#FFCA28',
+  '#66BB6A',
+  '#FF7043',
+  '#AB47BC',
+  '#29B6F6',
+  '#FFA726',
+];
+
 // Helper components for List items
 const MessageLeftIcon = () => (
   <MaterialCommunityIcons
@@ -122,6 +170,41 @@ const Home = ({ navigation }) => {
   const tenantData = analyticsData?.tenant_info || {};
   const roomData = analyticsData?.room_occupancy_map || {};
 
+  // Dynamic expense breakdown builder
+  const buildExpensesBreakdown = () => {
+    const expenseBreakdownData = profitLossData.expense_breakdown || {};
+    const categories = Object.keys(expenseBreakdownData);
+
+    return categories
+      .map((categoryKey, index) => {
+        const apiData = expenseBreakdownData[categoryKey];
+        const config = EXPENSE_CATEGORY_CONFIG[categoryKey];
+
+        // Use config if available, otherwise create dynamic entry
+        const categoryName =
+          config?.name ||
+          categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1);
+        const categoryColor =
+          config?.color || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+
+        return {
+          name: categoryName,
+          population: apiData?.percentage || 0,
+          color: categoryColor,
+          legendFontColor: isDark ? colors.white : '#333',
+          legendFontSize: 12,
+          amount: apiData?.amount || 0,
+          icon: config?.icon,
+          order: config?.order || 999, // Put unknown categories at the end
+        };
+      })
+      .sort((a, b) => a.order - b.order) // Sort by predefined order
+      .filter(expense => expense.population > 0); // Remove empty categories
+  };
+
+  // Get expenses breakdown from API
+  const expensesBreakdown = buildExpensesBreakdown();
+
   // KPI calculations from API data
   const paid = rentData.collected || 0;
   const notPaid = rentData.overdue || 0;
@@ -142,46 +225,6 @@ const Home = ({ navigation }) => {
   const vacancyLossByMonth = revenueData.monthly_data?.map(
     item => item.vacancy_loss / 1000,
   ) || [12, 10, 14, 9, 11, 8];
-
-  // Expenses breakdown from API
-  const expensesBreakdown = [
-    {
-      name: 'Electricity',
-      population:
-        profitLossData.expense_breakdown?.electricity?.percentage || 0,
-      color: '#7E57C2',
-      legendFontColor: '#333',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Water',
-      population: profitLossData.expense_breakdown?.water?.percentage || 0,
-      color: '#42A5F5',
-      legendFontColor: '#333',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Services',
-      population: profitLossData.expense_breakdown?.services?.percentage || 0,
-      color: '#26A69A',
-      legendFontColor: '#333',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Repairs',
-      population: profitLossData.expense_breakdown?.repairs?.percentage || 0,
-      color: '#EF5350',
-      legendFontColor: '#333',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Other',
-      population: profitLossData.expense_breakdown?.other?.percentage || 0,
-      color: '#FFCA28',
-      legendFontColor: '#333',
-      legendFontSize: 12,
-    },
-  ];
 
   // Mock data for features not in API (keep these until API is extended)
   const reconInbox = [
@@ -206,32 +249,37 @@ const Home = ({ navigation }) => {
   ];
 
   // Recent maintenance requests from API
-  const maintenanceRequests = issuesData.recent_issues?.map(issue => ({
-    id: issue.issue_id,
-    title: issue.title,
-    status:
-      issue.status === 'open'
-        ? 'Open'
-        : issue.status === 'in_progress'
-        ? 'In-progress'
-        : 'Completed',
-    priority: issue.priority.charAt(0).toUpperCase() + issue.priority.slice(1),
-  }));
+  const maintenanceRequests =
+    issuesData.recent_issues?.map(issue => ({
+      id: issue.issue_id,
+      title: issue.title,
+      status:
+        issue.status === 'open'
+          ? 'Open'
+          : issue.status === 'in_progress'
+          ? 'In-progress'
+          : 'Completed',
+      priority:
+        issue.priority.charAt(0).toUpperCase() + issue.priority.slice(1),
+    })) || [];
+
   // Top tenants from API
-  const tenants = tenantData.top_tenants?.map((tenant, index) => ({
-    id: tenant.tenant_id || `t${index + 1}`,
-    name: tenant.tenant_name,
-    room: tenant.room_number,
-    status: tenant.payment_status === 'on_time' ? 'On-time' : 'Overdue',
-  }));
+  const tenants =
+    tenantData.top_tenants?.map((tenant, index) => ({
+      id: tenant.tenant_id || `t${index + 1}`,
+      name: tenant.name || tenant.tenant_name,
+      room: tenant.room_number,
+      status: tenant.payment_status === 'on_time' ? 'On-time' : 'Overdue',
+    })) || [];
 
   // Room occupancy grid from API
-  const occupancyGrid = roomData.rooms?.map(room => ({
-    id: room.room_number.toString(),
-    room: room.room_number.toString(),
-    status: room.status,
-    hasIssues: room.has_issues,
-  }));
+  const occupancyGrid =
+    roomData.rooms?.map(room => ({
+      id: room.room_number.toString(),
+      room: room.room_number.toString(),
+      status: room.status,
+      hasIssues: room.has_issues,
+    })) || [];
 
   // Colors for occupancy grid
   const getRoomColor = status => {
@@ -248,26 +296,7 @@ const Home = ({ navigation }) => {
   };
 
   // P&L data from API
-  const plData = profitLossData.property_breakdown || [
-    {
-      property_name: 'Green View',
-      revenue: 52000,
-      expenses: 17500,
-      net_profit: 34500,
-    },
-    {
-      property_name: 'City Heights',
-      revenue: 48000,
-      expenses: 16000,
-      net_profit: 32000,
-    },
-    {
-      property_name: 'Lake Shore',
-      revenue: 46000,
-      expenses: 13000,
-      net_profit: 33000,
-    },
-  ];
+  const plData = profitLossData.property_breakdown || [];
 
   // Loading state
   if (loading) {
@@ -822,7 +851,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                ₹{(profitLossData.summary?.total_revenue).toLocaleString()}
+                ₹{(profitLossData.summary?.total_revenue || 0).toLocaleString()}
               </StandardText>
             </View>
 
@@ -845,7 +874,8 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                ₹{(profitLossData.summary?.total_expenses).toLocaleString()}
+                ₹
+                {(profitLossData.summary?.total_expenses || 0).toLocaleString()}
               </StandardText>
             </View>
 
@@ -868,7 +898,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.primary }}
               >
-                ₹{(profitLossData.summary?.net_profit).toLocaleString()}
+                ₹{(profitLossData.summary?.net_profit || 0).toLocaleString()}
               </StandardText>
             </View>
           </View>
@@ -936,7 +966,7 @@ const Home = ({ navigation }) => {
 
           <Gap size="sm" />
 
-          {/* Enhanced Expenses Breakdown */}
+          {/* Enhanced Expenses Breakdown - Using Dynamic API Data */}
           <View style={styles.expensesSection}>
             <StandardText
               size="md"
@@ -945,21 +975,40 @@ const Home = ({ navigation }) => {
             >
               Expenses Breakdown
             </StandardText>
-            <PieChart
-              data={expensesBreakdown}
-              width={screenWidth - 64}
-              height={180}
-              accessor="population"
-              backgroundColor="transparent"
-              chartConfig={{
-                backgroundColor: '#fff',
-                backgroundGradientFrom: '#fff',
-                backgroundGradientTo: '#fff',
-                color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-              }}
-              paddingLeft="12"
-              style={styles.chartStyle}
-            />
+
+            {expensesBreakdown.length > 0 ? (
+              <PieChart
+                data={expensesBreakdown}
+                width={screenWidth - 64}
+                height={180}
+                accessor="population"
+                backgroundColor="transparent"
+                chartConfig={{
+                  backgroundColor: isDark ? colors.backgroundDark : '#fff',
+                  backgroundGradientFrom: isDark
+                    ? colors.backgroundDark
+                    : '#fff',
+                  backgroundGradientTo: isDark ? colors.backgroundDark : '#fff',
+                  color: (opacity = 1) =>
+                    isDark
+                      ? `rgba(255,255,255,${opacity})`
+                      : `rgba(0,0,0,${opacity})`,
+                }}
+                paddingLeft="12"
+                style={styles.chartStyle}
+              />
+            ) : (
+              <View style={styles.noDataContainer}>
+                <MaterialCommunityIcons
+                  name="chart-pie"
+                  size={48}
+                  color={colors.textSecondary}
+                />
+                <StandardText size="sm" style={styles.noDataText}>
+                  No expense data available
+                </StandardText>
+              </View>
+            )}
           </View>
         </StandardCard>
 
@@ -1257,7 +1306,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                {tenantData.kyc_stats?.verified || 12}
+                {tenantData.kyc_stats?.verified || 0}
               </StandardText>
               <StandardText size="sm" style={{ color: colors.success }}>
                 Verified
@@ -1280,7 +1329,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.warning }}
               >
-                {tenantData.kyc_stats?.pending || 3}
+                {tenantData.kyc_stats?.pending || 0}
               </StandardText>
               <StandardText size="sm" style={{ color: colors.warning }}>
                 Pending
@@ -1303,7 +1352,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                {tenantData.kyc_stats?.rejected || 1}
+                {tenantData.kyc_stats?.rejected || 0}
               </StandardText>
               <StandardText size="sm" style={{ color: colors.error }}>
                 Rejected
@@ -1317,21 +1366,67 @@ const Home = ({ navigation }) => {
           </StandardText>
 
           <View style={styles.kycList}>
-            {tenantData.recent_kyc_submissions.slice(0, 3).map((kyc, index) => (
-              <TouchableOpacity
-                key={`kyc-${index}`}
-                style={styles.kycItem}
-                onPress={() =>
-                  navigation.navigate('TenantDetails', {
-                    tenant: { name: kyc.tenant_name, id: `kyc-${index}` },
-                  })
-                }
-                activeOpacity={0.7}
-              >
-                <View style={styles.kycLeft}>
+            {(tenantData.recent_kyc_submissions || [])
+              .slice(0, 3)
+              .map((kyc, index) => (
+                <TouchableOpacity
+                  key={`kyc-${index}`}
+                  style={styles.kycItem}
+                  onPress={() =>
+                    navigation.navigate('TenantDetails', {
+                      tenant: { name: kyc.tenant_name, id: `kyc-${index}` },
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.kycLeft}>
+                    <View
+                      style={[
+                        styles.kycStatusIcon,
+                        {
+                          backgroundColor:
+                            kyc.status === 'verified'
+                              ? colors.success + '20'
+                              : kyc.status === 'pending'
+                              ? colors.warning + '20'
+                              : colors.error + '20',
+                        },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={
+                          kyc.status === 'verified'
+                            ? 'check'
+                            : kyc.status === 'pending'
+                            ? 'clock'
+                            : 'close'
+                        }
+                        size={16}
+                        color={
+                          kyc.status === 'verified'
+                            ? colors.success
+                            : kyc.status === 'pending'
+                            ? colors.warning
+                            : colors.error
+                        }
+                      />
+                    </View>
+                    <View style={styles.kycContent}>
+                      <StandardText
+                        size="md"
+                        fontWeight="600"
+                        numberOfLines={1}
+                      >
+                        {kyc.tenant_name}
+                      </StandardText>
+                      <StandardText size="sm" style={styles.kycSubtext}>
+                        Submitted: {kyc.submission_date}
+                      </StandardText>
+                    </View>
+                  </View>
                   <View
                     style={[
-                      styles.kycStatusIcon,
+                      styles.statusChip,
                       {
                         backgroundColor:
                           kyc.status === 'verified'
@@ -1342,63 +1437,23 @@ const Home = ({ navigation }) => {
                       },
                     ]}
                   >
-                    <MaterialCommunityIcons
-                      name={
-                        kyc.status === 'verified'
-                          ? 'check'
-                          : kyc.status === 'pending'
-                          ? 'clock'
-                          : 'close'
-                      }
-                      size={16}
-                      color={
-                        kyc.status === 'verified'
-                          ? colors.success
-                          : kyc.status === 'pending'
-                          ? colors.warning
-                          : colors.error
-                      }
-                    />
-                  </View>
-                  <View style={styles.kycContent}>
-                    <StandardText size="md" fontWeight="600" numberOfLines={1}>
-                      {kyc.tenant_name}
-                    </StandardText>
-                    <StandardText size="sm" style={styles.kycSubtext}>
-                      Submitted: {kyc.submission_date}
+                    <StandardText
+                      size="xs"
+                      fontWeight="600"
+                      style={{
+                        color:
+                          kyc.status === 'verified'
+                            ? colors.success
+                            : kyc.status === 'pending'
+                            ? colors.warning
+                            : colors.error,
+                      }}
+                    >
+                      {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
                     </StandardText>
                   </View>
-                </View>
-                <View
-                  style={[
-                    styles.statusChip,
-                    {
-                      backgroundColor:
-                        kyc.status === 'verified'
-                          ? colors.success + '20'
-                          : kyc.status === 'pending'
-                          ? colors.warning + '20'
-                          : colors.error + '20',
-                    },
-                  ]}
-                >
-                  <StandardText
-                    size="xs"
-                    fontWeight="600"
-                    style={{
-                      color:
-                        kyc.status === 'verified'
-                          ? colors.success
-                          : kyc.status === 'pending'
-                          ? colors.warning
-                          : colors.error,
-                    }}
-                  >
-                    {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
-                  </StandardText>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              ))}
           </View>
         </StandardCard>
 
@@ -1463,7 +1518,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.primary }}
               >
-                {occupancyPct}%
+                {Math.round(occupancyPct)}%
               </StandardText>
               <StandardText size="sm" style={styles.occupancyStatLabel}>
                 Occupancy
@@ -1543,7 +1598,7 @@ const Home = ({ navigation }) => {
   );
 };
 
-// Add these new styles to your existing styles object
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -2044,6 +2099,67 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
     color: colors.textPrimary,
+  },
+
+  // New styles for dynamic expense breakdown
+  noDataContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+
+  noDataText: {
+    color: colors.textSecondary,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+
+  expenseDetailsList: {
+    width: '100%',
+    marginTop: 16,
+  },
+
+  expenseDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+
+  expenseDetailLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  expenseColorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+
+  expenseDetailContent: {
+    flex: 1,
+  },
+
+  expenseDetailSubtext: {
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
+  expensePercentage: {
+    color: colors.textPrimary,
+    minWidth: 40,
+    textAlign: 'right',
   },
 
   // Full width card styles
