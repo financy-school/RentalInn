@@ -50,7 +50,7 @@ export const SCREEN_NAMES = {
   RECORD_PAYMENT: 'RecordPayment',
   NOTICES: 'Notices',
   PAYMENTS: 'Payments',
-  KYC: 'KYC',
+  KYC: 'TenantKYC',
   SUPPORT: 'Support',
   FAQ: 'FAQ',
   CONTACT_SUPPORT: 'ContactSupport',
@@ -220,8 +220,9 @@ export const menuItems = [
         params: { editMode: false },
       },
       {
-        label: 'Room Analytics',
-        route: 'RoomAnalytics',
+        label: 'Add New Property',
+        route: SCREEN_NAMES.ADD_PROPERTY,
+        params: { editMode: false },
       },
     ],
   },
@@ -253,10 +254,6 @@ export const menuItems = [
         route: SCREEN_NAMES.ADD_TENANT,
         params: { editMode: false },
       },
-      {
-        label: 'Tenant History',
-        route: 'TenantHistory',
-      },
     ],
   },
   {
@@ -271,10 +268,6 @@ export const menuItems = [
       {
         label: 'Create Ticket',
         route: SCREEN_NAMES.ADD_TICKET,
-      },
-      {
-        label: 'Maintenance Schedule',
-        route: 'MaintenanceSchedule',
       },
     ],
   },
