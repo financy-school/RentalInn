@@ -30,10 +30,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const RoomDetails = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
-  const { room: routeRoom, roomId } = route.params;
+  const { room: routeRoom, room_id } = route.params;
 
   const [room, setRoom] = useState(routeRoom || null);
-  const [loading, setLoading] = useState(!routeRoom && !!roomId);
+  const [loading, setLoading] = useState(!routeRoom && !!room_id);
   const [error, setError] = useState(null);
 
   // Theme variables
@@ -53,7 +53,7 @@ const RoomDetails = ({ navigation, route }) => {
   useEffect(() => {
     if (
       !room &&
-      roomId &&
+      room_id &&
       credentials?.accessToken &&
       credentials?.property_id
     ) {
@@ -64,7 +64,7 @@ const RoomDetails = ({ navigation, route }) => {
           const response = await getRoom(
             credentials.accessToken,
             credentials.property_id,
-            roomId,
+            room_id,
           );
 
           if (response.success) {
@@ -83,7 +83,7 @@ const RoomDetails = ({ navigation, route }) => {
 
       fetchRoomDetails();
     }
-  }, [roomId, credentials, room]);
+  }, [room_id, credentials, room]);
 
   useEffect(() => {
     if (!room) return;

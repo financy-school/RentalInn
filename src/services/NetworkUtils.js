@@ -198,7 +198,7 @@ export const handleUserLogin = async credentials => {
 export const getOwnerDetails = async credentials => {
   if (__DEV__) {
     console.log('getOwnerDetails called with credentials:', {
-      id: credentials?.id,
+      id: credentials?.user_id,
       hasToken: !!credentials?.token,
       hasAccessToken: !!credentials?.accessToken,
       keys: Object.keys(credentials || {}),
@@ -207,7 +207,7 @@ export const getOwnerDetails = async credentials => {
 
   return handleApiResponse(
     () =>
-      apiClient.get(`/users/${credentials.id}`, {
+      apiClient.get(`/users/${credentials.user_id}`, {
         headers: getAuthHeaders(credentials.token || credentials.accessToken),
       }),
     'GET_OWNER_DETAILS',
@@ -317,10 +317,10 @@ export const fetchProperties = async accessToken => {
   );
 };
 
-export const getProperty = async (accessToken, propertyId) => {
+export const getProperty = async (accessToken, property_id) => {
   return handleApiResponse(
     () =>
-      apiClient.get(`/properties/${propertyId}`, {
+      apiClient.get(`/properties/${property_id}`, {
         headers: getAuthHeaders(accessToken),
       }),
     'GET_PROPERTY',
@@ -337,20 +337,24 @@ export const createProperty = async (accessToken, propertyData) => {
   );
 };
 
-export const updateProperty = async (accessToken, propertyId, propertyData) => {
+export const updateProperty = async (
+  accessToken,
+  property_id,
+  propertyData,
+) => {
   return handleApiResponse(
     () =>
-      apiClient.put(`/properties/${propertyId}`, propertyData, {
+      apiClient.put(`/properties/${property_id}`, propertyData, {
         headers: getAuthHeaders(accessToken),
       }),
     'UPDATE_PROPERTY',
   );
 };
 
-export const deleteProperty = async (accessToken, propertyId) => {
+export const deleteProperty = async (accessToken, property_id) => {
   return handleApiResponse(
     () =>
-      apiClient.delete(`/properties/${propertyId}`, {
+      apiClient.delete(`/properties/${property_id}`, {
         headers: getAuthHeaders(accessToken),
       }),
     'DELETE_PROPERTY',
@@ -360,50 +364,58 @@ export const deleteProperty = async (accessToken, propertyId) => {
 /**
  * Room Management API calls
  */
-export const propertyRooms = async (accessToken, propertyId) => {
+export const propertyRooms = async (accessToken, property_id) => {
   return handleApiResponse(
     () =>
-      apiClient.get(`/properties/${propertyId}/rooms`, {
-        headers: getAuthHeaders(accessToken),
+      apiClient.get(`/properties/${property_id}/rooms`, {
+        headers: {
+          ...getAuthHeaders(accessToken),
+          'x-property-id': property_id,
+        },
       }),
     'GET_PROPERTY_ROOMS',
   );
 };
 
-export const getRoom = async (accessToken, propertyId, roomId) => {
+export const getRoom = async (accessToken, property_id, room_id) => {
   return handleApiResponse(
     () =>
-      apiClient.get(`/properties/${propertyId}/rooms/${roomId}`, {
+      apiClient.get(`/properties/${property_id}/rooms/${room_id}`, {
         headers: getAuthHeaders(accessToken),
       }),
     'GET_ROOM',
   );
 };
 
-export const createRoom = async (accessToken, propertyId, roomData) => {
+export const createRoom = async (accessToken, property_id, roomData) => {
   return handleApiResponse(
     () =>
-      apiClient.post(`/properties/${propertyId}/rooms`, roomData, {
+      apiClient.post(`/properties/${property_id}/rooms`, roomData, {
         headers: getAuthHeaders(accessToken),
       }),
     'CREATE_ROOM',
   );
 };
 
-export const updateRoom = async (accessToken, propertyId, roomId, roomData) => {
+export const updateRoom = async (
+  accessToken,
+  property_id,
+  room_id,
+  roomData,
+) => {
   return handleApiResponse(
     () =>
-      apiClient.put(`/properties/${propertyId}/rooms/${roomId}`, roomData, {
+      apiClient.put(`/properties/${property_id}/rooms/${room_id}`, roomData, {
         headers: getAuthHeaders(accessToken),
       }),
     'UPDATE_ROOM',
   );
 };
 
-export const deleteRoom = async (accessToken, propertyId, roomId) => {
+export const deleteRoom = async (accessToken, property_id, room_id) => {
   return handleApiResponse(
     () =>
-      apiClient.delete(`/properties/${propertyId}/rooms/${roomId}`, {
+      apiClient.delete(`/properties/${property_id}/rooms/${room_id}`, {
         headers: getAuthHeaders(accessToken),
       }),
     'DELETE_ROOM',
@@ -413,14 +425,14 @@ export const deleteRoom = async (accessToken, propertyId, roomId) => {
 /**
  * Tenant Management API calls
  */
-export const addTenant = async (accessToken, propertyId, tenantData) => {
+export const addTenant = async (accessToken, property_id, tenantData) => {
   return handleApiResponse(
     () =>
       apiClient.post(
         '/tenants',
         {
           ...tenantData,
-          propertyId: propertyId,
+          property_id: property_id,
         },
         {
           headers: getAuthHeaders(accessToken),
@@ -440,26 +452,26 @@ export const updateTenant = async (accessToken, tenantId, tenantData) => {
   );
 };
 
-export const fetchTenants = async (accessToken, propertyId) => {
+export const fetchTenants = async (accessToken, property_id) => {
   return handleApiResponse(
     () =>
       apiClient.get('/tenants', {
         headers: getAuthHeaders(accessToken),
         params: {
-          propertyId: propertyId.toString(),
+          property_id: property_id,
         },
       }),
     'FETCH_TENANTS',
   );
 };
 
-export const getTenants = async (accessToken, propertyId, roomId) => {
+export const getTenants = async (accessToken, property_id, room_id) => {
   return handleApiResponse(
     () =>
-      apiClient.get(`/tenants/property/${propertyId}/room/${roomId}`, {
+      apiClient.get(`/tenants/property/${property_id}/room/${room_id}`, {
         headers: {
           ...getAuthHeaders(accessToken),
-          'x-property-id': propertyId,
+          'x-property-id': property_id,
         },
       }),
     'GET_TENANTS_BY_ROOM',
@@ -532,14 +544,18 @@ export const deleteDocument = (accessToken, property_id, documentId) => {
   );
 };
 
-export const createDocument = async (accessToken, propertyId, documentData) => {
+export const createDocument = async (
+  accessToken,
+  property_id,
+  documentData,
+) => {
   return handleApiResponse(
     () =>
       apiClient.post('/documents', documentData, {
         headers: {
           ...getAuthHeaders(accessToken),
           'Content-Type': 'application/json',
-          'x-property-id': propertyId,
+          'x-property-id': property_id,
         },
       }),
     'UPLOAD_DOCUMENT',
@@ -567,13 +583,13 @@ export const uploadToS3 = async (upload_url, file) => {
   return uploadResponse;
 };
 
-export const getDocument = async (accessToken, propertyId, documentId) => {
+export const getDocument = async (accessToken, property_id, documentId) => {
   return handleApiResponse(
     () =>
       apiClient.get(`/documents/${documentId}`, {
         headers: {
           ...getAuthHeaders(accessToken),
-          'x-property-id': propertyId,
+          'x-property-id': property_id,
         },
       }),
     'GET_DOCUMENT',
@@ -593,13 +609,13 @@ export const createTicket = async (accessToken, ticketData) => {
   );
 };
 
-export const fetchTickets = async (accessToken, propertyId) => {
+export const fetchTickets = async (accessToken, property_id) => {
   return handleApiResponse(
     () =>
       apiClient.get('/tickets', {
         headers: getAuthHeaders(accessToken),
         params: {
-          propertyId: propertyId.toString(),
+          property_id: property_id,
         },
       }),
     'FETCH_TICKETS',

@@ -111,8 +111,17 @@ const SignUp = ({ navigation }) => {
       clearErrorMessage();
       return false;
     }
-    if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters');
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters');
+      clearErrorMessage();
+      return false;
+    }
+    const passwordRegex =
+      /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setErrorMessage(
+        'Password must contain letters, numbers, and at least one special character',
+      );
       clearErrorMessage();
       return false;
     }
@@ -175,7 +184,11 @@ const SignUp = ({ navigation }) => {
       // Navigation will be handled by RootStack based on auth state
     } catch (error) {
       console.error('Signup error:', error);
-      setErrorMessage(error.message || 'An error occurred during signup');
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        'An error occurred during signup';
+      setErrorMessage(errorMsg);
       clearErrorMessage();
     } finally {
       setLoading(false);

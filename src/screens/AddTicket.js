@@ -36,7 +36,7 @@ const AddTicket = ({ navigation }) => {
     issue: '',
     description: '',
     raisedBy: '',
-    roomId: '',
+    room_id: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -62,7 +62,7 @@ const AddTicket = ({ navigation }) => {
       setError('Please enter who raised the ticket');
       return false;
     }
-    if (!form.roomId.trim()) {
+    if (!form.room_id.trim()) {
       setError('Please enter the room ID');
       return false;
     }
@@ -73,7 +73,7 @@ const AddTicket = ({ navigation }) => {
     if (!validateForm()) return;
 
     // Check if property is selected
-    if (!selectedProperty || selectedProperty.id === 'all') {
+    if (!selectedProperty || selectedProperty.property_id === 'all') {
       setError('Please select a specific property to add a ticket.');
       return;
     }
@@ -101,7 +101,7 @@ const AddTicket = ({ navigation }) => {
 
         const room_document_res = await createDocument(
           credentials.accessToken,
-          selectedProperty.id,
+          selectedProperty.property_id,
           imagedetails,
         );
 
@@ -111,15 +111,15 @@ const AddTicket = ({ navigation }) => {
 
       const payload = {
         ...form,
-        propertyId: selectedProperty.id,
+        property_id: selectedProperty.property_id,
         status: 'PENDING',
-        roomId: parseInt(form.roomId, 10),
+        room_id: form.room_id,
         image_document_id_list: imageDocumentIds,
       };
 
       await createTicket(credentials.accessToken, payload);
       setSuccess('Ticket created successfully! 🎉');
-      setForm({ issue: '', description: '', raisedBy: '', roomId: '' });
+      setForm({ issue: '', description: '', raisedBy: '', room_id: '' });
       setRoomImages([]);
 
       setTimeout(() => {
@@ -322,8 +322,8 @@ const AddTicket = ({ navigation }) => {
 
             <StyledTextInput
               label="Room ID"
-              value={form.roomId}
-              onChangeText={text => handleChange('roomId', text)}
+              value={form.room_id}
+              onChangeText={text => handleChange('room_id', text)}
               placeholder="e.g., 101, A-1, etc."
               keyboardType="numeric"
               left={<PaperInput.Icon icon="door" />}

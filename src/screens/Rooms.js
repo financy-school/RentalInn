@@ -36,7 +36,6 @@ const Rooms = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials, isAuthenticated } = useContext(CredentialsContext);
   const { selectedProperty, isAllPropertiesSelected } = useProperty();
-  console.log('Rooms credentials:', credentials);
 
   useEffect(() => {
     if (!isAuthenticated) {

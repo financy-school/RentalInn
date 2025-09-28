@@ -35,7 +35,7 @@ const PropertySelector = ({
 
   // Filter properties based on context
   const availableProperties = requireSpecificProperty
-    ? properties.filter(property => property.id !== 'all')
+    ? properties.filter(property => property.property_id !== 'all')
     : properties;
 
   // Theme variables
@@ -163,7 +163,7 @@ const PropertySelector = ({
                 >
                   {selectedProperty?.name || 'All Properties'}
                 </StandardText>
-                {selectedProperty && selectedProperty.id !== 'all' && (
+                {selectedProperty && selectedProperty.property_id !== 'all' && (
                   <StandardText
                     style={[styles.addressText, { color: textSecondary }]}
                     size="xs"
@@ -237,10 +237,11 @@ const PropertySelector = ({
             )}
 
             {availableProperties.map(property => {
-              const isSelected = selectedProperty?.id === property.id;
+              const isSelected =
+                selectedProperty?.property_id === property.property_id;
               return (
                 <TouchableOpacity
-                  key={property.id}
+                  key={property.property_id}
                   style={[
                     styles.propertyItem,
                     isSelected && styles.selectedPropertyItem,
@@ -250,7 +251,11 @@ const PropertySelector = ({
                 >
                   <View style={styles.propertyItemContent}>
                     <MaterialCommunityIcons
-                      name={property.id === 'all' ? 'view-dashboard' : 'home'}
+                      name={
+                        property.property_id === 'all'
+                          ? 'view-dashboard'
+                          : 'home'
+                      }
                       size={20}
                       color={isSelected ? colors.primary : textSecondary}
                     />
@@ -264,7 +269,7 @@ const PropertySelector = ({
                       >
                         {property.name}
                       </StandardText>
-                      {property.id !== 'all' ? (
+                      {property.property_id !== 'all' ? (
                         <StandardText
                           style={[
                             styles.propertyAddress,

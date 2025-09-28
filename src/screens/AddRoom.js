@@ -304,9 +304,13 @@ const AddRoom = ({ navigation, route }) => {
       };
 
       if (isEdit) {
-        await updateRoom(credentials.accessToken, editRoom.id, payload);
+        await updateRoom(credentials.accessToken, editRoom.room_id, payload);
       } else {
-        await createRoom(credentials.accessToken, selectedProperty.id, payload);
+        await createRoom(
+          credentials.accessToken,
+          selectedProperty.property_id,
+          payload,
+        );
       }
 
       resetForm();
@@ -763,6 +767,7 @@ const AddRoom = ({ navigation, route }) => {
               </TouchableOpacity>
             </View>
           </View>
+          {console.log('showDatePicker:', showDatePicker)}
 
           {showDatePicker && (
             <DateTimePicker

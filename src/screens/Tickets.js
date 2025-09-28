@@ -345,7 +345,7 @@ const Tickets = ({ navigation }) => {
                         👤 {ticket.raisedBy}
                       </StandardText>
                       <StandardText size="sm" color="default_gray">
-                        🏠 Room {ticket.roomId}
+                        🏠 Room {ticket.room_id}
                       </StandardText>
                     </View>
 

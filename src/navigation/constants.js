@@ -66,15 +66,15 @@ export const SCREEN_NAMES = {
 // Route parameters type definitions
 export const ROUTE_PARAMS = {
   [SCREEN_NAMES.ROOM_DETAILS]: {
-    roomId: 'string',
+    room_id: 'string',
     roomData: 'object',
   },
   [SCREEN_NAMES.TENANT_DETAILS]: {
-    tenantId: 'string',
+    tenant_id: 'string',
     tenantData: 'object',
   },
   [SCREEN_NAMES.TICKET_DETAILS]: {
-    ticketId: 'string',
+    ticket_id: 'string',
     ticketData: 'object',
   },
   [SCREEN_NAMES.ADD_ROOM]: {
@@ -82,16 +82,16 @@ export const ROUTE_PARAMS = {
     roomData: 'object',
   },
   [SCREEN_NAMES.EDIT_ROOM]: {
-    roomId: 'string',
+    room_id: 'string',
     roomData: 'object',
   },
   [SCREEN_NAMES.ADD_TENANT]: {
     editMode: 'boolean',
     tenantData: 'object',
-    roomId: 'string',
+    room_id: 'string',
   },
   [SCREEN_NAMES.EDIT_TENANT]: {
-    tenantId: 'string',
+    tenant_id: 'string',
     tenantData: 'object',
   },
   [SCREEN_NAMES.IMAGE_VIEWER]: {

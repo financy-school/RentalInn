@@ -265,56 +265,51 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
         <View
           style={[styles.header, { backgroundColor: colors.backgroundLight }]}
         >
-          <View style={{ backgroundColor: colors.backgroundLight }}>
-            <View style={styles.logoContainer}>
-              <Image
-                style={styles.logo}
-                source={require('../../../assets/rentalinn.png')}
-                resizeMode="contain"
-              />
-            </View>
+          <View style={styles.logoContainer}>
+            <Image
+              style={styles.logo}
+              source={require('../../../assets/rentalinn-white-text-without-bg.png')}
+              resizeMode="contain"
+            />
+          </View>
 
-            {/* User Info */}
-            <View style={styles.userInfoContainer}>
-              <View
+          {/* User Info */}
+          <View style={styles.userInfoContainer}>
+            {/* <View
+              style={[
+                styles.avatarContainer,
+                { backgroundColor: colors.primary },
+              ]}
+            >
+              <StandardText fontWeight="bold" style={styles.avatarText}>
+                {userInfo.initials}
+              </StandardText>
+            </View> */}
+
+            <View style={styles.userDetails}>
+              <StandardText
+                fontWeight="bold"
+                style={[styles.userName, { color: themeColors.textSecondary }]}
+              >
+                {userInfo.firstName}
+              </StandardText>
+              <StandardText
                 style={[
-                  styles.avatarContainer,
-                  { backgroundColor: colors.primary },
+                  styles.userContact,
+                  { color: themeColors.textSecondary },
+                ]}
+                numberOfLines={1}
+              >
+                {userInfo.email}
+              </StandardText>
+              <StandardText
+                style={[
+                  styles.userContact,
+                  { color: themeColors.textSecondary },
                 ]}
               >
-                <StandardText fontWeight="bold" style={styles.avatarText}>
-                  {userInfo.initials}
-                </StandardText>
-              </View>
-
-              <View style={styles.userDetails}>
-                <StandardText
-                  fontWeight="bold"
-                  style={[
-                    styles.userName,
-                    { color: themeColors.textSecondary },
-                  ]}
-                >
-                  {userInfo.firstName}
-                </StandardText>
-                <StandardText
-                  style={[
-                    styles.userContact,
-                    { color: themeColors.textSecondary },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {userInfo.email}
-                </StandardText>
-                <StandardText
-                  style={[
-                    styles.userContact,
-                    { color: themeColors.textSecondary },
-                  ]}
-                >
-                  +91 {userInfo.phone}
-                </StandardText>
-              </View>
+                +91 {userInfo.phone}
+              </StandardText>
             </View>
           </View>
         </View>
@@ -396,11 +391,9 @@ const styles = {
     marginBottom: 20,
     backgroundColor: colors.backgroundLight,
     width: '100%',
-    alignItems: 'flex-start',
-    paddingRight: 20,
   },
   logo: {
-    width: '90%',
+    width: 150,
     height: 60,
     alignSelf: 'flex-start',
   },
@@ -422,6 +415,7 @@ const styles = {
   },
   userDetails: {
     flex: 1,
+    paddingBottom: 4,
   },
   userName: {
     fontSize: 18,

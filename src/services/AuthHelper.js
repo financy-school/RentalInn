@@ -29,9 +29,11 @@ const AuthHelpers = {
         data: response,
       };
     } catch (error) {
+      const errorMsg =
+        error.response?.data?.message || error.message || 'Signup failed';
       return {
         success: false,
-        message: error.message || 'Signup failed',
+        message: errorMsg,
       };
     }
   },

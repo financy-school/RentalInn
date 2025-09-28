@@ -68,7 +68,7 @@ const AddTenant = ({ navigation, route }) => {
     phone: '',
     alternatePhone: '',
     email: '',
-    roomId: '',
+    room_id: '',
     checkInDate: '',
     checkOutDate: '',
     lockInPeriod: '',
@@ -85,7 +85,7 @@ const AddTenant = ({ navigation, route }) => {
         phone: editTenant.phone || '',
         alternatePhone: editTenant.alternate_phone || '',
         email: editTenant.email || '',
-        roomId: editTenant.room_id || editTenant.room?.id || '',
+        room_id: editTenant.room_id || editTenant.room?.room_id || '',
         checkInDate: editTenant.check_in_date || '',
         checkOutDate: editTenant.check_out_date || '',
         lockInPeriod: editTenant.lock_in_period?.toString() || '',
@@ -108,8 +108,8 @@ const AddTenant = ({ navigation, route }) => {
     if (!tenant.email.trim() || !tenant.email.includes('@')) {
       errors.email = 'Valid email is required';
     }
-    if (!tenant.roomId.trim()) {
-      errors.roomId = 'Room ID is required';
+    if (!tenant.room_id.trim()) {
+      errors.room_id = 'Room ID is required';
     }
     if (!tenant.checkInDate.trim()) {
       errors.checkInDate = 'Check-in date is required';
@@ -153,7 +153,7 @@ const AddTenant = ({ navigation, route }) => {
     setErrorMsg('');
 
     // Check if property is selected
-    if (!selectedProperty || selectedProperty.id === 'all') {
+    if (!selectedProperty || selectedProperty.property_id === 'all') {
       setErrorMsg('Please select a specific property to add a tenant.');
       setLoading(false);
       return;
@@ -161,9 +161,17 @@ const AddTenant = ({ navigation, route }) => {
 
     try {
       if (isEdit) {
-        await updateTenant(credentials.accessToken, editTenant.id, tenant);
+        await updateTenant(
+          credentials.accessToken,
+          editTenant.tenant_id,
+          tenant,
+        );
       } else {
-        await addTenant(credentials.accessToken, selectedProperty.id, tenant);
+        await addTenant(
+          credentials.accessToken,
+          selectedProperty.property_id,
+          tenant,
+        );
       }
       navigation.goBack({ refresh: true });
     } catch (error) {
@@ -373,11 +381,11 @@ const AddTenant = ({ navigation, route }) => {
 
             <StyledTextInput
               label="Room ID *"
-              value={tenant.roomId}
-              onChangeText={text => handleChange('roomId', text)}
+              value={tenant.room_id}
+              onChangeText={text => handleChange('room_id', text)}
               placeholder="Room ID or number"
               left={<PaperInput.Icon icon="door" />}
-              error={formErrors.roomId}
+              error={formErrors.room_id}
             />
 
             <View style={styles.formRow}>

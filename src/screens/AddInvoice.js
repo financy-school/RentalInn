@@ -153,7 +153,7 @@ const AddInvoice = ({ navigation, route }) => {
             const mappedId = categoryMapping[apiCategory];
 
             if (mappedId) {
-              const bill = fixedBills.find(b => b.id === mappedId);
+              const bill = fixedBills.find(b => b.invoice_id === mappedId);
               if (bill) {
                 bill.existingDues = item.pendingAmount || 0;
                 bill.existingDueDate = item.dueDate
@@ -172,7 +172,7 @@ const AddInvoice = ({ navigation, route }) => {
             const mappedId = categoryMapping[apiCategory];
 
             if (mappedId) {
-              const bill = fixedBills.find(b => b.id === mappedId);
+              const bill = fixedBills.find(b => b.invoice_id === mappedId);
               if (bill) {
                 bill.addDueAmount = item.amount || 0;
                 bill.dueDate = item.dueDate
@@ -244,7 +244,7 @@ const AddInvoice = ({ navigation, route }) => {
   // Helper function to safely extract tenant ID
   const getTenantId = () => {
     // Try different possible property names for tenant ID
-    return tenant?.id || tenant?.tenant_id || tenant?.tenantId;
+    return tenant?.tenant_id || tenant?.tenant_id || tenant?.tenantId;
   };
 
   // Helper function to safely extract rental/room ID
@@ -252,8 +252,7 @@ const AddInvoice = ({ navigation, route }) => {
     return (
       tenant?.rental_id ||
       tenant?.rentalId ||
-      tenant?.room?.id ||
-      tenant?.roomId ||
+      tenant?.room?.room_id ||
       tenant?.room_id
     );
   };
@@ -263,7 +262,9 @@ const AddInvoice = ({ navigation, route }) => {
     setInvoiceData(prev => ({
       ...prev,
       bills: prev.bills.map(bill =>
-        bill.id === billId ? { ...bill, selected: !bill.selected } : bill,
+        bill.tenant_id === billId
+          ? { ...bill, selected: !bill.selected }
+          : bill,
       ),
     }));
   };
@@ -272,7 +273,7 @@ const AddInvoice = ({ navigation, route }) => {
     setInvoiceData(prev => ({
       ...prev,
       bills: prev.bills.map(bill =>
-        bill.id === billId ? { ...bill, addDueAmount: amount } : bill,
+        bill.invoice_id === billId ? { ...bill, addDueAmount: amount } : bill,
       ),
     }));
   };
@@ -281,7 +282,7 @@ const AddInvoice = ({ navigation, route }) => {
     setInvoiceData(prev => ({
       ...prev,
       bills: prev.bills.map(bill =>
-        bill.id === billId ? { ...bill, dueDate: date } : bill,
+        bill.invoice_id === billId ? { ...bill, dueDate: date } : bill,
       ),
     }));
   };
@@ -567,7 +568,7 @@ const AddInvoice = ({ navigation, route }) => {
             {/* Table Rows */}
             {invoiceData.bills.map((bill, index) => (
               <View
-                key={bill.id}
+                key={bill.invoice_id}
                 style={[
                   styles.tableRow,
                   index % 2 === 0 ? styles.evenRow : styles.oddRow,
@@ -577,7 +578,7 @@ const AddInvoice = ({ navigation, route }) => {
                 <View style={styles.checkboxContainer}>
                   <Checkbox
                     status={bill.selected ? 'checked' : 'unchecked'}
-                    onPress={() => toggleBillSelection(bill.id)}
+                    onPress={() => toggleBillSelection(bill.invoice_id)}
                     color={colors.primary}
                   />
                 </View>
@@ -635,7 +636,10 @@ const AddInvoice = ({ navigation, route }) => {
                         bill.addDueAmount ? bill.addDueAmount.toString() : ''
                       }
                       onChangeText={text =>
-                        updateBillAmount(bill.id, parseInt(text, 10) || 0)
+                        updateBillAmount(
+                          bill.invoice_id,
+                          parseInt(text, 10) || 0,
+                        )
                       }
                       placeholder="Enter amount"
                       placeholderTextColor={textSecondary}
@@ -655,7 +659,9 @@ const AddInvoice = ({ navigation, route }) => {
                   <TouchableOpacity
                     style={[styles.dateButton, { borderColor: colors.border }]}
                     disabled={!bill.selected}
-                    onPress={() => bill.selected && openDatePicker(bill.id)}
+                    onPress={() =>
+                      bill.selected && openDatePicker(bill.invoice_id)
+                    }
                   >
                     <View style={styles.dateContent}>
                       <StandardText
@@ -714,8 +720,9 @@ const AddInvoice = ({ navigation, route }) => {
         <DateTimePicker
           value={
             selectedBillId
-              ? invoiceData.bills.find(bill => bill.id === selectedBillId)
-                  ?.dueDate || new Date()
+              ? invoiceData.bills.find(
+                  bill => bill.invoice_id === selectedBillId,
+                )?.dueDate || new Date()
               : new Date()
           }
           mode="date"

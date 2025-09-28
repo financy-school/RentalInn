@@ -82,7 +82,7 @@ export const PropertyProvider = ({ children }) => {
             if (storedSelectedProperty) {
               const parsedSelected = JSON.parse(storedSelectedProperty);
               const foundProperty = allProperties.find(
-                p => p.id === parsedSelected.id,
+                p => p.property_id === parsedSelected.property_id,
               );
               setSelectedProperty(foundProperty || DEFAULT_PROPERTIES[0]);
             } else {
@@ -130,7 +130,7 @@ export const PropertyProvider = ({ children }) => {
         if (storedSelectedProperty) {
           const parsedSelected = JSON.parse(storedSelectedProperty);
           const foundProperty = allProperties.find(
-            p => p.id === parsedSelected.id,
+            p => p.property_id === parsedSelected.property_id,
           );
           setSelectedProperty(foundProperty || DEFAULT_PROPERTIES[0]);
         } else {
@@ -150,7 +150,9 @@ export const PropertyProvider = ({ children }) => {
   const saveProperties = useCallback(async newProperties => {
     try {
       // Filter out the default "All Properties" entry for storage
-      const propertiesToStore = newProperties.filter(p => p.id !== 'all');
+      const propertiesToStore = newProperties.filter(
+        p => p.property_id !== 'all',
+      );
       await AsyncStorage.setItem(
         PROPERTIES_STORAGE_KEY,
         JSON.stringify(propertiesToStore),
@@ -223,7 +225,7 @@ export const PropertyProvider = ({ children }) => {
 
   // Update property
   const updateProperty = useCallback(
-    async (propertyId, updates) => {
+    async (property_id, updates) => {
       try {
         const accessToken = credentials?.token || credentials?.accessToken;
 
@@ -231,21 +233,21 @@ export const PropertyProvider = ({ children }) => {
           // Use API if authenticated
           const apiResponse = await apiUpdateProperty(
             accessToken,
-            propertyId,
+            property_id,
             updates,
           );
 
           if (apiResponse.success && apiResponse.data) {
             const updatedProperty = apiResponse.data;
             const updatedProperties = properties.map(property =>
-              property.id === propertyId ? updatedProperty : property,
+              property.property_id === property_id ? updatedProperty : property,
             );
 
             setProperties(updatedProperties);
             await saveProperties(updatedProperties);
 
             // Update selected property if it was the one being updated
-            if (selectedProperty.id === propertyId) {
+            if (selectedProperty.property_id === property_id) {
               setSelectedProperty(updatedProperty);
               await saveSelectedProperty(updatedProperty);
             }
@@ -257,7 +259,7 @@ export const PropertyProvider = ({ children }) => {
         } else {
           // Fallback to local storage if not authenticated
           const updatedProperties = properties.map(property =>
-            property.id === propertyId
+            property.property_id === property_id
               ? { ...property, ...updates, updatedAt: new Date().toISOString() }
               : property,
           );
@@ -266,15 +268,15 @@ export const PropertyProvider = ({ children }) => {
           await saveProperties(updatedProperties);
 
           // Update selected property if it was the one being updated
-          if (selectedProperty.id === propertyId) {
+          if (selectedProperty.property_id === property_id) {
             const updatedSelectedProperty = updatedProperties.find(
-              p => p.id === propertyId,
+              p => p.property_id === property_id,
             );
             setSelectedProperty(updatedSelectedProperty);
             await saveSelectedProperty(updatedSelectedProperty);
           }
 
-          return updatedProperties.find(p => p.id === propertyId);
+          return updatedProperties.find(p => p.property_id === property_id);
         }
       } catch (error) {
         console.error('Error updating property:', error);
@@ -292,10 +294,10 @@ export const PropertyProvider = ({ children }) => {
 
   // Delete property
   const deleteProperty = useCallback(
-    async propertyId => {
+    async property_id => {
       try {
         // Cannot delete the "All Properties" default entry
-        if (propertyId === 'all') {
+        if (property_id === 'all') {
           throw new Error('Cannot delete the "All Properties" entry');
         }
 
@@ -303,17 +305,17 @@ export const PropertyProvider = ({ children }) => {
 
         if (accessToken) {
           // Use API if authenticated
-          const apiResponse = await apiDeleteProperty(accessToken, propertyId);
+          const apiResponse = await apiDeleteProperty(accessToken, property_id);
 
           if (apiResponse.success) {
             const updatedProperties = properties.filter(
-              property => property.id !== propertyId,
+              property => property.property_id !== property_id,
             );
             setProperties(updatedProperties);
             await saveProperties(updatedProperties);
 
             // If the deleted property was selected, switch to "All Properties"
-            if (selectedProperty.id === propertyId) {
+            if (selectedProperty.property_id === property_id) {
               setSelectedProperty(DEFAULT_PROPERTIES[0]);
               await saveSelectedProperty(DEFAULT_PROPERTIES[0]);
             }
@@ -325,13 +327,13 @@ export const PropertyProvider = ({ children }) => {
         } else {
           // Fallback to local storage if not authenticated
           const updatedProperties = properties.filter(
-            property => property.id !== propertyId,
+            property => property.property_id !== property_id,
           );
           setProperties(updatedProperties);
           await saveProperties(updatedProperties);
 
           // If the deleted property was selected, switch to "All Properties"
-          if (selectedProperty.id === propertyId) {
+          if (selectedProperty.property_id === property_id) {
             setSelectedProperty(DEFAULT_PROPERTIES[0]);
             await saveSelectedProperty(DEFAULT_PROPERTIES[0]);
           }
@@ -368,13 +370,13 @@ export const PropertyProvider = ({ children }) => {
 
   // Get properties excluding "All Properties" (for management operations)
   const managedProperties = useMemo(() => {
-    return properties.filter(p => p.id !== 'all');
+    return properties.filter(p => p.property_id !== 'all');
   }, [properties]);
 
   // Get property by ID
   const getPropertyById = useCallback(
-    propertyId => {
-      return properties.find(property => property.id === propertyId);
+    property_id => {
+      return properties.find(property => property.property_id === property_id);
     },
     [properties],
   );
@@ -402,7 +404,7 @@ export const PropertyProvider = ({ children }) => {
       getPropertyById,
 
       // Helper functions
-      isAllPropertiesSelected: selectedProperty?.id === 'all',
+      isAllPropertiesSelected: selectedProperty?.property_id === 'all',
     }),
     [
       properties,

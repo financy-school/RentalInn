@@ -127,8 +127,8 @@ const Home = ({ navigation }) => {
           const queryParams = {};
 
           // If a specific property is selected, pass its ID to the API
-          if (!isAllPropertiesSelected && selectedProperty?.id) {
-            queryParams.property_id = selectedProperty.id;
+          if (!isAllPropertiesSelected && selectedProperty?.property_id) {
+            queryParams.property_id = selectedProperty.property_id;
           }
 
           // Default to current month data
@@ -1535,7 +1535,7 @@ const Home = ({ navigation }) => {
                   { backgroundColor: getRoomColor(room.status) },
                 ]}
                 onPress={() => {
-                  navigation.navigate('RoomDetails', { roomId: room.id });
+                  navigation.navigate('RoomDetails', { room_id: room.room_id });
                 }}
                 activeOpacity={0.8}
               >
