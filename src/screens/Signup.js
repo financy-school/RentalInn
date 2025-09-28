@@ -20,20 +20,12 @@ import KeyBoardAvoidingWrapper from '../components/KeyBoardAvoidingWrapper';
 import StandardText from '../components/StandardText/StandardText';
 
 // Services and utilities
-import { handleUserSignup } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
 
-const { StorageHelper, PerformanceHelper } = helpers;
-
-import {
-  ERROR_MESSAGES,
-  STORAGE_KEYS,
-  SCREEN_NAMES,
-} from '../navigation/constants';
+const { PerformanceHelper } = helpers;
 
 // Theme
 import colors from '../theme/color';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import AuthHelpers from '../services/AuthHelper';
 
 const SignUp = ({ navigation }) => {
@@ -48,11 +40,6 @@ const SignUp = ({ navigation }) => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -117,7 +104,7 @@ const SignUp = ({ navigation }) => {
       return false;
     }
     const passwordRegex =
-      /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?]).{8,}$/;
+      /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?]).{8,}$/;
     if (!passwordRegex.test(password)) {
       setErrorMessage(
         'Password must contain letters, numbers, and at least one special character',
@@ -168,8 +155,58 @@ const SignUp = ({ navigation }) => {
       // Call signup API
       const response = await AuthHelpers.signup(userData);
 
-      if (!response.success || !response.data) {
-        throw new Error(response.message || 'Signup failed');
+      if (!response.success) {
+        // Handle specific error cases
+        const errorMsg = response.message;
+
+        // Check for common error patterns and provide user-friendly messages
+        if (errorMsg.includes('email') && errorMsg.includes('already')) {
+          setErrorMessage(
+            'An account with this email already exists. Please use a different email or try logging in.',
+          );
+        } else if (
+          errorMsg.includes('validation') ||
+          errorMsg.includes('required')
+        ) {
+          setErrorMessage('Please fill in all required fields correctly.');
+        } else if (errorMsg.includes('password') && errorMsg.includes('weak')) {
+          setErrorMessage(
+            'Password must contain at least 8 characters with letters, numbers, and special characters.',
+          );
+        } else if (
+          errorMsg.includes('network') ||
+          errorMsg.includes('connection') ||
+          errorMsg.includes('timeout')
+        ) {
+          setErrorMessage(
+            'Network error. Please check your internet connection and try again.',
+          );
+        } else if (
+          errorMsg.includes('server') ||
+          errorMsg.includes('maintenance')
+        ) {
+          setErrorMessage(
+            'Server is temporarily unavailable. Please try again later.',
+          );
+        } else if (errorMsg.includes('too many')) {
+          setErrorMessage('Too many signup attempts. Please try again later.');
+        } else {
+          // Use the API error message if it's user-friendly, otherwise use a generic message
+          setErrorMessage(
+            errorMsg.length < 100
+              ? errorMsg
+              : 'Account creation failed. Please try again.',
+          );
+        }
+
+        clearErrorMessage();
+        return;
+      }
+
+      if (!response.data) {
+        setErrorMessage('Account creation failed. Please try again.');
+        clearErrorMessage();
+        return;
       }
 
       // Store credentials
@@ -184,11 +221,18 @@ const SignUp = ({ navigation }) => {
       // Navigation will be handled by RootStack based on auth state
     } catch (error) {
       console.error('Signup error:', error);
-      const errorMsg =
-        error.response?.data?.message ||
-        error.message ||
-        'An error occurred during signup';
-      setErrorMessage(errorMsg);
+
+      // Handle unexpected errors
+      if (error.message?.includes('network')) {
+        setErrorMessage(
+          'Network error. Please check your internet connection and try again.',
+        );
+      } else if (error.message?.includes('timeout')) {
+        setErrorMessage('Request timed out. Please try again.');
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+
       clearErrorMessage();
     } finally {
       setLoading(false);

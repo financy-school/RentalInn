@@ -20,20 +20,15 @@ import KeyBoardAvoidingWrapper from '../components/KeyBoardAvoidingWrapper';
 import StandardText from '../components/StandardText/StandardText';
 
 // Services and utilities
-import { handleUserLogin } from '../services/NetworkUtils';
 import helpers from '../navigation/helpers';
-import AuthHelpers from '../services/AuthHelper';
 
 const { PerformanceHelper } = helpers;
 
-import {
-  STORAGE_KEYS,
-  ERROR_MESSAGES,
-  SCREEN_NAMES,
-} from '../navigation/constants';
+import { ERROR_MESSAGES } from '../navigation/constants';
 
 // Theme
 import colors from '../theme/color';
+import AuthHelpers from '../services/AuthHelper';
 
 const Login = ({ navigation }) => {
   // State management
@@ -129,8 +124,60 @@ const Login = ({ navigation }) => {
       const response = await AuthHelpers.login(email, password);
       console.log('Login response:', response);
 
-      if (!response.success || !response.data) {
-        throw new Error(response.message || 'Login failed');
+      if (!response.success) {
+        // Handle specific error cases
+        const errorMsg = response.message;
+
+        // Check for common error patterns and provide user-friendly messages
+        if (
+          errorMsg.includes('Invalid email or password') ||
+          errorMsg.includes('credentials') ||
+          errorMsg.includes('authentication')
+        ) {
+          setErrorMessage(
+            'Invalid email or password. Please check your credentials and try again.',
+          );
+        } else if (
+          errorMsg.includes('network') ||
+          errorMsg.includes('connection') ||
+          errorMsg.includes('timeout')
+        ) {
+          setErrorMessage(
+            'Network error. Please check your internet connection and try again.',
+          );
+        } else if (
+          errorMsg.includes('account') &&
+          errorMsg.includes('locked')
+        ) {
+          setErrorMessage(
+            'Your account has been temporarily locked. Please contact support.',
+          );
+        } else if (errorMsg.includes('too many')) {
+          setErrorMessage('Too many login attempts. Please try again later.');
+        } else if (
+          errorMsg.includes('server') ||
+          errorMsg.includes('maintenance')
+        ) {
+          setErrorMessage(
+            'Server is temporarily unavailable. Please try again later.',
+          );
+        } else {
+          // Use the API error message if it's user-friendly, otherwise use a generic message
+          setErrorMessage(
+            errorMsg.length < 100
+              ? errorMsg
+              : 'Login failed. Please try again.',
+          );
+        }
+
+        clearErrorMessage();
+        return;
+      }
+
+      if (!response.data) {
+        setErrorMessage('Login failed. Please try again.');
+        clearErrorMessage();
+        return;
       }
 
       // Store remember me preference
@@ -156,14 +203,27 @@ const Login = ({ navigation }) => {
       const credentialResult = await setCredentials(credentials);
 
       if (!credentialResult || !credentialResult.success) {
-        throw new Error('Failed to store credentials');
+        setErrorMessage('Failed to save login session. Please try again.');
+        clearErrorMessage();
+        return;
       }
 
       // Clear loading state immediately after successful credential storage
       setLoading(false);
     } catch (error) {
       console.error('Login error:', error);
-      setErrorMessage(error.message || 'An error occurred during login');
+
+      // Handle unexpected errors
+      if (error.message?.includes('network')) {
+        setErrorMessage(
+          'Network error. Please check your internet connection and try again.',
+        );
+      } else if (error.message?.includes('timeout')) {
+        setErrorMessage('Request timed out. Please try again.');
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+
       clearErrorMessage();
     } finally {
       setLoading(false);
@@ -175,7 +235,7 @@ const Login = ({ navigation }) => {
     validateForm,
     setCredentials,
     clearErrorMessage,
-  ]); // Handle navigation to SignUp
+  ]);
   const handleSignUpNavigation = useCallback(() => {
     navigation.navigate('SignUp');
   }, [navigation]);
