@@ -121,6 +121,7 @@ const Tickets = ({ navigation }) => {
       ]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [credentials, selectedFilter, applyFilter, selectedProperty]);
 

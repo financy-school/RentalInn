@@ -73,32 +73,23 @@ const Rooms = ({ navigation }) => {
 
   // 🔹 Fetch rooms
   const fetchRooms = useCallback(async () => {
-    // Skip if no credentials available
-    if (!credentials?.accessToken) {
-      console.log('No access token available, skipping room fetch');
-      setRooms([]);
-      setLoading(false);
-      return;
-    }
-
-    // Use selectedProperty from PropertyContext if specific property is selected,
-    // otherwise don't fetch rooms when "All" is selected (rooms are property-specific)
-    // const currentPropertyId = !isAllPropertiesSelected
-    //   ? selectedProperty?.property_id
-    //   : null;
-
-    const currentPropertyId = selectedProperty?.property_id;
-
-    if (!accessToken || !currentPropertyId) {
-      // Don't show error when no property is selected - just clear data
-      setRooms([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
+    setLoading(true);
     try {
-      setLoading(true);
+      // Use selectedProperty from PropertyContext if specific property is selected,
+      // otherwise don't fetch rooms when "All" is selected (rooms are property-specific)
+      // const currentPropertyId = !isAllPropertiesSelected
+      //   ? selectedProperty?.property_id
+      //   : null;
+
+      const currentPropertyId = selectedProperty?.property_id;
+
+      if (!currentPropertyId) {
+        // Don't show error when no property is selected - just clear data
+        setRooms([]);
+        setLoading(false);
+        return;
+      }
+
       const response = await propertyRooms(accessToken, currentPropertyId);
       const roomData = response.data.items || [];
 
@@ -150,8 +141,9 @@ const Rooms = ({ navigation }) => {
       setError('Failed to load rooms. Please try again later.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [accessToken, credentials?.accessToken, selectedProperty]);
+  }, [accessToken, selectedProperty]);
 
   useEffect(() => {
     fetchRooms();
