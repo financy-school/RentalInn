@@ -24,15 +24,21 @@ import {
   deleteTenant,
   putTenantOnNotice,
   getTenant,
+  getKYCByTenantId,
+  createDocument,
+  updateKYC,
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
+import { PropertyContext } from '../context/PropertyContext';
 import Share from 'react-native-share';
+import { pick } from '@react-native-documents/picker';
 
 const screenWidth = Dimensions.get('window').width;
 
 const TenantDetails = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
+  const { selectedProperty } = useContext(PropertyContext);
   const { tenant: routeTenant, tenantId } = route.params;
 
   const [tenant, setTenant] = useState(routeTenant || null);
@@ -169,32 +175,25 @@ const TenantDetails = ({ navigation, route }) => {
     setConsentChecked(false);
   };
 
-  const handleDocumentPicker = () => {
-    // Mock document picker - in real app use react-native-document-picker
-    Alert.alert('Select Document', 'Choose document type', [
-      {
-        text: 'Camera',
-        onPress: () =>
-          setVerificationDocument({
-            type: 'photo',
-            name: 'background_check.jpg',
-          }),
-      },
-      {
-        text: 'Gallery',
-        onPress: () =>
-          setVerificationDocument({ type: 'image', name: 'document.jpg' }),
-      },
-      {
-        text: 'Files',
-        onPress: () =>
-          setVerificationDocument({
-            type: 'pdf',
-            name: 'verification_doc.pdf',
-          }),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+  const handleDocumentPicker = async () => {
+    try {
+      const results = await pick({
+        type: ['*/*'],
+      });
+      // Since pick returns an array, take the first result
+      const res = results[0];
+      setVerificationDocument({
+        uri: res.uri,
+        type: res.type,
+        name: res.name,
+      });
+    } catch (err) {
+      if (err.code === 'DOCUMENT_PICKER_CANCELED') {
+        // User cancelled the picker
+      } else {
+        Alert.alert('Error', 'Failed to pick document. Please try again.');
+      }
+    }
   };
 
   const handleBackgroundVerification = async () => {
@@ -209,14 +208,68 @@ const TenantDetails = ({ navigation, route }) => {
     try {
       setVerificationLoading(true);
 
-      // Mock API call - replace with actual background verification API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      Alert.alert(
-        'Success',
-        'Background verification request has been submitted successfully. You will be notified once the verification is complete.',
-        [{ text: 'OK', onPress: closeBackgroundVerificationModal }],
+      // Get the KYC data for the tenant
+      const kycResponse = await getKYCByTenantId(
+        credentials.accessToken,
+        tenant.tenant_id,
       );
+
+      if (!kycResponse.success || !kycResponse.data) {
+        Alert.alert(
+          'Error',
+          'KYC data not found for this tenant. Please ensure KYC is set up first.',
+        );
+        return;
+      }
+
+      const kycId = kycResponse.data.id;
+
+      // Create the document record
+      const documentData = {
+        name: verificationDocument.name,
+        type: verificationDocument.type,
+        url: verificationDocument.uri,
+        tenant_id: tenant.tenant_id,
+        document_type: 'kyc_verification',
+      };
+
+      const createResponse = await createDocument(
+        credentials.accessToken,
+        selectedProperty?.id,
+        documentData,
+      );
+
+      if (!createResponse.success) {
+        Alert.alert(
+          'Error',
+          createResponse.error ||
+            'Failed to create document record. Please try again.',
+        );
+        return;
+      }
+
+      const documentUrl = createResponse.data?.url || verificationDocument.uri;
+
+      // Update KYC with verification details
+      const updateData = {
+        status: 'verified',
+        verificationNotes: 'Background verification completed',
+        documentUrl,
+      };
+
+      const updateResponse = await updateKYC(
+        credentials.accessToken,
+        kycId,
+        updateData,
+      );
+
+      if (updateResponse.success) {
+      } else {
+        Alert.alert(
+          'Error',
+          updateResponse.error || 'Failed to update KYC. Please try again.',
+        );
+      }
     } catch (verificationError) {
       Alert.alert(
         'Error',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -18,101 +18,86 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import colors from '../theme/color';
+import { CredentialsContext } from '../context/CredentialsContext';
+import { useProperty } from '../context/PropertyContext';
+import { fetchKYCData } from '../services/NetworkUtils';
+import withAuthProtection from '../components/withAuthProtection';
 
 const TenantKYC = ({ navigation }) => {
+  const { credentials } = useContext(CredentialsContext);
+  const { selectedProperty, isAllPropertiesSelected } = useProperty();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [tenantData] = useState([
-    {
-      id: 1,
-      name: 'John Smith',
-      room: 'A101',
-      phone: '+1 (555) 123-4567',
-      email: 'john.smith@email.com',
-      kycStatus: 'verified',
-      documents: ['ID Card', 'Address Proof', 'Photo'],
-      joinDate: '2024-01-15',
-      completedSteps: 3,
-      totalSteps: 3,
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      room: 'B202',
-      phone: '+1 (555) 234-5678',
-      email: 'sarah.johnson@email.com',
-      kycStatus: 'pending',
-      documents: ['ID Card', 'Photo'],
-      joinDate: '2024-02-01',
-      completedSteps: 2,
-      totalSteps: 3,
-    },
-    {
-      id: 3,
-      name: 'Mike Wilson',
-      room: 'C103',
-      phone: '+1 (555) 345-6789',
-      email: 'mike.wilson@email.com',
-      kycStatus: 'incomplete',
-      documents: ['ID Card'],
-      joinDate: '2024-02-10',
-      completedSteps: 1,
-      totalSteps: 3,
-    },
-    {
-      id: 4,
-      name: 'Emily Davis',
-      room: 'A205',
-      phone: '+1 (555) 456-7890',
-      email: 'emily.davis@email.com',
-      kycStatus: 'verified',
-      documents: ['ID Card', 'Address Proof', 'Photo'],
-      joinDate: '2024-01-20',
-      completedSteps: 3,
-      totalSteps: 3,
-    },
-    {
-      id: 5,
-      name: 'Robert Brown',
-      room: 'B301',
-      phone: '+1 (555) 567-8901',
-      email: 'robert.brown@email.com',
-      kycStatus: 'pending',
-      documents: ['ID Card', 'Address Proof'],
-      joinDate: '2024-02-05',
-      completedSteps: 2,
-      totalSteps: 3,
-    },
-  ]);
+  const [kycData, setKycData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchKYCDataCallback = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const currentPropertyId = selectedProperty?.property_id;
+      const response = await fetchKYCData(
+        credentials.accessToken,
+        currentPropertyId,
+      );
+
+      if (response.success) {
+        const kycList = response.data.items || response.data || [];
+        setKycData(kycList);
+      } else {
+        setError(response.error || 'Failed to fetch KYC data');
+        setKycData([]);
+      }
+    } catch (err) {
+      console.error('Error fetching KYC data:', err);
+      setError('Failed to fetch KYC data');
+      setKycData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [credentials, selectedProperty]);
+
+  useEffect(() => {
+    fetchKYCDataCallback();
+  }, [fetchKYCDataCallback]);
 
   const filterOptions = [
-    { key: 'all', label: 'All', count: tenantData.length },
+    { key: 'all', label: 'All', count: kycData.length },
     {
       key: 'verified',
       label: 'Verified',
-      count: tenantData.filter(t => t.kycStatus === 'verified').length,
+      count: kycData.filter(t => t.status === 'verified').length,
     },
     {
       key: 'pending',
       label: 'Pending',
-      count: tenantData.filter(t => t.kycStatus === 'pending').length,
+      count: kycData.filter(t => t.status === 'pending').length,
     },
     {
       key: 'incomplete',
       label: 'Incomplete',
-      count: tenantData.filter(t => t.kycStatus === 'incomplete').length,
+      count: kycData.filter(t => t.status === 'incomplete').length,
     },
   ];
-
-  const filteredTenants = tenantData.filter(tenant => {
+  const filteredTenants = kycData.filter(tenant => {
+    const tenantInfo = tenant.tenant || {};
     const matchesSearch =
-      tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tenant.room.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tenant.email.toLowerCase().includes(searchQuery.toLowerCase());
+      (tenantInfo.name || '')
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (tenantInfo.room_id || '')
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (tenantInfo.email || '')
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
 
     const matchesFilter =
-      selectedFilter === 'all' || tenant.kycStatus === selectedFilter;
+      selectedFilter === 'all' || tenant.status === selectedFilter;
 
     return matchesSearch && matchesFilter;
   });
@@ -144,106 +129,133 @@ const TenantKYC = ({ navigation }) => {
   };
 
   const handleTenantPress = tenant => {
-    navigation.navigate('TenantDetails', { tenantId: tenant.tenant_id });
+    const tenantInfo = tenant.tenant || {};
+    navigation.navigate('TenantDetails', { tenantId: tenantInfo.tenant_id });
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    fetchKYCDataCallback().finally(() => setRefreshing(false));
   };
 
-  const renderTenantItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleTenantPress(item)}>
-      <StandardCard style={styles.tenantCard}>
-        <View style={styles.tenantHeader}>
-          <View style={styles.tenantInfo}>
-            <StandardText size="md" fontWeight="bold" style={styles.tenantName}>
-              {item.name}
-            </StandardText>
-            <StandardText size="sm" style={styles.tenantRoom}>
-              Room {item.room}
-            </StandardText>
-          </View>
-          <View
-            style={[
-              styles.statusIcon,
-              { backgroundColor: getKYCStatusColor(item.kycStatus) },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name={getKYCStatusIcon(item.kycStatus)}
-              size={20}
-              color={colors.white}
-            />
-          </View>
-        </View>
+  const renderTenantItem = ({ item }) => {
+    const tenantInfo = item.tenant || {};
 
-        <View style={styles.tenantDetails}>
-          <View style={styles.contactInfo}>
-            <View style={styles.contactItem}>
+    // Create documents array from KYC fields
+    const documents = [];
+    if (item.documentType) documents.push(item.documentType);
+    if (item.documentNumber) documents.push(`ID: ${item.documentNumber}`);
+
+    // Calculate progress based on available fields
+    const totalSteps = 3; // ID Card, Address Proof, Photo
+    let completedSteps = 0;
+    if (item.documentType) completedSteps++;
+    if (item.documentNumber) completedSteps++;
+    if (item.documentUrl) completedSteps++;
+
+    return (
+      <TouchableOpacity onPress={() => handleTenantPress(item)}>
+        <StandardCard style={styles.tenantCard}>
+          <View style={styles.tenantHeader}>
+            <View style={styles.tenantInfo}>
+              <StandardText
+                size="md"
+                fontWeight="bold"
+                style={styles.tenantName}
+              >
+                {tenantInfo.name || 'Unknown Tenant'}
+              </StandardText>
+              <StandardText size="sm" style={styles.tenantRoom}>
+                Room {tenantInfo.room_id || 'N/A'}
+              </StandardText>
+            </View>
+            <View
+              style={[
+                styles.statusIcon,
+                { backgroundColor: getKYCStatusColor(item.status) },
+              ]}
+            >
               <MaterialCommunityIcons
-                name="phone"
-                size={16}
-                color={colors.textSecondary}
-              />
-              <StandardText size="sm" style={styles.contactText}>
-                {item.phone}
-              </StandardText>
-            </View>
-            <View style={styles.contactItem}>
-              <MaterialCommunityIcons
-                name="email"
-                size={16}
-                color={colors.textSecondary}
-              />
-              <StandardText size="sm" style={styles.contactText}>
-                {item.email}
-              </StandardText>
-            </View>
-          </View>
-
-          <View style={styles.progressSection}>
-            <View style={styles.progressInfo}>
-              <StandardText size="sm" style={styles.progressLabel}>
-                KYC Progress
-              </StandardText>
-              <StandardText size="sm" style={styles.progressText}>
-                {item.completedSteps}/{item.totalSteps} completed
-              </StandardText>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${(item.completedSteps / item.totalSteps) * 100}%`,
-                    backgroundColor: getKYCStatusColor(item.kycStatus),
-                  },
-                ]}
+                name={getKYCStatusIcon(item.status)}
+                size={20}
+                color={colors.white}
               />
             </View>
           </View>
 
-          <View style={styles.documentsSection}>
-            <StandardText size="sm" style={styles.documentsLabel}>
-              Documents:
-            </StandardText>
-            <View style={styles.documentsList}>
-              {item.documents.map((doc, index) => (
-                <View key={index} style={styles.documentChip}>
-                  <StandardText size="xs" style={styles.documentChipText}>
-                    {doc}
-                  </StandardText>
-                </View>
-              ))}
+          <View style={styles.tenantDetails}>
+            <View style={styles.contactInfo}>
+              <View style={styles.contactItem}>
+                <MaterialCommunityIcons
+                  name="phone"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+                <StandardText size="sm" style={styles.contactText}>
+                  {tenantInfo.phone_number || 'N/A'}
+                </StandardText>
+              </View>
+              <View style={styles.contactItem}>
+                <MaterialCommunityIcons
+                  name="email"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+                <StandardText size="sm" style={styles.contactText}>
+                  {tenantInfo.email || 'N/A'}
+                </StandardText>
+              </View>
+            </View>
+
+            <View style={styles.progressSection}>
+              <View style={styles.progressInfo}>
+                <StandardText size="sm" style={styles.progressLabel}>
+                  KYC Progress
+                </StandardText>
+                <StandardText size="sm" style={styles.progressText}>
+                  {completedSteps}/{totalSteps} completed
+                </StandardText>
+              </View>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${(completedSteps / totalSteps) * 100}%`,
+                      backgroundColor: getKYCStatusColor(item.status),
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+
+            <View style={styles.documentsSection}>
+              <StandardText size="sm" style={styles.documentsLabel}>
+                Documents:
+              </StandardText>
+              <View style={styles.documentsList}>
+                {documents.length > 0 ? (
+                  documents.map((doc, index) => (
+                    <View key={index} style={styles.documentChip}>
+                      <StandardText size="xs" style={styles.documentChipText}>
+                        {doc}
+                      </StandardText>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.documentChip}>
+                    <StandardText size="xs" style={styles.documentChipText}>
+                      No documents uploaded
+                    </StandardText>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
-        </View>
-      </StandardCard>
-    </TouchableOpacity>
-  );
+        </StandardCard>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -305,7 +317,7 @@ const TenantKYC = ({ navigation }) => {
                   fontWeight="bold"
                   style={[styles.statValue, { color: colors.success }]}
                 >
-                  {tenantData.filter(t => t.kycStatus === 'verified').length}
+                  {kycData.filter(t => t.status === 'verified').length}
                 </StandardText>
                 <StandardText size="sm" style={styles.statLabel}>
                   Verified
@@ -317,7 +329,7 @@ const TenantKYC = ({ navigation }) => {
                   fontWeight="bold"
                   style={[styles.statValue, { color: colors.warning }]}
                 >
-                  {tenantData.filter(t => t.kycStatus === 'pending').length}
+                  {kycData.filter(t => t.status === 'pending').length}
                 </StandardText>
                 <StandardText size="sm" style={styles.statLabel}>
                   Pending
@@ -329,7 +341,7 @@ const TenantKYC = ({ navigation }) => {
                   fontWeight="bold"
                   style={[styles.statValue, { color: colors.error }]}
                 >
-                  {tenantData.filter(t => t.kycStatus === 'incomplete').length}
+                  {kycData.filter(t => t.status === 'incomplete').length}
                 </StandardText>
                 <StandardText size="sm" style={styles.statLabel}>
                   Incomplete
@@ -337,36 +349,59 @@ const TenantKYC = ({ navigation }) => {
               </View>
             </View>
 
-            <FlatList
-              data={filteredTenants}
-              renderItem={renderTenantItem}
-              keyExtractor={item => item.tenant_id}
-              contentContainerStyle={styles.listContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  colors={[colors.primary]}
-                />
-              }
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <MaterialCommunityIcons
-                    name="account-search-outline"
-                    size={64}
-                    color={colors.textSecondary}
+            {/* Loading State */}
+            {loading && (
+              <View style={styles.loadingContainer}>
+                <StandardText>Loading KYC data...</StandardText>
+              </View>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+              <View style={styles.errorContainer}>
+                <StandardText style={styles.errorText}>{error}</StandardText>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={fetchKYCDataCallback}
+                >
+                  <StandardText style={styles.retryText}>Retry</StandardText>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* KYC List */}
+            {!loading && !error && (
+              <FlatList
+                data={filteredTenants}
+                renderItem={renderTenantItem}
+                keyExtractor={item => item.tenant_id || item.id}
+                contentContainerStyle={styles.listContainer}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[colors.primary]}
                   />
-                  <StandardText size="md" style={styles.emptyText}>
-                    No tenants found
-                  </StandardText>
-                  <StandardText size="sm" style={styles.emptySubtext}>
-                    Try adjusting your search or filter criteria
-                  </StandardText>
-                </View>
-              }
-            />
+                }
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <MaterialCommunityIcons
+                      name="account-search-outline"
+                      size={64}
+                      color={colors.textSecondary}
+                    />
+                    <StandardText size="md" style={styles.emptyText}>
+                      No tenants found
+                    </StandardText>
+                    <StandardText size="sm" style={styles.emptySubtext}>
+                      Try adjusting your search or filter criteria
+                    </StandardText>
+                  </View>
+                }
+              />
+            )}
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -577,6 +612,34 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    color: colors.error,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: colors.white,
+    fontWeight: 'bold',
+  },
 });
 
-export default TenantKYC;
+export default withAuthProtection(TenantKYC);

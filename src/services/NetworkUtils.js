@@ -824,3 +824,37 @@ export const notifyPasswordChanged = async accessToken => {
     'PASSWORD_CHANGED',
   );
 };
+
+/**
+ * KYC Management API calls
+ */
+export const fetchKYCData = async (accessToken, property_id) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get('/kyc', {
+        headers: getAuthHeaders(accessToken),
+        params: property_id ? { property_id } : {},
+      }),
+    'FETCH_KYC_DATA',
+  );
+};
+
+export const updateKYC = async (accessToken, kycId, updateData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch(`/kyc/${kycId}`, updateData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_KYC',
+  );
+};
+
+export const getKYCByTenantId = async (accessToken, tenantId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/kyc/tenant/${tenantId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_KYC_BY_TENANT_ID',
+  );
+};

@@ -2,7 +2,7 @@ import {View, StyleSheet} from 'react-native';
 import React from 'react';
 
 const Gap = ({size}) => {
-  return <View style={gap[size]}></View>;
+  return <View style={gap[size]} />;
 };
 
 export default Gap;
