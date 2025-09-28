@@ -144,7 +144,7 @@ const TenantKYC = ({ navigation }) => {
   };
 
   const handleTenantPress = tenant => {
-    navigation.navigate('TenantDetails', { tenantId: tenant.id });
+    navigation.navigate('TenantDetails', { tenantId: tenant.tenant_id });
   };
 
   const onRefresh = () => {
@@ -340,7 +340,7 @@ const TenantKYC = ({ navigation }) => {
             <FlatList
               data={filteredTenants}
               renderItem={renderTenantItem}
-              keyExtractor={item => item.id.toString()}
+              keyExtractor={item => item.tenant_id}
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"

@@ -1204,7 +1204,7 @@ const Home = ({ navigation }) => {
           <View style={styles.tenantsContainer}>
             {tenants.slice(0, 3).map((t, index) => (
               <TouchableOpacity
-                key={t.id}
+                key={t.tenant_id}
                 style={styles.tenantItem}
                 onPress={() =>
                   navigation.navigate('TenantDetails', { tenant: t })
@@ -1529,7 +1529,7 @@ const Home = ({ navigation }) => {
           <View style={styles.roomGrid}>
             {occupancyGrid.slice(0, 9).map((room, idx) => (
               <TouchableOpacity
-                key={room.id}
+                key={room.room_id}
                 style={[
                   styles.roomCard,
                   { backgroundColor: getRoomColor(room.status) },

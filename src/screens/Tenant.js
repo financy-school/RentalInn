@@ -62,7 +62,7 @@ const Tenants = ({ navigation }) => {
       // Use selectedProperty from PropertyContext if specific property is selected,
       // otherwise don't fetch tenants when "All" is selected (tenants are property-specific)
       const currentPropertyId = !isAllPropertiesSelected
-        ? selectedProperty?.id
+        ? selectedProperty?.property_id
         : null;
 
       if (!currentPropertyId) {
@@ -272,7 +272,7 @@ const Tenants = ({ navigation }) => {
 
             {/* Tenant Cards */}
             {filteredTenants.map(tenant => (
-              <StandardCard key={tenant.id} style={styles.card}>
+              <StandardCard key={tenant.tenant_id} style={styles.card}>
                 <TouchableOpacity
                   onPress={() =>
                     navigation.navigate('TenantDetails', { tenant })
@@ -297,8 +297,8 @@ const Tenants = ({ navigation }) => {
 
                         {/* anchor button (we keep ref on this button) */}
                         <TouchableOpacity
-                          ref={r => (anchorRefs.current[tenant.id] = r)}
-                          onPress={() => openMenu(tenant.id)}
+                          ref={r => (anchorRefs.current[tenant.tenant_id] = r)}
+                          onPress={() => openMenu(tenant.tenant_id)}
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
                           <MaterialCommunityIcons
@@ -411,7 +411,7 @@ const Tenants = ({ navigation }) => {
               onPress={() => {
                 closeMenu();
                 const selectedTenant = tenants.find(
-                  t => t.id === activeMenuTenantId,
+                  t => t.tenant_id === activeMenuTenantId,
                 );
                 navigation.navigate('AddTenant', {
                   tenant: selectedTenant,
@@ -434,7 +434,7 @@ const Tenants = ({ navigation }) => {
               onPress={() => {
                 closeMenu();
                 const selectedTenant = tenants.find(
-                  t => t.id === activeMenuTenantId,
+                  t => t.tenant_id === activeMenuTenantId,
                 );
                 if (selectedTenant) {
                   handleShareTenant(selectedTenant);

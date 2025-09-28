@@ -247,7 +247,7 @@ const AddRoom = ({ navigation, route }) => {
 
         const documentResponse = await createDocument(
           credentials.accessToken,
-          selectedProperty.id,
+          selectedProperty.property_id,
           imageDetails,
         );
 
@@ -272,7 +272,7 @@ const AddRoom = ({ navigation, route }) => {
     setLoading(true);
 
     // Check if property is selected
-    if (!selectedProperty || selectedProperty.id === 'all') {
+    if (!selectedProperty || selectedProperty.property_id === 'all') {
       console.error('Please select a specific property to add a room.');
       setLoading(false);
       return;

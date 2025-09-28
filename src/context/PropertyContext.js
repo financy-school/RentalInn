@@ -25,7 +25,7 @@ const SELECTED_PROPERTY_STORAGE_KEY = '@RentalInn:selectedProperty';
 // Default properties (can be removed once user adds their own)
 const DEFAULT_PROPERTIES = [
   {
-    id: 'all',
+    property_id: 'all',
     name: 'All Properties',
     type: 'aggregate',
     address: '',

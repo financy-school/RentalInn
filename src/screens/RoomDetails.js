@@ -117,7 +117,7 @@ const RoomDetails = ({ navigation, route }) => {
         const res = await getTenants(
           credentials.accessToken,
           credentials.property_id,
-          room.id,
+          room.room_id,
         );
         if (res.success) {
           setTenants(res.data);
@@ -613,7 +613,7 @@ const RoomDetails = ({ navigation, route }) => {
 
           {tenants.map(tenant => (
             <StandardCard
-              key={tenant.id}
+              key={tenant.tenant_id}
               style={[styles.tenantCard, { backgroundColor: cardBackground }]}
             >
               <TouchableOpacity
@@ -639,8 +639,8 @@ const RoomDetails = ({ navigation, route }) => {
 
                       {/* Custom Menu Anchor */}
                       <TouchableOpacity
-                        ref={r => (anchorRefs.current[tenant.id] = r)}
-                        onPress={() => openMenu(tenant.id)}
+                        ref={r => (anchorRefs.current[tenant.tenant_id] = r)}
+                        onPress={() => openMenu(tenant.tenant_id)}
                         style={styles.menuButton}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
@@ -822,7 +822,7 @@ const RoomDetails = ({ navigation, route }) => {
                 const res = await getTenants(
                   credentials.accessToken,
                   credentials.property_id,
-                  room.id,
+                  room.room_id,
                 );
                 setTenants(res.data);
               }}

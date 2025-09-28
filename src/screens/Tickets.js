@@ -51,7 +51,7 @@ const Tickets = ({ navigation }) => {
       // Use selectedProperty from PropertyContext if specific property is selected,
       // otherwise don't fetch tickets when "All" is selected (tickets are property-specific)
       const currentPropertyId = !isAllPropertiesSelected
-        ? selectedProperty?.id
+        ? selectedProperty?.property_id
         : null;
 
       if (!currentPropertyId) {
@@ -101,7 +101,7 @@ const Tickets = ({ navigation }) => {
               }
             } catch (err) {}
           }
-          imagesMap[ticket.id] = urls;
+          imagesMap[ticket.ticket_id] = urls;
         }
       }
       setTicketImages(imagesMap);
@@ -143,7 +143,7 @@ const Tickets = ({ navigation }) => {
         const lower = search.toLowerCase();
         filtered = filtered.filter(
           t =>
-            t.id.toString().toLowerCase().includes(lower) ||
+            t.ticket_id.toString().toLowerCase().includes(lower) ||
             t.issue?.toLowerCase().includes(lower) ||
             t.description?.toLowerCase().includes(lower) ||
             t.raisedBy?.toLowerCase().includes(lower),
@@ -301,8 +301,8 @@ const Tickets = ({ navigation }) => {
                 {tickets.map(ticket => (
                   <StandardCard
                     style={styles.card}
-                    id={ticket.id}
-                    key={ticket.id}
+                    id={ticket.ticket_id}
+                    key={ticket.ticket_id}
                   >
                     {/* Header */}
                     <View style={styles.header}>
@@ -310,7 +310,7 @@ const Tickets = ({ navigation }) => {
                         fontWeight="semibold"
                         style={styles.ticketId}
                       >
-                        #{ticket.id}
+                        #{ticket.ticket_id}
                       </StandardText>
                       <View
                         style={[
@@ -359,14 +359,14 @@ const Tickets = ({ navigation }) => {
                     </StandardText>
 
                     {/* Images */}
-                    {ticketImages[ticket.id] &&
-                      ticketImages[ticket.id].length > 0 && (
+                    {ticketImages[ticket.ticket_id] &&
+                      ticketImages[ticket.ticket_id].length > 0 && (
                         <ScrollView
                           horizontal
                           showsHorizontalScrollIndicator={false}
                           style={styles.imageScroll}
                         >
-                          {ticketImages[ticket.id].map((imgUrl, idx) => (
+                          {ticketImages[ticket.ticket_id].map((imgUrl, idx) => (
                             <TouchableOpacity
                               key={idx}
                               style={{ marginRight: 8 }}
@@ -408,7 +408,7 @@ const Tickets = ({ navigation }) => {
                         <Button
                           mode="contained"
                           style={styles.actionButton}
-                          onPress={() => handleCloseTicket(ticket.id)}
+                          onPress={() => handleCloseTicket(ticket.ticket_id)}
                         >
                           <StandardText
                             fontWeight="semibold"

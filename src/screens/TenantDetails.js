@@ -739,9 +739,13 @@ const TenantDetails = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={async () => {
-                await putTenantOnNotice(credentials.accessToken, tenant.id, {
-                  notice: true,
-                });
+                await putTenantOnNotice(
+                  credentials.accessToken,
+                  tenant.tenant_id,
+                  {
+                    notice: true,
+                  },
+                );
                 closeMenu();
               }}
             >
@@ -759,7 +763,7 @@ const TenantDetails = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={async () => {
-                await deleteTenant(credentials.accessToken, tenant.id);
+                await deleteTenant(credentials.accessToken, tenant.tenant_id);
                 closeMenu();
                 navigation.goBack();
               }}
@@ -812,7 +816,7 @@ const TenantDetails = ({ navigation, route }) => {
 
             <FlatList
               data={getLedgerData(ledgerType)}
-              keyExtractor={item => item.id.toString()}
+              keyExtractor={item => item.tenant_id}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <View

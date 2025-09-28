@@ -136,7 +136,7 @@ const RecordPayment = ({ navigation, route }) => {
     try {
       // Prepare payment data according to API format
       const paymentPayload = {
-        invoiceId: tenant?.invoice_id || tenant?.id, // Use invoice_id or fallback to tenant id
+        invoiceId: tenant?.invoice_id || tenant?.tenant_id, // Use invoice_id or fallback to tenant id
         amount: parseFloat(formData.collectedAmount),
         paymentDate: formData.paymentDate.toISOString(),
         paymentMethod: mapPaymentMode(formData.paymentMode),

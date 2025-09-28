@@ -82,7 +82,7 @@ const Rooms = ({ navigation }) => {
     // Use selectedProperty from PropertyContext if specific property is selected,
     // otherwise don't fetch rooms when "All" is selected (rooms are property-specific)
     const currentPropertyId = !isAllPropertiesSelected
-      ? selectedProperty?.id
+      ? selectedProperty?.property_id
       : null;
 
     if (!accessToken || !currentPropertyId) {
@@ -177,7 +177,7 @@ const Rooms = ({ navigation }) => {
     try {
       const message =
         `🏠 Room Details\n` +
-        `Name: ${room.name || `Room ${room.id}`}\n` +
+        `Name: ${room.name || `Room ${room.room_id}`}\n` +
         `Beds: ${room.bedCount ?? 'N/A'}\n` +
         `Bathrooms: ${room.bathroomCount ?? 'N/A'}\n` +
         `Floor: ${room.floorNumber ?? 'N/A'}\n` +
@@ -316,7 +316,7 @@ const Rooms = ({ navigation }) => {
             {/* Rooms */}
             {!loading &&
               filteredRooms.map(room => (
-                <StandardCard key={room.id} style={styles.card}>
+                <StandardCard key={room.room_id} style={styles.card}>
                   <TouchableOpacity
                     onPress={() => navigation.navigate('RoomDetails', { room })}
                   >
@@ -344,7 +344,7 @@ const Rooms = ({ navigation }) => {
                           fontWeight="bold"
                           style={styles.roomTitle}
                         >
-                          {room.name || `Room ${room.id}`}
+                          {room.name || `Room ${room.room_id}`}
                         </StandardText>
                         <View
                           style={[
@@ -371,8 +371,8 @@ const Rooms = ({ navigation }) => {
 
                         {/* Custom Menu Trigger */}
                         <TouchableOpacity
-                          ref={ref => (iconRefs.current[room.id] = ref)}
-                          onPress={() => openMenu(room, room.id)}
+                          ref={ref => (iconRefs.current[room.room_id] = ref)}
+                          onPress={() => openMenu(room, room.room_id)}
                         >
                           <MaterialCommunityIcons
                             name="dots-vertical"
@@ -510,13 +510,13 @@ const Rooms = ({ navigation }) => {
               onPress={async () => {
                 setMenuVisible(false);
                 const currentPropertyId = !isAllPropertiesSelected
-                  ? selectedProperty?.id
+                  ? selectedProperty?.property_id
                   : null;
                 if (currentPropertyId) {
                   await deleteRoom(
                     accessToken,
                     currentPropertyId,
-                    selectedRoom.id,
+                    selectedRoom.room_id,
                   );
                   fetchRooms();
                 }
