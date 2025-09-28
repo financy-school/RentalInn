@@ -7,6 +7,7 @@ import {
   Image,
 } from 'react-native';
 import { Button, FAB, Chip } from 'react-native-paper';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TextInput as PaperInput } from 'react-native-paper';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
@@ -293,6 +294,25 @@ const Tickets = ({ navigation }) => {
             </View>
           ) : (
             <>
+              {/* Empty State */}
+              {tickets.length === 0 && (
+                <View style={styles.emptyContainer}>
+                  <MaterialCommunityIcons
+                    name="clipboard-text-outline"
+                    size={80}
+                    color={colors.primary}
+                    style={styles.emptyIcon}
+                  />
+                  <StandardText style={styles.emptyText}>
+                    No tickets found
+                  </StandardText>
+                  <StandardText style={styles.emptySubtext}>
+                    Create your first maintenance ticket to track property
+                    issues
+                  </StandardText>
+                </View>
+              )}
+
               {/* Ticket List */}
               {tickets.map(ticket => (
                 <StandardCard
@@ -617,6 +637,27 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
 });
 
 import withAuthProtection from '../components/withAuthProtection';

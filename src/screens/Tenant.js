@@ -272,6 +272,24 @@ const Tenants = ({ navigation }) => {
             </View>
           )}
 
+          {/* Empty State */}
+          {!loading && filteredTenants.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons
+                name="account-group-outline"
+                size={80}
+                color={colors.primary}
+                style={styles.emptyIcon}
+              />
+              <StandardText style={styles.emptyText}>
+                No tenants found
+              </StandardText>
+              <StandardText style={styles.emptySubtext}>
+                Add your first tenant to start managing your property
+              </StandardText>
+            </View>
+          )}
+
           {/* Tenant Cards */}
           {filteredTenants.map(tenant => (
             <StandardCard key={tenant.tenant_id} style={styles.card}>
@@ -576,6 +594,27 @@ const styles = StyleSheet.create({
   },
   propertySelectorContainer: {
     marginBottom: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });
 

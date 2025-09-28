@@ -305,9 +305,20 @@ const Rooms = ({ navigation }) => {
             </View>
           )}
           {!loading && !error && filteredRooms.length === 0 && (
-            <StandardText style={{ textAlign: 'center' }}>
-              No rooms found
-            </StandardText>
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons
+                name="home-outline"
+                size={80}
+                color={colors.primary}
+                style={styles.emptyIcon}
+              />
+              <StandardText style={styles.emptyText}>
+                No rooms found
+              </StandardText>
+              <StandardText style={styles.emptySubtext}>
+                Add your first room to get started with property management
+              </StandardText>
+            </View>
           )}
 
           {/* Rooms */}
@@ -589,6 +600,27 @@ const styles = StyleSheet.create({
   },
   propertySelectorContainer: {
     marginBottom: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });
 
