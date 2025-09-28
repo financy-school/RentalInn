@@ -405,7 +405,7 @@ export const updateRoom = async (
 ) => {
   return handleApiResponse(
     () =>
-      apiClient.put(`/properties/${property_id}/rooms/${room_id}`, roomData, {
+      apiClient.patch(`/properties/${property_id}/rooms/${room_id}`, roomData, {
         headers: getAuthHeaders(accessToken),
       }),
     'UPDATE_ROOM',
@@ -445,7 +445,7 @@ export const addTenant = async (accessToken, property_id, tenantData) => {
 export const updateTenant = async (accessToken, tenantId, tenantData) => {
   return handleApiResponse(
     () =>
-      apiClient.put(`/tenants/${tenantId}`, tenantData, {
+      apiClient.patch(`/tenants/${tenantId}`, tenantData, {
         headers: getAuthHeaders(accessToken),
       }),
     'UPDATE_TENANT',

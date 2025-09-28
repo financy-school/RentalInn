@@ -275,10 +275,10 @@ const Home = ({ navigation }) => {
   // Room occupancy grid from API
   const occupancyGrid =
     roomData.rooms?.map(room => ({
-      id: room.room_number.toString(),
+      room_id: room.room_number.toString(),
       room: room.room_number.toString(),
       status: room.status,
-      hasIssues: room.has_issues,
+      has_issues: room.has_issues,
     })) || [];
 
   // Colors for occupancy grid
@@ -1370,11 +1370,11 @@ const Home = ({ navigation }) => {
               .slice(0, 3)
               .map((kyc, index) => (
                 <TouchableOpacity
-                  key={`kyc-${index}`}
+                  key={kyc.kyc_id}
                   style={styles.kycItem}
                   onPress={() =>
                     navigation.navigate('TenantDetails', {
-                      tenant: { name: kyc.tenant_name, id: `kyc-${index}` },
+                      tenantId: kyc.tenant_id,
                     })
                   }
                   activeOpacity={0.7}
@@ -1554,7 +1554,7 @@ const Home = ({ navigation }) => {
                   color="#fff"
                   style={styles.roomIcon}
                 />
-                {room.hasIssues && (
+                {room.has_issues && (
                   <View style={styles.issueIndicator}>
                     <MaterialCommunityIcons
                       name="alert-circle"

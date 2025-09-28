@@ -61,7 +61,7 @@ const AddRoom = ({ navigation, route }) => {
 
   // Form state
   const [formData, setFormData] = useState({
-    roomName: '',
+    name: '',
     areaType: '',
     floorNumber: '',
     rentAmount: '',
@@ -108,7 +108,7 @@ const AddRoom = ({ navigation, route }) => {
   useEffect(() => {
     if (isEdit && editRoom) {
       setFormData({
-        roomName: editRoom.roomName || editRoom.name || '',
+        name: editRoom.name || '',
         areaType: editRoom.areaType || '',
         floorNumber: editRoom.floorNumber?.toString() || '',
         rentAmount: editRoom.rentAmount?.toString() || '',
@@ -153,7 +153,7 @@ const AddRoom = ({ navigation, route }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.roomName.trim()) newErrors.roomName = 'Room name is required';
+    if (!formData.name.trim()) newErrors.name = 'Room name is required';
     if (!formData.areaType.trim()) newErrors.areaType = 'Area type is required';
     if (!formData.floorNumber.trim())
       newErrors.floorNumber = 'Floor number is required';
@@ -288,7 +288,7 @@ const AddRoom = ({ navigation, route }) => {
         .map(img => img.documentId || img.id);
 
       const payload = {
-        roomName: formData.roomName.trim(),
+        name: formData.name.trim(),
         areaType: formData.areaType,
         floorNumber: parseInt(formData.floorNumber, 10),
         rentAmount: parseFloat(formData.rentAmount),
@@ -304,7 +304,12 @@ const AddRoom = ({ navigation, route }) => {
       };
 
       if (isEdit) {
-        await updateRoom(credentials.accessToken, editRoom.room_id, payload);
+        await updateRoom(
+          credentials.accessToken,
+          editRoom.property_id,
+          editRoom.room_id,
+          payload,
+        );
       } else {
         await createRoom(
           credentials.accessToken,
@@ -324,7 +329,7 @@ const AddRoom = ({ navigation, route }) => {
 
   const resetForm = () => {
     setFormData({
-      roomName: '',
+      name: '',
       areaType: '',
       floorNumber: '',
       rentAmount: '',
@@ -515,12 +520,12 @@ const AddRoom = ({ navigation, route }) => {
             <View style={styles.formColumn}>
               <StyledTextInput
                 label="Room Name *"
-                value={formData.roomName}
-                onChangeText={value => handleInputChange('roomName', value)}
+                value={formData.name}
+                onChangeText={value => handleInputChange('name', value)}
                 mode="outlined"
                 left={<TextInput.Icon icon="home" />}
                 placeholder="e.g., Deluxe Room A"
-                error={errors.roomName}
+                error={errors.name}
               />
             </View>
 

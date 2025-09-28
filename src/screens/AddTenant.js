@@ -25,7 +25,6 @@ const AddTenant = ({ navigation, route }) => {
   const params = route?.params;
   const isEdit = params && params.isEdit;
   const editTenant = params && params.tenant;
-  console.log('Edit Tenant:', isEdit, editTenant);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -65,8 +64,8 @@ const AddTenant = ({ navigation, route }) => {
 
   const [tenant, setTenant] = useState({
     name: '',
-    phone: '',
-    alternatePhone: '',
+    phone_number: '',
+    alternate_phone: '',
     email: '',
     room_id: '',
     checkInDate: '',
@@ -82,8 +81,8 @@ const AddTenant = ({ navigation, route }) => {
     if (isEdit && editTenant) {
       setTenant({
         name: editTenant.name || '',
-        phone: editTenant.phone || '',
-        alternatePhone: editTenant.alternate_phone || '',
+        phone_number: editTenant.phone_number || '',
+        alternate_phone: editTenant.alternate_phone || '',
         email: editTenant.email || '',
         room_id: editTenant.room_id || editTenant.room?.room_id || '',
         checkInDate: editTenant.check_in_date || '',
@@ -102,8 +101,8 @@ const AddTenant = ({ navigation, route }) => {
     if (!tenant.name.trim()) {
       errors.name = 'Name is required';
     }
-    if (!tenant.phone.trim() || tenant.phone.length !== 10) {
-      errors.phone = 'Valid phone is required';
+    if (!tenant.phone_number.trim() || tenant.phone_number.length !== 10) {
+      errors.phone_number = 'Valid phone is required';
     }
     if (!tenant.email.trim() || !tenant.email.includes('@')) {
       errors.email = 'Valid email is required';
@@ -335,21 +334,21 @@ const AddTenant = ({ navigation, route }) => {
               <View style={styles.formColumn}>
                 <StyledTextInput
                   label="Phone Number *"
-                  value={tenant.phone}
-                  onChangeText={text => handleChange('phone', text)}
+                  value={tenant.phone_number}
+                  onChangeText={text => handleChange('phone_number', text)}
                   placeholder="Primary phone number"
                   keyboardType="phone-pad"
                   maxLength={10}
                   left={<PaperInput.Icon icon="phone" />}
-                  error={formErrors.phone}
+                  error={formErrors.phone_number}
                 />
               </View>
 
               <View style={styles.formColumn}>
                 <StyledTextInput
                   label="Alternate Phone"
-                  value={tenant.alternatePhone}
-                  onChangeText={text => handleChange('alternatePhone', text)}
+                  value={tenant.alternate_phone}
+                  onChangeText={text => handleChange('alternate_phone', text)}
                   placeholder="Alternate number"
                   keyboardType="phone-pad"
                   maxLength={10}
