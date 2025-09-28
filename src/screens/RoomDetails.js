@@ -236,436 +236,480 @@ const RoomDetails = ({ navigation, route }) => {
     );
   }
 
+  // Calculate statistics from API data
+  const activeTickets = room.tickets
+    ? room.tickets.filter(ticket => ticket.status !== 'CLOSED')
+    : [];
+  const activeTicketsCount = activeTickets.length;
+  const latestTicketMessage =
+    activeTickets.length > 0
+      ? activeTickets[0].issue || 'Issue reported'
+      : 'No active issues';
+
+  const rentDueRentals = room.rentals
+    ? room.rentals.filter(
+        rental =>
+          parseFloat(rental.outstandingAmount) > 0 ||
+          rental.paymentStatus === 'pending',
+      )
+    : [];
+  const rentDueCount = rentDueRentals.length;
+
+  const tenantsOnNotice = tenants.filter(tenant => tenant.is_on_notice);
+  const underNoticeCount = tenantsOnNotice.length;
+
   return (
     <View style={styles.container}>
       <StandardHeader navigation={navigation} title="Room Details" />
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        onScrollBeginDrag={closeMenu}
-      >
-        {/* ===== Image Carousel ===== */}
-        <View style={styles.imageCarouselContainer}>
-          <Animated.ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-              { useNativeDriver: false },
-            )}
-            scrollEventThrottle={16}
+
+      {/* Calculate statistics from API data */}
+      {(() => {
+        return (
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            onScrollBeginDrag={closeMenu}
           >
-            {imageUrls.length > 0 ? (
-              imageUrls.map((img, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: img }}
-                  style={styles.carouselImage}
-                />
-              ))
-            ) : (
-              <View style={[styles.carouselImage, styles.placeholderImage]}>
-                <MaterialCommunityIcons
-                  name="home-outline"
-                  size={80}
-                  color={colors.primary}
-                />
-                <StandardText
-                  style={[styles.placeholderText, { color: textSecondary }]}
-                  fontWeight="500"
-                >
-                  No Images Available
-                </StandardText>
-              </View>
-            )}
-          </Animated.ScrollView>
-
-          {/* Dots */}
-          {imageUrls.length > 1 && (
-            <View style={styles.dotsContainer}>
-              {imageUrls.map((_, index) => {
-                const opacity = scrollX.interpolate({
-                  inputRange: [
-                    screenWidth * (index - 1),
-                    screenWidth * index,
-                    screenWidth * (index + 1),
-                  ],
-                  outputRange: [0.3, 1, 0.3],
-                  extrapolate: 'clamp',
-                });
-                return (
-                  <Animated.View
-                    key={index}
-                    style={[styles.dot, { opacity }]}
-                  />
-                );
-              })}
-            </View>
-          )}
-        </View>
-
-        {/* ===== Room Header ===== */}
-        <Card
-          style={[styles.roomHeaderCard, { backgroundColor: cardBackground }]}
-        >
-          <View style={styles.roomHeaderContent}>
-            <View style={styles.roomTitleSection}>
-              <MaterialCommunityIcons
-                name="door"
-                size={32}
-                color={colors.primary}
-              />
-              <StandardText
-                style={[styles.roomTitle, { color: textPrimary }]}
-                fontWeight="bold"
-                size="xl"
+            {/* ===== Image Carousel ===== */}
+            <View style={styles.imageCarouselContainer}>
+              <Animated.ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={Animated.event(
+                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                  { useNativeDriver: false },
+                )}
+                scrollEventThrottle={16}
               >
-                Room {room.name}
-              </StandardText>
-            </View>
-            <Chip
-              style={[
-                styles.statusChip,
-                {
-                  backgroundColor:
-                    room.status === 'vacant' || room.available
-                      ? colors.success + '20'
-                      : colors.warning + '20',
-                },
-              ]}
-              textStyle={[
-                styles.statusText,
-                {
-                  color:
-                    room.status === 'vacant' || room.available
-                      ? colors.success
-                      : colors.warning,
-                },
-              ]}
-            >
-              {room.available ? 'Available' : 'Occupied'}
-            </Chip>
-          </View>
-        </Card>
-
-        <Gap size="md" />
-
-        {/* ===== Content ===== */}
-        <View style={styles.contentContainer}>
-          {/* Room Statistics Cards */}
-          <View style={styles.statisticsGrid}>
-            {/* Bed Information Card */}
-            <Card
-              style={[
-                styles.statisticsCard,
-                { backgroundColor: cardBackground },
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <MaterialCommunityIcons
-                  name="bed"
-                  size={24}
-                  color={colors.primary}
-                />
-                <StandardText
-                  style={[styles.cardTitle, { color: textPrimary }]}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Bed Information
-                </StandardText>
-              </View>
-              <View style={styles.cardContent}>
-                <View style={styles.statRow}>
-                  <StandardText
-                    style={[styles.statLabel, { color: textSecondary }]}
-                  >
-                    Total Beds:
-                  </StandardText>
-                  <StandardText
-                    style={[styles.statValue, { color: colors.primary }]}
-                    fontWeight="bold"
-                  >
-                    {room.bedCount}
-                  </StandardText>
-                </View>
-                <View style={styles.statRow}>
-                  <StandardText
-                    style={[styles.statLabel, { color: textSecondary }]}
-                  >
-                    Available:
-                  </StandardText>
-                  <StandardText
-                    style={[styles.statValue, { color: colors.success }]}
-                    fontWeight="bold"
-                  >
-                    {room.bedCount - tenants.length}
-                  </StandardText>
-                </View>
-                <View style={styles.statRow}>
-                  <StandardText
-                    style={[styles.statLabel, { color: textSecondary }]}
-                  >
-                    Occupied:
-                  </StandardText>
-                  <StandardText
-                    style={[styles.statValue, { color: colors.warning }]}
-                    fontWeight="bold"
-                  >
-                    {tenants.length}
-                  </StandardText>
-                </View>
-              </View>
-            </Card>
-
-            {/* Rent Due Card */}
-            <Card
-              style={[
-                styles.statisticsCard,
-                { backgroundColor: cardBackground },
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <MaterialCommunityIcons
-                  name="cash"
-                  size={24}
-                  color={colors.error}
-                />
-                <StandardText
-                  style={[styles.cardTitle, { color: textPrimary }]}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Rent Due
-                </StandardText>
-              </View>
-              <View style={styles.cardContent}>
-                <View style={styles.statRow}>
-                  <StandardText
-                    style={[styles.statLabel, { color: textSecondary }]}
-                  >
-                    Count:
-                  </StandardText>
-                  <StandardText
-                    style={[styles.statValue, { color: colors.error }]}
-                    fontWeight="bold"
-                  >
-                    {room.rentDueCount || 0}
-                  </StandardText>
-                </View>
-                {['Rihaa Kapoor', 'Schmidt'].map((name, idx) => (
-                  <View key={idx} style={styles.tenantRow}>
+                {imageUrls.length > 0 ? (
+                  imageUrls.map((img, index) => (
+                    <Image
+                      key={index}
+                      source={{ uri: img }}
+                      style={styles.carouselImage}
+                    />
+                  ))
+                ) : (
+                  <View style={[styles.carouselImage, styles.placeholderImage]}>
                     <MaterialCommunityIcons
-                      name="account-circle"
-                      size={20}
+                      name="home-outline"
+                      size={80}
                       color={colors.primary}
                     />
                     <StandardText
-                      style={[styles.tenantName, { color: textPrimary }]}
+                      style={[styles.placeholderText, { color: textSecondary }]}
+                      fontWeight="500"
                     >
-                      {name}
+                      No Images Available
                     </StandardText>
                   </View>
-                ))}
-              </View>
-            </Card>
+                )}
+              </Animated.ScrollView>
 
-            {/* Active Tickets Card */}
+              {/* Dots */}
+              {imageUrls.length > 1 && (
+                <View style={styles.dotsContainer}>
+                  {imageUrls.map((_, index) => {
+                    const opacity = scrollX.interpolate({
+                      inputRange: [
+                        screenWidth * (index - 1),
+                        screenWidth * index,
+                        screenWidth * (index + 1),
+                      ],
+                      outputRange: [0.3, 1, 0.3],
+                      extrapolate: 'clamp',
+                    });
+                    return (
+                      <Animated.View
+                        key={index}
+                        style={[styles.dot, { opacity }]}
+                      />
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            {/* ===== Room Header ===== */}
             <Card
               style={[
-                styles.statisticsCard,
+                styles.roomHeaderCard,
                 { backgroundColor: cardBackground },
               ]}
             >
-              <View style={styles.cardHeader}>
-                <MaterialCommunityIcons
-                  name="ticket-confirmation"
-                  size={24}
-                  color={colors.warning}
-                />
-                <StandardText
-                  style={[styles.cardTitle, { color: textPrimary }]}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Active Tickets
-                </StandardText>
-              </View>
-              <View style={styles.cardContent}>
-                <View style={styles.statRow}>
-                  <StandardText
-                    style={[styles.statLabel, { color: textSecondary }]}
-                  >
-                    Count:
-                  </StandardText>
-                  <StandardText
-                    style={[styles.statValue, { color: colors.warning }]}
-                    fontWeight="bold"
-                  >
-                    {room.activeTickets || 0}
-                  </StandardText>
-                </View>
-                <StandardText
-                  style={[styles.ticketMessage, { color: textSecondary }]}
-                >
-                  {room.ticketMessage || 'Cupboard door needs fixing'}
-                </StandardText>
-              </View>
-            </Card>
-
-            {/* Under Notice Card */}
-            <Card
-              style={[
-                styles.statisticsCard,
-                { backgroundColor: cardBackground },
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <MaterialCommunityIcons
-                  name="calendar-alert"
-                  size={24}
-                  color={colors.error}
-                />
-                <StandardText
-                  style={[styles.cardTitle, { color: textPrimary }]}
-                  fontWeight="bold"
-                  size="md"
-                >
-                  Under Notice
-                </StandardText>
-              </View>
-              <View style={styles.cardContent}>
-                <View style={styles.statRow}>
-                  <StandardText
-                    style={[styles.statLabel, { color: textSecondary }]}
-                  >
-                    Count:
-                  </StandardText>
-                  <StandardText
-                    style={[styles.statValue, { color: colors.error }]}
-                    fontWeight="bold"
-                  >
-                    {room.room || 0}
-                  </StandardText>
-                </View>
-                <View style={styles.tenantRow}>
+              <View style={styles.roomHeaderContent}>
+                <View style={styles.roomTitleSection}>
                   <MaterialCommunityIcons
-                    name="account-circle"
-                    size={20}
+                    name="door"
+                    size={32}
                     color={colors.primary}
                   />
                   <StandardText
-                    style={[styles.tenantName, { color: textPrimary }]}
+                    style={[styles.roomTitle, { color: textPrimary }]}
+                    fontWeight="bold"
+                    size="xl"
                   >
-                    Rihan Kapoor
+                    Room {room.name}
                   </StandardText>
                 </View>
+                <Chip
+                  style={[
+                    styles.statusChip,
+                    {
+                      backgroundColor:
+                        room.status === 'vacant' || room.available
+                          ? colors.success + '20'
+                          : colors.warning + '20',
+                    },
+                  ]}
+                  textStyle={[
+                    styles.statusText,
+                    {
+                      color:
+                        room.status === 'vacant' || room.available
+                          ? colors.success
+                          : colors.warning,
+                    },
+                  ]}
+                >
+                  {room.available ? 'Available' : 'Occupied'}
+                </Chip>
               </View>
             </Card>
-          </View>
 
-          <Gap size="lg" />
+            <Gap size="md" />
 
-          {/* Amenities Section */}
-          <Card
-            style={[styles.amenitiesCard, { backgroundColor: cardBackground }]}
-          >
-            <StandardText
-              fontWeight="bold"
-              size="lg"
-              style={[styles.sectionTitle, { color: textPrimary }]}
-            >
-              Amenities
-            </StandardText>
-            <View style={styles.amenitiesContainer}>
-              {(room.amenities
-                ? room.amenities.split(',').map(item => item.trim())
-                : ['WiFi', 'AC', 'Heater', 'Wardrobe', 'Attached Bathroom']
-              ).map((item, idx) => (
-                <Chip
-                  key={idx}
+            {/* ===== Content ===== */}
+            <View style={styles.contentContainer}>
+              {/* Room Statistics Cards */}
+              <View style={styles.statisticsGrid}>
+                {/* Bed Information Card */}
+                <Card
                   style={[
-                    styles.amenityChip,
-                    { backgroundColor: colors.accent },
+                    styles.statisticsCard,
+                    { backgroundColor: cardBackground },
                   ]}
-                  textStyle={[styles.amenityText, { color: colors.primary }]}
-                  icon="check"
                 >
-                  {item}
-                </Chip>
-              ))}
-            </View>
-          </Card>
-
-          <Gap size="lg" />
-
-          {/* Tenants Section */}
-          <StandardText
-            fontWeight="bold"
-            size="xl"
-            style={[styles.sectionTitle, { color: textPrimary }]}
-          >
-            List of Tenants ({tenants.length})
-          </StandardText>
-
-          <Gap size="md" />
-
-          {tenants.map(tenant => (
-            <StandardCard
-              key={tenant.tenant_id}
-              style={[styles.tenantCard, { backgroundColor: cardBackground }]}
-            >
-              <TouchableOpacity
-                onPress={() => navigation.navigate('TenantDetails', { tenant })}
-              >
-                <View style={styles.tenantCardContent}>
-                  <Avatar.Image
-                    size={60}
-                    source={{
-                      uri: 'https://avatar.iran.liara.run/public/37',
-                    }}
-                    style={styles.tenantAvatar}
-                  />
-                  <View style={styles.tenantInfo}>
-                    <View style={styles.tenantHeader}>
+                  <View style={styles.cardHeader}>
+                    <MaterialCommunityIcons
+                      name="bed"
+                      size={24}
+                      color={colors.primary}
+                    />
+                    <StandardText
+                      style={[styles.cardTitle, { color: textPrimary }]}
+                      fontWeight="bold"
+                      size="md"
+                    >
+                      Bed Information
+                    </StandardText>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <View style={styles.statRow}>
                       <StandardText
-                        fontWeight="bold"
-                        size="lg"
-                        style={[styles.tenantName, { color: textPrimary }]}
+                        style={[styles.statLabel, { color: textSecondary }]}
                       >
-                        {tenant.name}
+                        Total Beds:
                       </StandardText>
-
-                      {/* Custom Menu Anchor */}
-                      <TouchableOpacity
-                        ref={r => (anchorRefs.current[tenant.tenant_id] = r)}
-                        onPress={() => openMenu(tenant.tenant_id)}
-                        style={styles.menuButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      <StandardText
+                        style={[styles.statValue, { color: colors.primary }]}
+                        fontWeight="bold"
                       >
+                        {room.bedCount}
+                      </StandardText>
+                    </View>
+                    <View style={styles.statRow}>
+                      <StandardText
+                        style={[styles.statLabel, { color: textSecondary }]}
+                      >
+                        Available:
+                      </StandardText>
+                      <StandardText
+                        style={[styles.statValue, { color: colors.success }]}
+                        fontWeight="bold"
+                      >
+                        {room.bedCount - tenants.length}
+                      </StandardText>
+                    </View>
+                    <View style={styles.statRow}>
+                      <StandardText
+                        style={[styles.statLabel, { color: textSecondary }]}
+                      >
+                        Occupied:
+                      </StandardText>
+                      <StandardText
+                        style={[styles.statValue, { color: colors.warning }]}
+                        fontWeight="bold"
+                      >
+                        {tenants.length}
+                      </StandardText>
+                    </View>
+                  </View>
+                </Card>
+
+                {/* Rent Due Card */}
+                <Card
+                  style={[
+                    styles.statisticsCard,
+                    { backgroundColor: cardBackground },
+                  ]}
+                >
+                  <View style={styles.cardHeader}>
+                    <MaterialCommunityIcons
+                      name="cash"
+                      size={24}
+                      color={colors.error}
+                    />
+                    <StandardText
+                      style={[styles.cardTitle, { color: textPrimary }]}
+                      fontWeight="bold"
+                      size="md"
+                    >
+                      Rent Due
+                    </StandardText>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <View style={styles.statRow}>
+                      <StandardText
+                        style={[styles.statLabel, { color: textSecondary }]}
+                      >
+                        Count:
+                      </StandardText>
+                      <StandardText
+                        style={[styles.statValue, { color: colors.error }]}
+                        fontWeight="bold"
+                      >
+                        {rentDueCount}
+                      </StandardText>
+                    </View>
+                    {rentDueRentals.slice(0, 2).map((rental, idx) => (
+                      <View key={idx} style={styles.tenantRow}>
                         <MaterialCommunityIcons
-                          name="dots-vertical"
-                          size={22}
+                          name="account-circle"
+                          size={20}
                           color={colors.primary}
                         />
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Badges */}
-                    <View style={styles.badgesContainer}>
-                      {tenant.has_dues && (
-                        <Chip
-                          style={[
-                            styles.badgeDues,
-                            { backgroundColor: colors.error },
-                          ]}
-                          textStyle={styles.badgeText}
+                        <StandardText
+                          style={[styles.tenantName, { color: textPrimary }]}
                         >
-                          Dues
-                        </Chip>
-                      )}
-                      {/* {tenant.is_on_notice && (
+                          {rental.tenantName || 'Tenant'}
+                        </StandardText>
+                      </View>
+                    ))}
+                  </View>
+                </Card>
+
+                {/* Active Tickets Card */}
+                <Card
+                  style={[
+                    styles.statisticsCard,
+                    { backgroundColor: cardBackground },
+                  ]}
+                >
+                  <View style={styles.cardHeader}>
+                    <MaterialCommunityIcons
+                      name="ticket-confirmation"
+                      size={24}
+                      color={colors.warning}
+                    />
+                    <StandardText
+                      style={[styles.cardTitle, { color: textPrimary }]}
+                      fontWeight="bold"
+                      size="md"
+                    >
+                      Active Tickets
+                    </StandardText>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <View style={styles.statRow}>
+                      <StandardText
+                        style={[styles.statLabel, { color: textSecondary }]}
+                      >
+                        Count:
+                      </StandardText>
+                      <StandardText
+                        style={[styles.statValue, { color: colors.warning }]}
+                        fontWeight="bold"
+                      >
+                        {activeTicketsCount}
+                      </StandardText>
+                    </View>
+                    <StandardText
+                      style={[styles.ticketMessage, { color: textSecondary }]}
+                    >
+                      {latestTicketMessage}
+                    </StandardText>
+                  </View>
+                </Card>
+
+                {/* Under Notice Card */}
+                <Card
+                  style={[
+                    styles.statisticsCard,
+                    { backgroundColor: cardBackground },
+                  ]}
+                >
+                  <View style={styles.cardHeader}>
+                    <MaterialCommunityIcons
+                      name="calendar-alert"
+                      size={24}
+                      color={colors.error}
+                    />
+                    <StandardText
+                      style={[styles.cardTitle, { color: textPrimary }]}
+                      fontWeight="bold"
+                      size="md"
+                    >
+                      Under Notice
+                    </StandardText>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <View style={styles.statRow}>
+                      <StandardText
+                        style={[styles.statLabel, { color: textSecondary }]}
+                      >
+                        Count:
+                      </StandardText>
+                      <StandardText
+                        style={[styles.statValue, { color: colors.error }]}
+                        fontWeight="bold"
+                      >
+                        {underNoticeCount}
+                      </StandardText>
+                    </View>
+                    {tenantsOnNotice.slice(0, 1).map((tenant, idx) => (
+                      <View key={idx} style={styles.tenantRow}>
+                        <MaterialCommunityIcons
+                          name="account-circle"
+                          size={20}
+                          color={colors.primary}
+                        />
+                        <StandardText
+                          style={[styles.tenantName, { color: textPrimary }]}
+                        >
+                          {tenant.name || 'Tenant'}
+                        </StandardText>
+                      </View>
+                    ))}
+                  </View>
+                </Card>
+              </View>
+
+              <Gap size="lg" />
+
+              {/* Amenities Section */}
+              <Card
+                style={[
+                  styles.amenitiesCard,
+                  { backgroundColor: cardBackground },
+                ]}
+              >
+                <StandardText
+                  fontWeight="bold"
+                  size="lg"
+                  style={[styles.sectionTitle, { color: textPrimary }]}
+                >
+                  Amenities
+                </StandardText>
+                <View style={styles.amenitiesContainer}>
+                  {(room.amenities
+                    ? room.amenities.split(',').map(item => item.trim())
+                    : ['WiFi', 'AC', 'Heater', 'Wardrobe', 'Attached Bathroom']
+                  ).map((item, idx) => (
+                    <Chip
+                      key={idx}
+                      style={[
+                        styles.amenityChip,
+                        { backgroundColor: colors.accent },
+                      ]}
+                      textStyle={[
+                        styles.amenityText,
+                        { color: colors.primary },
+                      ]}
+                      icon="check"
+                    >
+                      {item}
+                    </Chip>
+                  ))}
+                </View>
+              </Card>
+
+              <Gap size="lg" />
+
+              {/* Tenants Section */}
+              <StandardText
+                fontWeight="bold"
+                size="xl"
+                style={[styles.sectionTitle, { color: textPrimary }]}
+              >
+                List of Tenants ({tenants.length})
+              </StandardText>
+
+              <Gap size="md" />
+
+              {tenants.map(tenant => (
+                <StandardCard
+                  key={tenant.tenant_id}
+                  style={[
+                    styles.tenantCard,
+                    { backgroundColor: cardBackground },
+                  ]}
+                >
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('TenantDetails', { tenant })
+                    }
+                  >
+                    <View style={styles.tenantCardContent}>
+                      <Avatar.Image
+                        size={60}
+                        source={{
+                          uri: 'https://avatar.iran.liara.run/public/37',
+                        }}
+                        style={styles.tenantAvatar}
+                      />
+                      <View style={styles.tenantInfo}>
+                        <View style={styles.tenantHeader}>
+                          <StandardText
+                            fontWeight="bold"
+                            size="lg"
+                            style={[styles.tenantName, { color: textPrimary }]}
+                          >
+                            {tenant.name}
+                          </StandardText>
+
+                          {/* Custom Menu Anchor */}
+                          <TouchableOpacity
+                            ref={r =>
+                              (anchorRefs.current[tenant.tenant_id] = r)
+                            }
+                            onPress={() => openMenu(tenant.tenant_id)}
+                            style={styles.menuButton}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <MaterialCommunityIcons
+                              name="dots-vertical"
+                              size={22}
+                              color={colors.primary}
+                            />
+                          </TouchableOpacity>
+                        </View>
+
+                        {/* Badges */}
+                        <View style={styles.badgesContainer}>
+                          {tenant.has_dues && (
+                            <Chip
+                              style={[
+                                styles.badgeDues,
+                                { backgroundColor: colors.error },
+                              ]}
+                              textStyle={styles.badgeText}
+                            >
+                              Dues
+                            </Chip>
+                          )}
+                          {/* {tenant.is_on_notice && (
                         <Chip
                           style={[
                             styles.badgeNotice,
@@ -676,84 +720,101 @@ const RoomDetails = ({ navigation, route }) => {
                           Notice
                         </Chip>
                       )} */}
+                        </View>
+
+                        {/* Details */}
+                        <View style={styles.tenantDetails}>
+                          <View style={styles.detailRow}>
+                            <MaterialCommunityIcons
+                              name="alert-circle"
+                              size={16}
+                              color={colors.primary}
+                            />
+                            <StandardText
+                              style={[
+                                styles.detailText,
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Under Notice: {tenant.is_on_notice ? 'Yes' : 'No'}
+                            </StandardText>
+                          </View>
+
+                          <View style={styles.detailRow}>
+                            <MaterialCommunityIcons
+                              name="cash"
+                              size={16}
+                              color={colors.primary}
+                            />
+                            <StandardText
+                              style={[
+                                styles.detailText,
+                                { color: textSecondary },
+                              ]}
+                            >
+                              ₹{tenant.room?.rentAmount || 'N/A'}
+                            </StandardText>
+                          </View>
+
+                          <View style={styles.detailRow}>
+                            <MaterialCommunityIcons
+                              name="alert-circle"
+                              size={16}
+                              color={colors.primary}
+                            />
+                            <StandardText
+                              style={[
+                                styles.detailText,
+                                { color: textSecondary },
+                              ]}
+                            >
+                              {tenant.has_dues ? 'Has Dues' : 'No Dues'}
+                            </StandardText>
+                          </View>
+
+                          <View style={styles.detailRow}>
+                            <MaterialCommunityIcons
+                              name="calendar-check"
+                              size={16}
+                              color={colors.primary}
+                            />
+                            <StandardText
+                              style={[
+                                styles.detailText,
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Joined: {tenant.check_in_date || 'N/A'}
+                            </StandardText>
+                          </View>
+
+                          <View style={styles.detailRow}>
+                            <MaterialCommunityIcons
+                              name="calendar-remove"
+                              size={16}
+                              color={colors.primary}
+                            />
+                            <StandardText
+                              style={[
+                                styles.detailText,
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Lease End: {tenant.check_out_date || 'N/A'}
+                            </StandardText>
+                          </View>
+                        </View>
+                      </View>
                     </View>
+                  </TouchableOpacity>
+                </StandardCard>
+              ))}
 
-                    {/* Details */}
-                    <View style={styles.tenantDetails}>
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="alert-circle"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          Under Notice: {tenant.is_on_notice ? 'Yes' : 'No'}
-                        </StandardText>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="cash"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          ₹{tenant.room?.rentAmount || 'N/A'}
-                        </StandardText>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="alert-circle"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          {tenant.has_dues ? 'Has Dues' : 'No Dues'}
-                        </StandardText>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="calendar-check"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          Joined: {tenant.check_in_date || 'N/A'}
-                        </StandardText>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="calendar-remove"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          Lease End: {tenant.check_out_date || 'N/A'}
-                        </StandardText>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </StandardCard>
-          ))}
-
-          <Gap size="xxl" />
-        </View>
-      </ScrollView>
+              <Gap size="xxl" />
+            </View>
+          </ScrollView>
+        );
+      })()}
 
       {/* ===== CUSTOM MENU OVERLAY - MOVED OUTSIDE SCROLLVIEW ===== */}
       {activeMenuTenantId && menuPosition && (
