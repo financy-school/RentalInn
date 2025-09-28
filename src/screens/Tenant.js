@@ -61,9 +61,11 @@ const Tenants = ({ navigation }) => {
     try {
       // Use selectedProperty from PropertyContext if specific property is selected,
       // otherwise don't fetch tenants when "All" is selected (tenants are property-specific)
-      const currentPropertyId = !isAllPropertiesSelected
-        ? selectedProperty?.property_id
-        : null;
+      // const currentPropertyId = !isAllPropertiesSelected
+      //   ? selectedProperty?.property_id
+      //   : null;
+
+      const currentPropertyId = selectedProperty?.property_id;
 
       if (!currentPropertyId) {
         // Don't show error when no property is selected - just clear data
@@ -95,7 +97,7 @@ const Tenants = ({ navigation }) => {
       setTenants([]);
     }
     setLoading(false);
-  }, [credentials, selectedProperty, isAllPropertiesSelected]);
+  }, [credentials, selectedProperty]);
 
   // Filter tenants based on selectedFilter and search
   const filteredTenants = tenants.filter(tenant => {
@@ -186,7 +188,7 @@ const Tenants = ({ navigation }) => {
       <View style={styles.propertySelectorContainer}>
         <PropertySelector
           navigation={navigation}
-          requireSpecificProperty={true}
+          requireSpecificProperty={false}
           actionContext="manage-tenants"
         />
       </View>
@@ -199,7 +201,7 @@ const Tenants = ({ navigation }) => {
         }}
       >
         {/* Show SelectPropertyPrompt if no property is selected */}
-        {isAllPropertiesSelected ? (
+        {/* {isAllPropertiesSelected ? (
           <SelectPropertyPrompt
             title="Select a Property"
             description="Please select a specific property to view and manage tenants. Tenants are organized by property."
@@ -207,178 +209,176 @@ const Tenants = ({ navigation }) => {
               // Scroll to top to show PropertySelector
             }}
           />
-        ) : (
-          <>
-            {/* Search */}
-            <PaperInput
-              mode="flat"
-              placeholder="Search Tenants..."
-              value={search}
-              onChangeText={setSearch}
-              style={[styles.searchBar, { fontFamily: 'Metropolis-Medium' }]}
-              left={<PaperInput.Icon icon="magnify" />}
-              underlineColor="transparent"
-              activeUnderlineColor="transparent"
-              contentStyle={{ fontFamily: 'Metropolis-Medium' }}
-              theme={{
-                roundness: 25,
-                colors: {
-                  background: '#fff',
-                  text: '#000',
-                  placeholder: '#888',
-                },
-              }}
-            />
+        ) : ( */}
+        <>
+          {/* Search */}
+          <PaperInput
+            mode="flat"
+            placeholder="Search Tenants..."
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchBar, { fontFamily: 'Metropolis-Medium' }]}
+            left={<PaperInput.Icon icon="magnify" />}
+            underlineColor="transparent"
+            activeUnderlineColor="transparent"
+            contentStyle={{ fontFamily: 'Metropolis-Medium' }}
+            theme={{
+              roundness: 25,
+              colors: {
+                background: '#fff',
+                text: '#000',
+                placeholder: '#888',
+              },
+            }}
+          />
 
-            <Gap size="md" />
+          <Gap size="md" />
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterContainer}
-            >
-              {filterOptions.map(option => (
-                <Chip
-                  key={option.key}
-                  selected={selectedFilter === option.key}
-                  selectedColor="#fff"
-                  onPress={() => setSelectedFilter(option.key)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor:
-                        selectedFilter === option.key
-                          ? colors.secondary
-                          : '#f5f5f5',
-                    },
-                  ]}
-                  textStyle={{
-                    color: selectedFilter === option.key ? '#fff' : '#000',
-                    fontFamily: 'Metropolis-Medium',
-                    fontWeight: selectedFilter === option.key ? '600' : '400',
-                  }}
-                >
-                  {option.label} ({option.value})
-                </Chip>
-              ))}
-            </ScrollView>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterContainer}
+          >
+            {filterOptions.map(option => (
+              <Chip
+                key={option.key}
+                selected={selectedFilter === option.key}
+                selectedColor="#fff"
+                onPress={() => setSelectedFilter(option.key)}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor:
+                      selectedFilter === option.key
+                        ? colors.secondary
+                        : '#f5f5f5',
+                  },
+                ]}
+                textStyle={{
+                  color: selectedFilter === option.key ? '#fff' : '#000',
+                  fontFamily: 'Metropolis-Medium',
+                  fontWeight: selectedFilter === option.key ? '600' : '400',
+                }}
+              >
+                {option.label} ({option.value})
+              </Chip>
+            ))}
+          </ScrollView>
 
-            {/* Loader */}
-            {loading && (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <StandardText>Loading tenants...</StandardText>
-              </View>
-            )}
+          {/* Loader */}
+          {loading && (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <StandardText>Loading tenants...</StandardText>
+            </View>
+          )}
 
-            {/* Tenant Cards */}
-            {filteredTenants.map(tenant => (
-              <StandardCard key={tenant.tenant_id} style={styles.card}>
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate('TenantDetails', { tenant })
-                  }
-                >
-                  <View style={styles.row}>
-                    {/* Avatar */}
-                    <Avatar.Image
-                      size={60}
-                      source={{
-                        uri: 'https://avatar.iran.liara.run/public/37',
-                      }}
-                      style={{ marginRight: 14 }}
-                    />
+          {/* Tenant Cards */}
+          {filteredTenants.map(tenant => (
+            <StandardCard key={tenant.tenant_id} style={styles.card}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('TenantDetails', { tenant })}
+              >
+                <View style={styles.row}>
+                  {/* Avatar */}
+                  <Avatar.Image
+                    size={60}
+                    source={{
+                      uri: 'https://avatar.iran.liara.run/public/37',
+                    }}
+                    style={{ marginRight: 14 }}
+                  />
 
-                    {/* Info Section */}
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.rowBetween}>
-                        <StandardText fontWeight="bold" size="lg">
-                          {tenant.name}
-                        </StandardText>
+                  {/* Info Section */}
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.rowBetween}>
+                      <StandardText fontWeight="bold" size="lg">
+                        {tenant.name}
+                      </StandardText>
 
-                        {/* anchor button (we keep ref on this button) */}
-                        <TouchableOpacity
-                          ref={r => (anchorRefs.current[tenant.tenant_id] = r)}
-                          onPress={() => openMenu(tenant.tenant_id)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      {/* anchor button (we keep ref on this button) */}
+                      <TouchableOpacity
+                        ref={r => (anchorRefs.current[tenant.tenant_id] = r)}
+                        onPress={() => openMenu(tenant.tenant_id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <MaterialCommunityIcons
+                          name="dots-vertical"
+                          size={22}
+                          color="#444"
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Quick badges */}
+                    <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                      {tenant.has_dues && (
+                        <Chip
+                          style={styles.badgeDues}
+                          textStyle={{ color: '#fff' }}
                         >
-                          <MaterialCommunityIcons
-                            name="dots-vertical"
-                            size={22}
-                            color="#444"
-                          />
-                        </TouchableOpacity>
+                          Dues
+                        </Chip>
+                      )}
+                      {tenant.is_on_notice && (
+                        <Chip
+                          style={styles.badgeNotice}
+                          textStyle={{
+                            color: '#fff',
+                            fontFamily: 'Metropolis-Medium',
+                            fontSize: 14,
+                            lineHeight: 16, // Add this to help with vertical centering
+                            textAlignVertical: 'center', // Add this to help with vertical centering
+                          }}
+                        >
+                          Notice
+                        </Chip>
+                      )}
+                    </View>
+
+                    {/* Small details */}
+                    <View style={{ marginTop: 8 }}>
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="bed"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          {tenant?.room?.name || 'No room assigned'}
+                        </StandardText>
                       </View>
 
-                      {/* Quick badges */}
-                      <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                        {tenant.has_dues && (
-                          <Chip
-                            style={styles.badgeDues}
-                            textStyle={{ color: '#fff' }}
-                          >
-                            Dues
-                          </Chip>
-                        )}
-                        {tenant.is_on_notice && (
-                          <Chip
-                            style={styles.badgeNotice}
-                            textStyle={{
-                              color: '#fff',
-                              fontFamily: 'Metropolis-Medium',
-                              fontSize: 14,
-                              lineHeight: 16, // Add this to help with vertical centering
-                              textAlignVertical: 'center', // Add this to help with vertical centering
-                            }}
-                          >
-                            Notice
-                          </Chip>
-                        )}
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="cash"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          ₹{tenant?.room?.rentAmount || 'N/A'}
+                        </StandardText>
                       </View>
 
-                      {/* Small details */}
-                      <View style={{ marginTop: 8 }}>
-                        <View style={styles.detailRow}>
-                          <MaterialCommunityIcons
-                            name="bed"
-                            size={18}
-                            color="#555"
-                          />
-                          <StandardText style={styles.detailText}>
-                            {tenant?.room?.name || 'No room assigned'}
-                          </StandardText>
-                        </View>
-
-                        <View style={styles.detailRow}>
-                          <MaterialCommunityIcons
-                            name="cash"
-                            size={18}
-                            color="#555"
-                          />
-                          <StandardText style={styles.detailText}>
-                            ₹{tenant?.room?.rentAmount || 'N/A'}
-                          </StandardText>
-                        </View>
-
-                        <View style={styles.detailRow}>
-                          <MaterialCommunityIcons
-                            name="calendar-check"
-                            size={18}
-                            color="#555"
-                          />
-                          <StandardText style={styles.detailText}>
-                            Joined: {tenant.check_in_date}
-                          </StandardText>
-                        </View>
+                      <View style={styles.detailRow}>
+                        <MaterialCommunityIcons
+                          name="calendar-check"
+                          size={18}
+                          color="#555"
+                        />
+                        <StandardText style={styles.detailText}>
+                          Joined: {tenant.check_in_date}
+                        </StandardText>
                       </View>
                     </View>
                   </View>
-                </TouchableOpacity>
-              </StandardCard>
-            ))}
+                </View>
+              </TouchableOpacity>
+            </StandardCard>
+          ))}
 
-            <Gap size="xl" />
-          </>
-        )}
+          <Gap size="xl" />
+        </>
+        {/* )} */}
       </ScrollView>
 
       {/* Floating Add Button */}

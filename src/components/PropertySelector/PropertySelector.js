@@ -174,7 +174,7 @@ const PropertySelector = ({
                       : 'No location'}
                   </StandardText>
                 )}
-                {showAllPropertiesWarning && (
+                {/* {showAllPropertiesWarning && (
                   <StandardText
                     style={[styles.warningText, { color: colors.warning }]}
                     size="xs"
@@ -182,7 +182,7 @@ const PropertySelector = ({
                   >
                     Please select a specific property
                   </StandardText>
-                )}
+                )} */}
               </View>
             </View>
             <View style={styles.actionContainer}>

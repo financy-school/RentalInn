@@ -50,9 +50,11 @@ const Tickets = ({ navigation }) => {
     try {
       // Use selectedProperty from PropertyContext if specific property is selected,
       // otherwise don't fetch tickets when "All" is selected (tickets are property-specific)
-      const currentPropertyId = !isAllPropertiesSelected
-        ? selectedProperty?.property_id
-        : null;
+      // const currentPropertyId = !isAllPropertiesSelected
+      //   ? selectedProperty?.property_id
+      //   : null;
+
+      const currentPropertyId = selectedProperty?.property_id;
 
       if (!currentPropertyId) {
         // Don't show error when no property is selected - just clear data
@@ -117,13 +119,7 @@ const Tickets = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [
-    credentials,
-    selectedFilter,
-    applyFilter,
-    selectedProperty,
-    isAllPropertiesSelected,
-  ]);
+  }, [credentials, selectedFilter, applyFilter, selectedProperty]);
 
   /** --- Apply Filters --- */
   const applyFilter = useCallback(
@@ -187,7 +183,7 @@ const Tickets = ({ navigation }) => {
       <View style={styles.propertySelectorContainer}>
         <PropertySelector
           navigation={navigation}
-          requireSpecificProperty={true}
+          requireSpecificProperty={false}
           actionContext="manage-tickets"
         />
       </View>
@@ -218,7 +214,7 @@ const Tickets = ({ navigation }) => {
       )}
       <ScrollView>
         {/* Show SelectPropertyPrompt if no property is selected */}
-        {isAllPropertiesSelected ? (
+        {/* {isAllPropertiesSelected ? (
           <SelectPropertyPrompt
             title="Select a Property"
             description="Please select a specific property to view and manage tickets. Tickets are organized by property."
@@ -226,207 +222,204 @@ const Tickets = ({ navigation }) => {
               // Scroll to top to show PropertySelector
             }}
           />
-        ) : (
-          <>
-            {/* Search Bar */}
-            <PaperInput
-              mode="flat"
-              placeholder="Search Tickets..."
-              value={search}
-              onChangeText={setSearch}
-              style={styles.searchBar}
-              left={<PaperInput.Icon icon="magnify" />}
-              underlineColor="transparent"
-              activeUnderlineColor="transparent"
-              contentStyle={{ fontFamily: 'Metropolis-Medium' }}
-              theme={{
-                roundness: 25,
-                colors: {
-                  background: '#fff',
-                  text: '#000',
-                  placeholder: '#888',
+        ) : ( */}
+        <>
+          {/* Search Bar */}
+          <PaperInput
+            mode="flat"
+            placeholder="Search Tickets..."
+            value={search}
+            onChangeText={setSearch}
+            style={styles.searchBar}
+            left={<PaperInput.Icon icon="magnify" />}
+            underlineColor="transparent"
+            activeUnderlineColor="transparent"
+            contentStyle={{ fontFamily: 'Metropolis-Medium' }}
+            theme={{
+              roundness: 25,
+              colors: {
+                background: '#fff',
+                text: '#000',
+                placeholder: '#888',
+                fontFamily: 'Metropolis-Medium',
+              },
+            }}
+          />
+
+          <Gap size="md" />
+
+          {/* Filters */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterContainer}
+          >
+            {filterOptions.map(option => (
+              <Chip
+                key={option.key}
+                selected={selectedFilter === option.key}
+                selectedColor="#fff"
+                onPress={() => setSelectedFilter(option.key)}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor:
+                      selectedFilter === option.key
+                        ? colors.secondary
+                        : '#f5f5f5',
+                  },
+                ]}
+                textStyle={{
+                  color: selectedFilter === option.key ? '#fff' : '#000',
                   fontFamily: 'Metropolis-Medium',
-                },
-              }}
-            />
-
-            <Gap size="md" />
-
-            {/* Filters */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterContainer}
-            >
-              {filterOptions.map(option => (
-                <Chip
-                  key={option.key}
-                  selected={selectedFilter === option.key}
-                  selectedColor="#fff"
-                  onPress={() => setSelectedFilter(option.key)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor:
-                        selectedFilter === option.key
-                          ? colors.secondary
-                          : '#f5f5f5',
-                    },
-                  ]}
-                  textStyle={{
-                    color: selectedFilter === option.key ? '#fff' : '#000',
-                    fontFamily: 'Metropolis-Medium',
-                    fontWeight: selectedFilter === option.key ? '600' : '400',
-                  }}
-                >
-                  {option.label} ({option.value})
-                </Chip>
-              ))}
-            </ScrollView>
-
-            {/* Loading Indicator or Ticket List */}
-            {loading ? (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: 'center',
-                  alignItems: 'center',
+                  fontWeight: selectedFilter === option.key ? '600' : '400',
                 }}
               >
-                <StandardText>Loading tickets...</StandardText>
-              </View>
-            ) : (
-              <>
-                {/* Ticket List */}
-                {tickets.map(ticket => (
-                  <StandardCard
-                    style={styles.card}
-                    id={ticket.ticket_id}
-                    key={ticket.ticket_id}
-                  >
-                    {/* Header */}
-                    <View style={styles.header}>
+                {option.label} ({option.value})
+              </Chip>
+            ))}
+          </ScrollView>
+
+          {/* Loading Indicator or Ticket List */}
+          {loading ? (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <StandardText>Loading tickets...</StandardText>
+            </View>
+          ) : (
+            <>
+              {/* Ticket List */}
+              {tickets.map(ticket => (
+                <StandardCard
+                  style={styles.card}
+                  id={ticket.ticket_id}
+                  key={ticket.ticket_id}
+                >
+                  {/* Header */}
+                  <View style={styles.header}>
+                    <StandardText fontWeight="semibold" style={styles.ticketId}>
+                      #{ticket.ticket_id}
+                    </StandardText>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor:
+                            ticket.status === 'PENDING'
+                              ? 'rgba(255, 152, 0, 0.2)'
+                              : ticket.status === 'ACTIVE'
+                              ? 'rgba(76, 175, 80, 0.2)'
+                              : 'rgba(158, 158, 158, 0.2)',
+                        },
+                      ]}
+                    >
                       <StandardText
                         fontWeight="semibold"
-                        style={styles.ticketId}
+                        size="sm"
+                        style={{ color: colors.primary }}
                       >
-                        #{ticket.ticket_id}
+                        {ticket.status}
                       </StandardText>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          {
-                            backgroundColor:
-                              ticket.status === 'PENDING'
-                                ? 'rgba(255, 152, 0, 0.2)'
-                                : ticket.status === 'ACTIVE'
-                                ? 'rgba(76, 175, 80, 0.2)'
-                                : 'rgba(158, 158, 158, 0.2)',
-                          },
-                        ]}
+                    </View>
+                  </View>
+
+                  {/* Raised By + Room */}
+                  <View style={styles.infoRow}>
+                    <StandardText
+                      size="sm"
+                      fontWeight="semibold"
+                      color="default_gray"
+                    >
+                      👤 {ticket.raisedBy}
+                    </StandardText>
+                    <StandardText size="sm" color="default_gray">
+                      🏠 Room {ticket.room_id}
+                    </StandardText>
+                  </View>
+
+                  {/* Time */}
+                  <StandardText
+                    size="xs"
+                    color="default_gray"
+                    style={styles.timeText}
+                  >
+                    {new Date(ticket.createdAt).toLocaleString()}
+                  </StandardText>
+
+                  {/* Images */}
+                  {ticketImages[ticket.ticket_id] &&
+                    ticketImages[ticket.ticket_id].length > 0 && (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.imageScroll}
+                      >
+                        {ticketImages[ticket.ticket_id].map((imgUrl, idx) => (
+                          <TouchableOpacity
+                            key={idx}
+                            style={{ marginRight: 8 }}
+                            onPress={() => {
+                              setSelectedImageUrl(imgUrl);
+                              setModalVisible(true);
+                            }}
+                          >
+                            <Image
+                              key={idx}
+                              source={{ uri: imgUrl }}
+                              style={styles.image}
+                            />
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    )}
+
+                  {/* Issue + Description */}
+                  <View style={{ marginTop: 6 }}>
+                    <StandardText fontWeight="semibold" style={styles.issue}>
+                      {ticket.issue}
+                    </StandardText>
+                    {ticket.description ? (
+                      <StandardText
+                        size="sm"
+                        color="default_gray"
+                        numberOfLines={3}
+                        style={styles.description}
+                      >
+                        {ticket.description}
+                      </StandardText>
+                    ) : null}
+                  </View>
+
+                  {/* Close Button */}
+                  {ticket.status === 'PENDING' && (
+                    <View style={styles.actionRow}>
+                      <Button
+                        mode="contained"
+                        style={styles.actionButton}
+                        onPress={() => handleCloseTicket(ticket.ticket_id)}
                       >
                         <StandardText
                           fontWeight="semibold"
-                          size="sm"
-                          style={{ color: colors.primary }}
+                          style={{ color: '#fff' }}
                         >
-                          {ticket.status}
+                          Close Ticket
                         </StandardText>
-                      </View>
+                      </Button>
                     </View>
-
-                    {/* Raised By + Room */}
-                    <View style={styles.infoRow}>
-                      <StandardText
-                        size="sm"
-                        fontWeight="semibold"
-                        color="default_gray"
-                      >
-                        👤 {ticket.raisedBy}
-                      </StandardText>
-                      <StandardText size="sm" color="default_gray">
-                        🏠 Room {ticket.room_id}
-                      </StandardText>
-                    </View>
-
-                    {/* Time */}
-                    <StandardText
-                      size="xs"
-                      color="default_gray"
-                      style={styles.timeText}
-                    >
-                      {new Date(ticket.createdAt).toLocaleString()}
-                    </StandardText>
-
-                    {/* Images */}
-                    {ticketImages[ticket.ticket_id] &&
-                      ticketImages[ticket.ticket_id].length > 0 && (
-                        <ScrollView
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          style={styles.imageScroll}
-                        >
-                          {ticketImages[ticket.ticket_id].map((imgUrl, idx) => (
-                            <TouchableOpacity
-                              key={idx}
-                              style={{ marginRight: 8 }}
-                              onPress={() => {
-                                setSelectedImageUrl(imgUrl);
-                                setModalVisible(true);
-                              }}
-                            >
-                              <Image
-                                key={idx}
-                                source={{ uri: imgUrl }}
-                                style={styles.image}
-                              />
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      )}
-
-                    {/* Issue + Description */}
-                    <View style={{ marginTop: 6 }}>
-                      <StandardText fontWeight="semibold" style={styles.issue}>
-                        {ticket.issue}
-                      </StandardText>
-                      {ticket.description ? (
-                        <StandardText
-                          size="sm"
-                          color="default_gray"
-                          numberOfLines={3}
-                          style={styles.description}
-                        >
-                          {ticket.description}
-                        </StandardText>
-                      ) : null}
-                    </View>
-
-                    {/* Close Button */}
-                    {ticket.status === 'PENDING' && (
-                      <View style={styles.actionRow}>
-                        <Button
-                          mode="contained"
-                          style={styles.actionButton}
-                          onPress={() => handleCloseTicket(ticket.ticket_id)}
-                        >
-                          <StandardText
-                            fontWeight="semibold"
-                            style={{ color: '#fff' }}
-                          >
-                            Close Ticket
-                          </StandardText>
-                        </Button>
-                      </View>
-                    )}
-                  </StandardCard>
-                ))}
-                <Gap size="xl" />
-                <Gap size="xl" />
-              </>
-            )}
-          </>
-        )}
+                  )}
+                </StandardCard>
+              ))}
+              <Gap size="xl" />
+              <Gap size="xl" />
+            </>
+          )}
+        </>
+        {/* )} */}
       </ScrollView>
 
       {/* FAB */}
