@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import {
   Avatar,
@@ -114,51 +115,64 @@ const Home = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [scope] = useState('property'); // property | unit | tenant
   const [autoRecon, setAutoRecon] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Fetch analytics data from API
-  useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchAnalyticsData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        if (credentials?.accessToken) {
-          // Build query parameters
-          const queryParams = {};
+      if (credentials?.accessToken) {
+        // Build query parameters
+        const queryParams = {};
 
-          // If a specific property is selected, pass its ID to the API
-          if (!isAllPropertiesSelected && selectedProperty?.property_id) {
-            queryParams.property_id = selectedProperty.property_id;
-          }
-
-          // Default to current month data
-          queryParams.date_range = 'current_month';
-
-          const response = await getDashboardAnalytics(
-            credentials.accessToken,
-            queryParams,
-          );
-
-          if (response.success) {
-            setAnalyticsData(response.data);
-          } else {
-            setError(response.error || 'Failed to fetch analytics data');
-            console.error('Analytics API Error:', response.error);
-          }
-        } else {
-          // If no credentials, clear analytics data
-          setAnalyticsData(null);
+        // If a specific property is selected, pass its ID to the API
+        if (!isAllPropertiesSelected && selectedProperty?.property_id) {
+          queryParams.property_id = selectedProperty.property_id;
         }
-      } catch (error) {
-        setError('Error fetching analytics data');
-        console.error('Error fetching analytics data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchAnalyticsData();
+        // Default to current month data
+        queryParams.date_range = 'current_month';
+
+        const response = await getDashboardAnalytics(
+          credentials.accessToken,
+          queryParams,
+        );
+
+        if (response.success) {
+          setAnalyticsData(response.data);
+        } else {
+          setError(response.error || 'Failed to fetch analytics data');
+          console.error('Analytics API Error:', response.error);
+        }
+      } else {
+        // If no credentials, clear analytics data
+        setAnalyticsData(null);
+      }
+    } catch (err) {
+      setError('Error fetching analytics data');
+      console.error('Error fetching analytics data:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [credentials, selectedProperty, isAllPropertiesSelected]);
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [
+    credentials,
+    selectedProperty,
+    isAllPropertiesSelected,
+    fetchAnalyticsData,
+  ]);
+
+  // Handle pull to refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchAnalyticsData();
+  };
 
   // Extract data from API response or use defaults
   const propertyInfo = analyticsData?.property_info || {};
@@ -356,7 +370,12 @@ const Home = ({ navigation }) => {
         <PropertySelector navigation={navigation} showTitle={false} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Real-time tracking banner */}
         <Card style={styles.bannerCard}>
           <MaterialCommunityIcons

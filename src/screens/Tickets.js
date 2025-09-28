@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { Button, FAB, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -35,6 +36,7 @@ const Tickets = ({ navigation }) => {
   const [allTickets, setAllTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ticketImages, setTicketImages] = useState({}); // { ticketId: [urls] }
+  const [refreshing, setRefreshing] = useState(false);
 
   const [filterOptions, setFilterOptions] = useState([
     { label: 'All', key: 'ALL', value: 0 },
@@ -168,6 +170,12 @@ const Tickets = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, fetchData]);
 
+  // Handle pull to refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
+
   /** --- Close Ticket Handler --- */
   const handleCloseTicket = async ticketId => {
     try {
@@ -213,7 +221,11 @@ const Tickets = ({ navigation }) => {
           </View>
         </View>
       )}
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Show SelectPropertyPrompt if no property is selected */}
         {/* {isAllPropertiesSelected ? (
           <SelectPropertyPrompt

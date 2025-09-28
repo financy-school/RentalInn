@@ -13,6 +13,7 @@ import {
   Image,
   Modal,
   Pressable,
+  RefreshControl,
 } from 'react-native';
 import { Button, Chip, FAB, TextInput as PaperInput } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -51,6 +52,7 @@ const Rooms = ({ navigation }) => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // 🔹 Menu state
   const [menuVisible, setMenuVisible] = useState(false);
@@ -157,6 +159,12 @@ const Rooms = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, fetchRooms]);
 
+  // Handle pull to refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchRooms();
+  };
+
   // 🔹 Filtering
   const filteredRooms = rooms
     .filter(
@@ -217,7 +225,11 @@ const Rooms = ({ navigation }) => {
         />
       </View>
 
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Show SelectPropertyPrompt if no property is selected */}
         {/* {isAllPropertiesSelected ? (
           <SelectPropertyPrompt

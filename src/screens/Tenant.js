@@ -11,6 +11,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { Avatar, FAB, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -41,6 +42,7 @@ const Tenants = ({ navigation }) => {
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // menu state
   const [activeMenuTenantId, setActiveMenuTenantId] = useState(null);
@@ -119,6 +121,12 @@ const Tenants = ({ navigation }) => {
     const unsubscribe = navigation.addListener('focus', fetchData);
     return unsubscribe;
   }, [navigation, fetchData, search, selectedFilter]);
+
+  // Handle pull to refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
 
   // Open menu by measuring position of the icon using measureInWindow
   const openMenu = tenantId => {
@@ -199,6 +207,9 @@ const Tenants = ({ navigation }) => {
           // hide menu on scroll to avoid stale position
           closeMenu();
         }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* Show SelectPropertyPrompt if no property is selected */}
         {/* {isAllPropertiesSelected ? (
