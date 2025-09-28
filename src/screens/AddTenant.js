@@ -28,6 +28,7 @@ const AddTenant = ({ navigation, route }) => {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [formErrors, setFormErrors] = useState({});
 
   const [datePicker, setDatePicker] = useState({
@@ -150,6 +151,7 @@ const AddTenant = ({ navigation, route }) => {
   const submitTenant = async () => {
     setLoading(true);
     setErrorMsg('');
+    setSuccessMsg('');
 
     // Check if property is selected
     if (!selectedProperty || selectedProperty.property_id === 'all') {
@@ -160,19 +162,31 @@ const AddTenant = ({ navigation, route }) => {
 
     try {
       if (isEdit) {
-        await updateTenant(
+        const response = await updateTenant(
           credentials.accessToken,
           editTenant.tenant_id,
           tenant,
         );
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to update tenant');
+        }
+        setSuccessMsg('Tenant updated successfully! ✅');
       } else {
-        await addTenant(
+        const response = await addTenant(
           credentials.accessToken,
           selectedProperty.property_id,
           tenant,
         );
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to add tenant');
+        }
+        setSuccessMsg('Tenant added successfully! ✅');
       }
-      navigation.goBack({ refresh: true });
+
+      // Navigate back after a short delay to show success message
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
     } catch (error) {
       setErrorMsg(
         error?.message ||
@@ -189,11 +203,13 @@ const AddTenant = ({ navigation, route }) => {
 
   const getStatusColor = () => {
     if (errorMsg) return theme.colors.errorContainer;
+    if (successMsg) return theme.colors.primaryContainer;
     return theme.colors.surfaceVariant;
   };
 
   const getStatusTextColor = () => {
     if (errorMsg) return theme.colors.onErrorContainer;
+    if (successMsg) return theme.colors.onPrimaryContainer;
     return theme.colors.onSurfaceVariant;
   };
 
@@ -507,7 +523,7 @@ const AddTenant = ({ navigation, route }) => {
           </View>
 
           {/* Status Messages */}
-          {errorMsg && (
+          {(errorMsg || successMsg) && (
             <View
               style={[
                 styles.statusContainer,
@@ -519,7 +535,7 @@ const AddTenant = ({ navigation, route }) => {
                 fontWeight="600"
                 style={[styles.statusText, { color: getStatusTextColor() }]}
               >
-                ❌ {errorMsg}
+                {errorMsg ? `❌ ${errorMsg}` : `✅ ${successMsg}`}
               </StandardText>
             </View>
           )}

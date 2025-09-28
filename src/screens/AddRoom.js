@@ -78,6 +78,8 @@ const AddRoom = ({ navigation, route }) => {
   const [roomImages, setRoomImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Predefined options
@@ -270,10 +272,12 @@ const AddRoom = ({ navigation, route }) => {
 
   const submitRoom = async () => {
     setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
 
     // Check if property is selected
     if (!selectedProperty || selectedProperty.property_id === 'all') {
-      console.error('Please select a specific property to add a room.');
+      setErrorMsg('Please select a specific property to add a room.');
       setLoading(false);
       return;
     }
@@ -304,24 +308,42 @@ const AddRoom = ({ navigation, route }) => {
       };
 
       if (isEdit) {
-        await updateRoom(
+        const response = await updateRoom(
           credentials.accessToken,
           editRoom.property_id,
           editRoom.room_id,
           payload,
         );
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to update room');
+        }
+        setSuccessMsg('Room updated successfully! ✅');
       } else {
-        await createRoom(
+        const response = await createRoom(
           credentials.accessToken,
           selectedProperty.property_id,
           payload,
         );
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to add room');
+        }
+        setSuccessMsg('Room added successfully! ✅');
       }
 
       resetForm();
-      navigation.goBack();
+
+      // Navigate back after a short delay to show success message
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
     } catch (error) {
       console.error('Room submission error:', error);
+      setErrorMsg(
+        error?.message ||
+          (typeof error === 'string'
+            ? error
+            : `Failed to ${isEdit ? 'update' : 'add'} room. Please try again.`),
+      );
     } finally {
       setLoading(false);
     }
@@ -465,6 +487,12 @@ const AddRoom = ({ navigation, route }) => {
       marginTop: 24,
       marginBottom: 32,
       gap: 12,
+    },
+    statusContainer: {
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 16,
+      alignItems: 'center',
     },
     fieldLabel: {
       marginBottom: 8,
@@ -836,6 +864,33 @@ const AddRoom = ({ navigation, route }) => {
           fullWidth={true}
           disabled={roomImages.length >= 5}
         /> */}
+
+          {/* Status Messages */}
+          {(errorMsg || successMsg) && (
+            <View
+              style={[
+                styles.statusContainer,
+                {
+                  backgroundColor: errorMsg
+                    ? theme.colors.errorContainer
+                    : theme.colors.primaryContainer,
+                },
+              ]}
+            >
+              <StandardText
+                size="md"
+                fontWeight="600"
+                style={{
+                  color: errorMsg
+                    ? theme.colors.onErrorContainer
+                    : theme.colors.onPrimaryContainer,
+                  textAlign: 'center',
+                }}
+              >
+                {errorMsg ? `❌ ${errorMsg}` : `✅ ${successMsg}`}
+              </StandardText>
+            </View>
+          )}
 
           {/* Submit Buttons */}
           <View style={styles.submitContainer}>

@@ -117,11 +117,16 @@ const AddTicket = ({ navigation }) => {
         image_document_id_list: imageDocumentIds,
       };
 
-      await createTicket(credentials.accessToken, payload);
+      const response = await createTicket(credentials.accessToken, payload);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create ticket');
+      }
+
       setSuccess('Ticket created successfully! 🎉');
       setForm({ issue: '', description: '', raisedBy: '', room_id: '' });
       setRoomImages([]);
 
+      // Navigate back after a short delay to show success message
       setTimeout(() => {
         navigation.goBack();
       }, 1500);
