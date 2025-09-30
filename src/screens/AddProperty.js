@@ -3,11 +3,10 @@ import {
   View,
   ScrollView,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Card, Button } from 'react-native-paper';
+import { Card, Button, useTheme } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { ThemeContext } from '../context/ThemeContext';
@@ -839,6 +838,7 @@ const INDIAN_STATES_DATA = [
 const AddProperty = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { addProperty } = useProperty();
+  const theme = useTheme();
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -865,6 +865,8 @@ const AddProperty = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [availableCities, setAvailableCities] = useState([]);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   // Convert INDIAN_STATES_DATA to picker format
   const statePickerItems = INDIAN_STATES_DATA.map(state => ({
@@ -967,6 +969,9 @@ const AddProperty = ({ navigation }) => {
     }
 
     setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
     try {
       // Format data to match API expectations
       const propertyData = {
@@ -997,12 +1002,14 @@ const AddProperty = ({ navigation }) => {
 
       await addProperty(propertyData);
 
-      navigation.goBack();
+      setSuccessMsg('Property added successfully! ✅');
+
+      // Navigate back after a short delay to show success message
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
     } catch (error) {
-      Alert.alert(
-        'Error',
-        error.message || 'Failed to add property. Please try again.',
-      );
+      setErrorMsg(error.message || 'Failed to add property. Please try again.');
       console.error('Add property error:', error);
     } finally {
       setLoading(false);
@@ -1389,6 +1396,33 @@ const AddProperty = ({ navigation }) => {
           </StandardText>
         )}
 
+        {/* Status Messages */}
+        {(errorMsg || successMsg) && (
+          <View
+            style={[
+              styles.statusContainer,
+              {
+                backgroundColor: errorMsg
+                  ? theme.colors.errorContainer
+                  : theme.colors.primaryContainer,
+              },
+            ]}
+          >
+            <StandardText
+              size="md"
+              fontWeight="600"
+              style={{
+                color: errorMsg
+                  ? theme.colors.onErrorContainer
+                  : theme.colors.onPrimaryContainer,
+                textAlign: 'center',
+              }}
+            >
+              {errorMsg ? `❌ ${errorMsg}` : `✅ ${successMsg}`}
+            </StandardText>
+          </View>
+        )}
+
         <Gap size="xxl" />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -1587,6 +1621,12 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 16,
     fontFamily: 'Metropolis-Regular',
+  },
+  statusContainer: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    alignItems: 'center',
   },
 });
 
