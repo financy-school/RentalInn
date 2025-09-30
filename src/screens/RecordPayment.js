@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -7,6 +7,7 @@ import {
   Dimensions,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Card, Button, Checkbox } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -16,7 +17,7 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
-import { recordPayment } from '../services/NetworkUtils';
+import { recordPayment, getTenant } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/color';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +27,7 @@ const screenWidth = Dimensions.get('window').width;
 const RecordPayment = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
-  const { tenant } = route.params || {};
+  const { tenant_id } = route.params || {};
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -48,7 +49,36 @@ const RecordPayment = ({ navigation, route }) => {
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingTenant, setLoadingTenant] = useState(false);
+  const [tenantData, setTenantData] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // Fetch tenant details
+  useEffect(() => {
+    const fetchTenantDetails = async () => {
+      setLoadingTenant(true);
+      try {
+        const response = await getTenant(credentials.accessToken, tenant_id);
+        if (response.success) {
+          setTenantData(response.data);
+        } else {
+          Alert.alert('Error', 'Failed to fetch tenant details');
+        }
+      } catch (error) {
+        console.error('Error fetching tenant:', error);
+        Alert.alert(
+          'Error',
+          'An unexpected error occurred while fetching tenant details',
+        );
+      } finally {
+        setLoadingTenant(false);
+      }
+    };
+
+    if (tenant_id) {
+      fetchTenantDetails();
+    }
+  }, [tenant_id, credentials.accessToken]);
 
   // Payment modes with icons
   const paymentModes = [
@@ -59,14 +89,6 @@ const RecordPayment = ({ navigation, route }) => {
     { id: 'upi', name: 'UPI', icon: 'bank-transfer' },
     { id: 'other', name: 'Other', icon: 'credit-card' },
   ];
-
-  // Mock tenant data for demo (replace with actual data)
-  const tenantData = tenant || {
-    name: 'Sumit Scientist',
-    rent_amount: 38742,
-    room: { name: 'smart' },
-    deposit: 0,
-  };
 
   const formatDate = date => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -136,7 +158,8 @@ const RecordPayment = ({ navigation, route }) => {
     try {
       // Prepare payment data according to API format
       const paymentPayload = {
-        invoice_id: tenant?.invoice_id || tenant?.tenant_id, // Use invoice_id or fallback to tenant id
+        invoice_id:
+          tenantData?.invoices?.[0]?.invoice_id || tenantData?.tenant_id,
         amount: parseFloat(formData.collectedAmount),
         paymentDate: formData.paymentDate.toISOString(),
         paymentMethod: mapPaymentMode(formData.paymentMode),
@@ -184,42 +207,55 @@ const RecordPayment = ({ navigation, route }) => {
       >
         {/* Tenant Info Card */}
         <Card style={[styles.tenantCard, { backgroundColor: cardBackground }]}>
-          <View style={styles.tenantHeader}>
-            <View style={styles.tenantInfo}>
+          {loadingTenant ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
               <StandardText
-                fontWeight="bold"
-                style={[styles.tenantName, { color: textPrimary }]}
+                style={[styles.loadingText, { color: textSecondary }]}
               >
-                {tenantData.name}
+                Loading tenant details...
               </StandardText>
-              <View style={styles.tenantDetails}>
-                <MaterialCommunityIcons
-                  name="home"
-                  size={16}
-                  color={textSecondary}
-                  style={styles.roomIcon}
-                />
+            </View>
+          ) : (
+            <View style={styles.tenantHeader}>
+              <View style={styles.tenantInfo}>
                 <StandardText
-                  style={[styles.roomText, { color: textSecondary }]}
+                  fontWeight="bold"
+                  style={[styles.tenantName, { color: textPrimary }]}
                 >
-                  {tenantData.room?.name}
+                  {tenantData?.name || 'N/A'}
+                </StandardText>
+                <View style={styles.tenantDetails}>
+                  <MaterialCommunityIcons
+                    name="home"
+                    size={16}
+                    color={textSecondary}
+                    style={styles.roomIcon}
+                  />
+                  <StandardText
+                    style={[styles.roomText, { color: textSecondary }]}
+                  >
+                    {tenantData?.room?.name || 'N/A'}
+                  </StandardText>
+                </View>
+              </View>
+              <View style={styles.amountContainer}>
+                <StandardText
+                  fontWeight="bold"
+                  style={[styles.rentAmount, { color: colors.primary }]}
+                >
+                  ₹{parseFloat(tenantData?.rent_amount || 0).toLocaleString()}
+                </StandardText>
+                <StandardText
+                  style={[styles.nextDueDate, { color: textSecondary }]}
+                >
+                  {tenantData?.invoices?.[0]?.due_date
+                    ? formatDate(new Date(tenantData.invoices[0].due_date))
+                    : 'N/A'}
                 </StandardText>
               </View>
             </View>
-            <View style={styles.amountContainer}>
-              <StandardText
-                fontWeight="bold"
-                style={[styles.rentAmount, { color: colors.primary }]}
-              >
-                ₹{tenantData.rent_amount?.toLocaleString()}
-              </StandardText>
-              <StandardText
-                style={[styles.nextDueDate, { color: textSecondary }]}
-              >
-                {formatDate(new Date(2025, 2, 23))} {/* Mock next due date */}
-              </StandardText>
-            </View>
-          </View>
+          )}
         </Card>
 
         <Gap size="lg" />
@@ -236,7 +272,7 @@ const RecordPayment = ({ navigation, route }) => {
                 setErrors({ ...errors, collectedAmount: null });
               }}
               keyboardType="numeric"
-              placeholder="38742"
+              placeholder="Ex: 1000"
               error={errors.collectedAmount}
               style={styles.amountInput}
             />
@@ -392,7 +428,10 @@ const RecordPayment = ({ navigation, route }) => {
               <StandardText
                 style={[styles.depositInfo, { color: colors.error }]}
               >
-                Available Deposit: {tenantData.deposit || 0}
+                Available Deposit: ₹
+                {parseFloat(
+                  tenantData?.rentals?.[0]?.securityDeposit || 0,
+                ).toLocaleString()}
               </StandardText>
             </View>
           </TouchableOpacity>
@@ -468,6 +507,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
   },
   tenantHeader: {
     flexDirection: 'row',

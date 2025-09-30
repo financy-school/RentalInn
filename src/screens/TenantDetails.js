@@ -470,7 +470,9 @@ const TenantDetails = ({ navigation, route }) => {
                   {
                     backgroundColor: tenant.is_on_notice
                       ? colors.warning
-                      : colors.success,
+                      : tenant.is_active !== false
+                      ? colors.success
+                      : colors.error,
                   },
                 ]}
               />
@@ -507,7 +509,9 @@ const TenantDetails = ({ navigation, route }) => {
                   {
                     backgroundColor: tenant.is_on_notice
                       ? colors.warning + '20'
-                      : colors.success + '20',
+                      : tenant.is_active !== false
+                      ? colors.success + '20'
+                      : colors.error + '20',
                   },
                 ]}
                 textStyle={[
@@ -515,11 +519,17 @@ const TenantDetails = ({ navigation, route }) => {
                   {
                     color: tenant.is_on_notice
                       ? colors.warning
-                      : colors.success,
+                      : tenant.is_active !== false
+                      ? colors.success
+                      : colors.error,
                   },
                 ]}
               >
-                {tenant.is_on_notice ? 'On Notice' : 'Active'}
+                {tenant.is_on_notice
+                  ? 'On Notice'
+                  : tenant.is_active !== false
+                  ? 'Active'
+                  : 'Inactive'}
               </Chip>
             </View>
           </View>
@@ -669,6 +679,8 @@ const TenantDetails = ({ navigation, route }) => {
                   ? parseFloat(
                       tenant.rentals[0].outstandingAmount || 0,
                     ).toLocaleString()
+                  : tenant.due_amount
+                  ? parseFloat(tenant.due_amount).toLocaleString()
                   : '0'}
               </StandardText>
             </View>
@@ -780,7 +792,9 @@ const TenantDetails = ({ navigation, route }) => {
                 tenant.kycDocuments.length > 0 &&
                 tenant.kycDocuments[0].status === 'verified'
                   ? 'Verified'
-                  : 'Pending'}
+                  : tenant.kycDocuments && tenant.kycDocuments.length > 0
+                  ? tenant.kycDocuments[0].status || 'Pending'
+                  : 'Not Submitted'}
               </Chip>
             </View>
 
@@ -818,7 +832,9 @@ const TenantDetails = ({ navigation, route }) => {
                 tenant.rentals.length > 0 &&
                 tenant.rentals[0].isActive
                   ? 'Active'
-                  : 'Pending'}
+                  : tenant.rentals && tenant.rentals.length > 0
+                  ? 'Inactive'
+                  : 'Not Created'}
               </Chip>
             </View>
 
