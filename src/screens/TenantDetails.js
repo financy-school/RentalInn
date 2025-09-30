@@ -27,6 +27,7 @@ import {
   getKYCByTenantId,
   createDocument,
   updateKYC,
+  uploadToS3,
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { PropertyContext } from '../context/PropertyContext';
@@ -35,14 +36,42 @@ import { pick } from '@react-native-documents/picker';
 
 const screenWidth = Dimensions.get('window').width;
 
+// Helper function to calculate staying duration
+const calculateStayingDuration = checkInDate => {
+  if (!checkInDate) return 'N/A';
+
+  const checkIn = new Date(checkInDate);
+  const now = new Date();
+
+  const diffTime = Math.abs(now - checkIn);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 30) {
+    return `${diffDays} days`;
+  } else if (diffDays < 365) {
+    const months = Math.floor(diffDays / 30);
+    const remainingDays = diffDays % 30;
+    return remainingDays > 0
+      ? `${months} months & ${remainingDays} days`
+      : `${months} months`;
+  } else {
+    const years = Math.floor(diffDays / 365);
+    const remainingMonths = Math.floor((diffDays % 365) / 30);
+    return remainingMonths > 0
+      ? `${years} years & ${remainingMonths} months`
+      : `${years} years`;
+  }
+};
+
 const TenantDetails = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
   const { selectedProperty } = useContext(PropertyContext);
-  const { tenant: routeTenant, tenantId } = route.params;
 
-  const [tenant, setTenant] = useState(routeTenant || null);
-  const [loading, setLoading] = useState(!routeTenant && !!tenantId);
+  const { tenant_id } = route.params;
+
+  const [tenant, setTenant] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeMenu, setActiveMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -71,7 +100,7 @@ const TenantDetails = ({ navigation, route }) => {
   // Fetch tenant details if tenantId is provided but no tenant data
   useEffect(() => {
     const fetchTenantDetails = async () => {
-      if (!tenantId || tenant) return;
+      if (!tenant_id || tenant) return;
 
       try {
         setLoading(true);
@@ -79,7 +108,7 @@ const TenantDetails = ({ navigation, route }) => {
 
         const response = await getTenant(
           credentials?.token || credentials?.accessToken,
-          tenantId,
+          tenant_id,
         );
 
         if (response.success && response.data) {
@@ -99,7 +128,7 @@ const TenantDetails = ({ navigation, route }) => {
     };
 
     fetchTenantDetails();
-  }, [tenantId, credentials, navigation, tenant]);
+  }, [tenant_id, credentials, navigation, tenant]);
 
   const openMenu = () => {
     if (!anchorRef.current || !anchorRef.current.measureInWindow) {
@@ -123,15 +152,23 @@ const TenantDetails = ({ navigation, route }) => {
       const message =
         `👤 Tenant Details\n` +
         `Name: ${tenantData.name || 'N/A'}\n` +
-        `Phone: ${tenantData.phone || 'N/A'}\n` +
+        `Phone: ${tenantData.phone_number || 'N/A'}\n` +
         (tenantData.alternate_phone
           ? `Alternate Phone: ${tenantData.alternate_phone}\n`
           : '') +
         `Email: ${tenantData.email || 'N/A'}\n` +
         `Room: ${tenantData?.room?.name || 'No room assigned'}\n` +
-        `Rent: ₹${tenantData?.room?.rentAmount || 'N/A'}\n` +
-        `Check-in Date: ${tenantData.check_in_date || 'N/A'}\n` +
-        `Check-out Date: ${tenantData.check_out_date || 'N/A'}\n` +
+        `Rent: ₹${tenantData.rent_amount || 'N/A'}\n` +
+        `Check-in Date: ${
+          tenantData.check_in_date
+            ? new Date(tenantData.check_in_date).toLocaleDateString()
+            : 'N/A'
+        }\n` +
+        `Check-out Date: ${
+          tenantData.check_out_date
+            ? new Date(tenantData.check_out_date).toLocaleDateString()
+            : 'N/A'
+        }\n` +
         (tenantData.lock_in_period
           ? `Lock-in Period: ${tenantData.lock_in_period} months\n`
           : '') +
@@ -222,20 +259,28 @@ const TenantDetails = ({ navigation, route }) => {
         return;
       }
 
-      const kycId = kycResponse.data.id;
+      const kyc_id = kycResponse.data.items[0].kyc_id;
+
+      if (!verificationDocument) {
+        Alert.alert('Error', 'Please select a document to upload.');
+        return;
+      }
 
       // Create the document record
       const documentData = {
-        name: verificationDocument.name,
-        type: verificationDocument.type,
-        url: verificationDocument.uri,
-        tenant_id: tenant.tenant_id,
-        document_type: 'kyc_verification',
+        file_name:
+          verificationDocument.name ||
+          verificationDocument.uri.split('/').pop() ||
+          'kyc_document',
+        file_type: verificationDocument.type || 'application/pdf',
+        descriptor: 'KYC Verification Document',
+        is_signature_required: false,
+        doc_type: 'kyc_verification',
       };
 
       const createResponse = await createDocument(
         credentials.accessToken,
-        selectedProperty?.id,
+        tenant?.property_id,
         documentData,
       );
 
@@ -248,7 +293,9 @@ const TenantDetails = ({ navigation, route }) => {
         return;
       }
 
-      const documentUrl = createResponse.data?.url || verificationDocument.uri;
+      await uploadToS3(createResponse.data.upload_url, verificationDocument);
+
+      const documentUrl = createResponse.data?.document_id;
 
       // Update KYC with verification details
       const updateData = {
@@ -259,11 +306,12 @@ const TenantDetails = ({ navigation, route }) => {
 
       const updateResponse = await updateKYC(
         credentials.accessToken,
-        kycId,
+        kyc_id,
         updateData,
       );
 
       if (updateResponse.success) {
+        closeBackgroundVerificationModal();
       } else {
         Alert.alert(
           'Error',
@@ -483,40 +531,88 @@ const TenantDetails = ({ navigation, route }) => {
           <View style={styles.detailsGrid}>
             <DetailRow
               label="Room"
-              value={tenant.room?.name || 'smart'}
+              value={tenant.room?.name || 'Not assigned'}
               isDark={isDark}
             />
             <DetailRow
               label="Date of Joining"
-              value={tenant.check_in_date || '23 Mar 2025'}
+              value={
+                tenant.check_in_date
+                  ? new Date(tenant.check_in_date).toLocaleDateString()
+                  : 'N/A'
+              }
               isDark={isDark}
             />
             <DetailRow
               label="Move Out Date"
-              value={tenant.check_out_date || 'N/A'}
+              value={
+                tenant.check_out_date
+                  ? new Date(tenant.check_out_date).toLocaleDateString()
+                  : 'N/A'
+              }
               isDark={isDark}
             />
             <DetailRow
               label="Staying Since"
-              value={tenant.staying_duration || '5 months & 18 days'}
+              value={
+                tenant.check_in_date
+                  ? calculateStayingDuration(tenant.check_in_date)
+                  : 'N/A'
+              }
               isDark={isDark}
             />
             <DetailRow
               label="Rent Amount"
-              value={`₹${tenant.rent_amount || '6,000'}`}
+              value={`₹${parseFloat(tenant.rent_amount || 0).toLocaleString()}`}
               isDark={isDark}
             />
             <DetailRow
               label="Add Rent On"
-              value={tenant.rent_due_date || '1st of every month'}
+              value={
+                tenant.add_rent_on
+                  ? new Date(tenant.add_rent_on).toLocaleDateString()
+                  : 'N/A'
+              }
               isDark={isDark}
             />
             <DetailRow
-              label="Food"
-              value={tenant.food_included ? 'Included' : 'N/A'}
+              label="Agreement Period"
+              value={
+                tenant.agreement_period
+                  ? `${tenant.agreement_period} months`
+                  : 'N/A'
+              }
               isDark={isDark}
             />
-            <DetailRow label="Assigned Packages" value="View" isDark={isDark} />
+            <DetailRow
+              label="Lock-in Period"
+              value={
+                tenant.lock_in_period
+                  ? `${tenant.lock_in_period} months`
+                  : 'N/A'
+              }
+              isDark={isDark}
+            />
+            <DetailRow
+              label="Tenant Type"
+              value={tenant.tenant_type || 'N/A'}
+              isDark={isDark}
+            />
+            <DetailRow
+              label="Phone"
+              value={tenant.phone_number || 'N/A'}
+              isDark={isDark}
+            />
+            <DetailRow
+              label="Alternate Phone"
+              value={tenant.alternate_phone || 'N/A'}
+              isDark={isDark}
+            />
+            <DetailRow
+              label="Email"
+              value={tenant.email || 'N/A'}
+              isDark={isDark}
+            />
           </View>
         </Card>
 
@@ -549,7 +645,7 @@ const TenantDetails = ({ navigation, route }) => {
               <StandardText
                 style={[styles.financialAmount, { color: colors.error }]}
               >
-                ₹{tenant.total_dues || '38,742'}
+                ₹{parseFloat(tenant.due_amount || 0).toLocaleString()}
               </StandardText>
             </View>
 
@@ -568,7 +664,12 @@ const TenantDetails = ({ navigation, route }) => {
               <StandardText
                 style={[styles.financialAmount, { color: colors.success }]}
               >
-                ₹{tenant.total_collection || '0'}
+                ₹
+                {tenant.rentals && tenant.rentals.length > 0
+                  ? parseFloat(
+                      tenant.rentals[0].outstandingAmount || 0,
+                    ).toLocaleString()
+                  : '0'}
               </StandardText>
             </View>
 
@@ -587,8 +688,12 @@ const TenantDetails = ({ navigation, route }) => {
               <StandardText
                 style={[styles.financialAmount, { color: textPrimary }]}
               >
-                ₹{tenant.security_deposit || '0'} / ₹
-                {tenant.total_deposit || '0'}
+                ₹
+                {tenant.rentals && tenant.rentals.length > 0
+                  ? parseFloat(
+                      tenant.rentals[0].securityDeposit || 0,
+                    ).toLocaleString()
+                  : '0'}
               </StandardText>
             </View>
           </View>
@@ -650,14 +755,32 @@ const TenantDetails = ({ navigation, route }) => {
               <Chip
                 style={[
                   styles.verificationChip,
-                  { backgroundColor: colors.error + '20' },
+                  {
+                    backgroundColor:
+                      tenant.kycDocuments &&
+                      tenant.kycDocuments.length > 0 &&
+                      tenant.kycDocuments[0].status === 'verified'
+                        ? colors.success + '20'
+                        : colors.warning + '20',
+                  },
                 ]}
                 textStyle={[
                   styles.verificationChipText,
-                  { color: colors.error },
+                  {
+                    color:
+                      tenant.kycDocuments &&
+                      tenant.kycDocuments.length > 0 &&
+                      tenant.kycDocuments[0].status === 'verified'
+                        ? colors.success
+                        : colors.warning,
+                  },
                 ]}
               >
-                Not Verified
+                {tenant.kycDocuments &&
+                tenant.kycDocuments.length > 0 &&
+                tenant.kycDocuments[0].status === 'verified'
+                  ? 'Verified'
+                  : 'Pending'}
               </Chip>
             </View>
 
@@ -670,14 +793,32 @@ const TenantDetails = ({ navigation, route }) => {
               <Chip
                 style={[
                   styles.verificationChip,
-                  { backgroundColor: colors.warning + '20' },
+                  {
+                    backgroundColor:
+                      tenant.rentals &&
+                      tenant.rentals.length > 0 &&
+                      tenant.rentals[0].isActive
+                        ? colors.success + '20'
+                        : colors.warning + '20',
+                  },
                 ]}
                 textStyle={[
                   styles.verificationChipText,
-                  { color: colors.warning },
+                  {
+                    color:
+                      tenant.rentals &&
+                      tenant.rentals.length > 0 &&
+                      tenant.rentals[0].isActive
+                        ? colors.success
+                        : colors.warning,
+                  },
                 ]}
               >
-                Pending
+                {tenant.rentals &&
+                tenant.rentals.length > 0 &&
+                tenant.rentals[0].isActive
+                  ? 'Active'
+                  : 'Pending'}
               </Chip>
             </View>
 
@@ -711,7 +852,7 @@ const TenantDetails = ({ navigation, route }) => {
             ]}
             labelStyle={[styles.buttonLabel, { color: colors.primary }]}
             onPress={() =>
-              navigation.navigate('AddInvoice', { tenant: tenant })
+              navigation.navigate('AddInvoice', { tenant_id: tenant.tenant_id })
             }
           >
             Add Invoice
@@ -725,7 +866,9 @@ const TenantDetails = ({ navigation, route }) => {
             ]}
             labelStyle={[styles.buttonLabel, { color: colors.white }]}
             onPress={() =>
-              navigation.navigate('RecordPayment', { tenant: tenant })
+              navigation.navigate('RecordPayment', {
+                tenant_id: tenant.tenant_id,
+              })
             }
           >
             Record Payment

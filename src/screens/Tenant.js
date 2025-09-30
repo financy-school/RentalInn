@@ -305,7 +305,11 @@ const Tenants = ({ navigation }) => {
           {filteredTenants.map(tenant => (
             <StandardCard key={tenant.tenant_id} style={styles.card}>
               <TouchableOpacity
-                onPress={() => navigation.navigate('TenantDetails', { tenant })}
+                onPress={() =>
+                  navigation.navigate('TenantDetails', {
+                    tenant_id: tenant.tenant_id,
+                  })
+                }
               >
                 <View style={styles.row}>
                   {/* Avatar */}

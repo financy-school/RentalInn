@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -15,14 +15,18 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
-import { createInvoice, getTenantInvoiceData } from '../services/NetworkUtils';
+import {
+  createInvoice,
+  getTenantInvoiceData,
+  getTenant,
+} from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/color';
 
 const AddInvoice = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
   const { credentials } = useContext(CredentialsContext);
-  const { tenant } = route.params;
+  const { tenant_id } = route.params;
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -45,89 +49,108 @@ const AddInvoice = ({ navigation, route }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tenantInvoiceData, setTenantInvoiceData] = useState(null);
+  const [tenantDetails, setTenantDetails] = useState(null); // Store tenant details
+
+  // Fetch tenant details from API
+  const fetchTenantDetails = useCallback(async () => {
+    try {
+      if (!tenant_id) {
+        console.warn('No tenant ID available for fetching details');
+        return;
+      }
+
+      const response = await getTenant(credentials.accessToken, tenant_id);
+
+      if (response.success && response.data) {
+        setTenantDetails(response.data);
+        console.log('Tenant details fetched:', response.data);
+      } else {
+        console.warn('Failed to fetch tenant details:', response.error);
+      }
+    } catch (fetchError) {
+      console.error('Error fetching tenant details:', fetchError);
+    }
+  }, [credentials.accessToken, tenant_id]);
 
   // Debug: Log tenant data
   useEffect(() => {
-    console.log('Tenant data received:', JSON.stringify(tenant, null, 2));
+    fetchTenantDetails();
     fetchTenantInvoiceData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenant]);
+  }, [fetchTenantDetails, fetchTenantInvoiceData, tenant_id]);
 
   // Helper function to create fixed bill structure
-  const createFixedBills = () => [
-    {
-      invoice_id: 'rent',
-      category: 'Rent',
-      existingDues: 0,
-      existingDueDate: '',
-      addDueAmount: 0,
-      dueDate: new Date(),
-      dueDescription: '',
-      selected: false,
-    },
-    {
-      invoice_id: 'security',
-      category: 'Security Deposit',
-      existingDues: 0,
-      existingDueDate: '',
-      addDueAmount: 0,
-      dueDate: new Date(),
-      dueDescription: '',
-      selected: false,
-    },
-    {
-      invoice_id: 'joining',
-      category: 'Joining Fee',
-      existingDues: 0,
-      existingDueDate: '',
-      addDueAmount: 0,
-      dueDate: new Date(),
-      dueDescription: '',
-      selected: false,
-    },
-    {
-      invoice_id: 'electricity',
-      category: 'Electricity',
-      existingDues: 0,
-      existingDueDate: '',
-      addDueAmount: 0,
-      dueDate: new Date(),
-      dueDescription: '',
-      selected: false,
-    },
-    {
-      invoice_id: 'water',
-      category: 'Water',
-      existingDues: 0,
-      existingDueDate: '',
-      addDueAmount: 0,
-      dueDate: new Date(),
-      dueDescription: '',
-      selected: false,
-    },
-  ];
+  const createFixedBills = useCallback(
+    () => [
+      {
+        invoice_id: 'rent',
+        category: 'Rent',
+        existingDues: 0,
+        existingDueDate: '',
+        addDueAmount: 0,
+        dueDate: new Date(),
+        dueDescription: '',
+        selected: false,
+      },
+      {
+        invoice_id: 'security',
+        category: 'Security Deposit',
+        existingDues: 0,
+        existingDueDate: '',
+        addDueAmount: 0,
+        dueDate: new Date(),
+        dueDescription: '',
+        selected: false,
+      },
+      {
+        invoice_id: 'joining',
+        category: 'Joining Fee',
+        existingDues: 0,
+        existingDueDate: '',
+        addDueAmount: 0,
+        dueDate: new Date(),
+        dueDescription: '',
+        selected: false,
+      },
+      {
+        invoice_id: 'electricity',
+        category: 'Electricity',
+        existingDues: 0,
+        existingDueDate: '',
+        addDueAmount: 0,
+        dueDate: new Date(),
+        dueDescription: '',
+        selected: false,
+      },
+      {
+        invoice_id: 'water',
+        category: 'Water',
+        existingDues: 0,
+        existingDueDate: '',
+        addDueAmount: 0,
+        dueDate: new Date(),
+        dueDescription: '',
+        selected: false,
+      },
+    ],
+    [],
+  );
 
   // Fetch tenant invoice data from API
-  const fetchTenantInvoiceData = async () => {
+  const fetchTenantInvoiceData = useCallback(async () => {
     try {
       setInitialLoading(true);
       setError(null);
 
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!tenant_id) {
         setError('Tenant ID is missing. Unable to fetch invoice data.');
         setInitialLoading(false);
         return;
       }
 
-      console.log('Fetching invoice data for tenant ID:', tenantId);
-
       const response = await getTenantInvoiceData(
         credentials.accessToken,
-        tenantId,
+        tenant_id,
       );
-
-      console.log('Invoice data response:', JSON.stringify(response, null, 2));
 
       if (response.success && response.data) {
         const data = response.data;
@@ -136,16 +159,13 @@ const AddInvoice = ({ navigation, route }) => {
         // Create fixed bill categories
         const fixedBills = createFixedBills();
 
-        // Map API categories to fixed categories
+        // Map API categories to fixed categories (reverse mapping for sending to API)
         const categoryMapping = {
-          RENT: 'rent',
-          SECURITY_DEPOSIT: 'security',
-          SECURITY: 'security',
-          JOINING_FEE: 'joining',
-          JOINING: 'joining',
-          ELECTRICITY: 'electricity',
-          WATER: 'water',
-          MAINTENANCE: 'electricity', // Map maintenance to electricity if needed
+          rent: 'RENT',
+          security: 'SECURITY_DEPOSIT',
+          joining: 'JOINING_FEE',
+          electricity: 'ELECTRICITY',
+          water: 'WATER',
         };
 
         // Populate existing dues from pending items
@@ -222,10 +242,15 @@ const AddInvoice = ({ navigation, route }) => {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [
+    tenant_id,
+    credentials.accessToken,
+    createFixedBills,
+    formatExistingDueDate,
+  ]);
 
   // Helper function to format existing due dates
-  const formatExistingDueDate = date => {
+  const formatExistingDueDate = useCallback(date => {
     const months = [
       'Jan',
       'Feb',
@@ -241,23 +266,7 @@ const AddInvoice = ({ navigation, route }) => {
       'Dec',
     ];
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
-  };
-
-  // Helper function to safely extract tenant ID
-  const getTenantId = () => {
-    // Try different possible property names for tenant ID
-    return tenant?.tenant_id || tenant?.tenant_id || tenant?.tenantId;
-  };
-
-  // Helper function to safely extract rental/room ID
-  const getRentalId = () => {
-    return (
-      tenant?.rental_id ||
-      tenant?.rentalId ||
-      tenant?.room?.room_id ||
-      tenant?.room_id
-    );
-  };
+  }, []);
 
   // Invoice functions
   const toggleBillSelection = billId => {
@@ -329,8 +338,8 @@ const AddInvoice = ({ navigation, route }) => {
     }
 
     // Validate tenant data
-    const tenantId = getTenantId();
-    if (!tenantId) {
+
+    if (!tenant_id) {
       Alert.alert('Error', 'Tenant information is missing. Please try again.');
       return;
     }
@@ -338,27 +347,35 @@ const AddInvoice = ({ navigation, route }) => {
     try {
       setLoading(true);
 
-      // Ensure tenantId is a valid number
-      const parsedTenantId = tenantId;
-      const rentalId = getRentalId();
-      const parsedRentalId = rentalId ? parseInt(rentalId, 10) : null;
+      const rentalId = tenantDetails.rentals[0].rental_id;
 
-      // Prepare invoice data according to API format - only send new amounts
+      // Helper function to map frontend categories to backend enum values
+      const mapCategoryToEnum = category => {
+        const categoryMap = {
+          Rent: 'RENT',
+          'Security Deposit': 'SECURITY_DEPOSIT',
+          'Joining Fee': 'JOINING_FEE',
+          Electricity: 'ELECTRICITY',
+          Water: 'WATER',
+        };
+        return categoryMap[category] || 'OTHER';
+      };
+
       const invoicePayload = {
-        tenant_id: parsedTenantId,
-        rental_id: parsedRentalId,
-        dueDate:
-          tenantInvoiceData?.invoiceGeneration?.suggestedDueDate ||
-          new Date().toISOString(),
-        description: `Invoice for ${tenant?.name || 'tenant'}`,
+        tenant_id: tenant_id,
+        rental_id: rentalId,
+        dueDate: tenantInvoiceData?.invoiceGeneration?.suggestedDueDate
+          ? new Date(tenantInvoiceData.invoiceGeneration.suggestedDueDate)
+          : new Date(),
+        description: `Invoice for ${tenantDetails?.name}`,
         isRecurring: false,
         recurringFrequency: null,
         items: selectedBills.map(bill => ({
-          category: bill.category.toUpperCase().replace(/\s+/g, '_'), // Convert spaces to underscores
+          category: mapCategoryToEnum(bill.category),
           description: bill.dueDescription || `${bill.category} charges`,
           amount: parseFloat(bill.addDueAmount) || 0,
-          existingDues: 0, // Don't include existing dues in new invoice
-          dueDate: bill.dueDate.toISOString(),
+          existingDues: bill.existingDues || 0,
+          dueDate: bill.dueDate,
           quantity: 1,
           metadata: bill.metadata || {},
         })),
@@ -445,13 +462,13 @@ const AddInvoice = ({ navigation, route }) => {
                 style={[styles.tenantName, { color: textPrimary }]}
                 fontWeight="bold"
               >
-                {tenant?.name || 'Unknown Tenant'}
+                {tenantDetails?.name}
               </StandardText>
               <StandardText
                 style={[styles.tenantRoom, { color: textSecondary }]}
               >
-                Room: {tenant?.room?.name || 'N/A'} -{' '}
-                {tenant?.room?.room_id || 'N/A'}
+                Room: {tenantDetails?.room?.name}
+                {tenantDetails?.room?.room_id}
               </StandardText>
             </View>
           </View>
