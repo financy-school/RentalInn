@@ -56,7 +56,7 @@ const AddInvoice = ({ navigation, route }) => {
   // Helper function to create fixed bill structure
   const createFixedBills = () => [
     {
-      id: 'rent',
+      invoice_id: 'rent',
       category: 'Rent',
       existingDues: 0,
       existingDueDate: '',
@@ -66,7 +66,7 @@ const AddInvoice = ({ navigation, route }) => {
       selected: false,
     },
     {
-      id: 'security',
+      invoice_id: 'security',
       category: 'Security Deposit',
       existingDues: 0,
       existingDueDate: '',
@@ -76,7 +76,7 @@ const AddInvoice = ({ navigation, route }) => {
       selected: false,
     },
     {
-      id: 'joining',
+      invoice_id: 'joining',
       category: 'Joining Fee',
       existingDues: 0,
       existingDueDate: '',
@@ -86,7 +86,7 @@ const AddInvoice = ({ navigation, route }) => {
       selected: false,
     },
     {
-      id: 'electricity',
+      invoice_id: 'electricity',
       category: 'Electricity',
       existingDues: 0,
       existingDueDate: '',
@@ -96,7 +96,7 @@ const AddInvoice = ({ navigation, route }) => {
       selected: false,
     },
     {
-      id: 'water',
+      invoice_id: 'water',
       category: 'Water',
       existingDues: 0,
       existingDueDate: '',
@@ -127,6 +127,8 @@ const AddInvoice = ({ navigation, route }) => {
         tenantId,
       );
 
+      console.log('Invoice data response:', JSON.stringify(response, null, 2));
+
       if (response.success && response.data) {
         const data = response.data;
         setTenantInvoiceData(data);
@@ -155,7 +157,7 @@ const AddInvoice = ({ navigation, route }) => {
             if (mappedId) {
               const bill = fixedBills.find(b => b.invoice_id === mappedId);
               if (bill) {
-                bill.existingDues = item.pendingAmount || 0;
+                bill.existingDues = parseFloat(item.pendingAmount) || 0;
                 bill.existingDueDate = item.dueDate
                   ? formatExistingDueDate(new Date(item.dueDate))
                   : '';
@@ -174,7 +176,7 @@ const AddInvoice = ({ navigation, route }) => {
             if (mappedId) {
               const bill = fixedBills.find(b => b.invoice_id === mappedId);
               if (bill) {
-                bill.addDueAmount = item.amount || 0;
+                bill.addDueAmount = parseFloat(item.amount) || 0;
                 bill.dueDate = item.dueDate
                   ? new Date(item.dueDate)
                   : new Date();
@@ -262,7 +264,7 @@ const AddInvoice = ({ navigation, route }) => {
     setInvoiceData(prev => ({
       ...prev,
       bills: prev.bills.map(bill =>
-        bill.tenant_id === billId
+        bill.invoice_id === billId
           ? { ...bill, selected: !bill.selected }
           : bill,
       ),
@@ -343,8 +345,8 @@ const AddInvoice = ({ navigation, route }) => {
 
       // Prepare invoice data according to API format - only send new amounts
       const invoicePayload = {
-        tenantId: parsedTenantId,
-        rentalId: parsedRentalId,
+        tenant_id: parsedTenantId,
+        rental_id: parsedRentalId,
         dueDate:
           tenantInvoiceData?.invoiceGeneration?.suggestedDueDate ||
           new Date().toISOString(),
@@ -448,7 +450,8 @@ const AddInvoice = ({ navigation, route }) => {
               <StandardText
                 style={[styles.tenantRoom, { color: textSecondary }]}
               >
-                Room: {tenant?.room_number || 'N/A'}
+                Room: {tenant?.room?.name || 'N/A'} -{' '}
+                {tenant?.room?.room_id || 'N/A'}
               </StandardText>
             </View>
           </View>
@@ -673,11 +676,8 @@ const AddInvoice = ({ navigation, route }) => {
                         ]}
                         numberOfLines={1}
                       >
-                        {bill.dueDate.getDate().toString().padStart(2, '0')}-
-                        {(bill.dueDate.getMonth() + 1)
-                          .toString()
-                          .padStart(2, '0')}
-                        -{bill.dueDate.getFullYear().toString().slice(-2)}
+                        {bill.dueDate.getDate()}-{bill.dueDate.getMonth() + 1}-
+                        {bill.dueDate.getFullYear().toString().slice(-2)}
                       </StandardText>
                       {bill.selected && (
                         <MaterialCommunityIcons
@@ -708,7 +708,7 @@ const AddInvoice = ({ navigation, route }) => {
             loading={loading}
             disabled={loading}
           >
-            Add ₹{calculateTotalDueAmount().toLocaleString()} Dues now
+            Add ₹{calculateTotalDueAmount()} Dues now
           </Button>
 
           <Gap size="xxl" />
