@@ -122,41 +122,43 @@ const Login = ({ navigation }) => {
 
       // Call authentication API
       const response = await AuthHelpers.login(email, password);
-      console.log('Login response:', response);
 
-      if (!response.success) {
+      if (!response.success || (response.data && !response.data.success)) {
         // Handle specific error cases
-        const errorMsg = response.message;
+        const errorMsg = response.data?.error || response.message;
 
         // Check for common error patterns and provide user-friendly messages
         if (
-          errorMsg.includes('Invalid email or password') ||
-          errorMsg.includes('credentials') ||
-          errorMsg.includes('authentication')
+          errorMsg &&
+          (errorMsg.includes('Invalid email or password') ||
+            errorMsg.includes('credentials') ||
+            errorMsg.includes('authentication'))
         ) {
           setErrorMessage(
             'Invalid email or password. Please check your credentials and try again.',
           );
         } else if (
-          errorMsg.includes('network') ||
-          errorMsg.includes('connection') ||
-          errorMsg.includes('timeout')
+          errorMsg &&
+          (errorMsg.includes('network') ||
+            errorMsg.includes('connection') ||
+            errorMsg.includes('timeout'))
         ) {
           setErrorMessage(
             'Network error. Please check your internet connection and try again.',
           );
         } else if (
+          errorMsg &&
           errorMsg.includes('account') &&
           errorMsg.includes('locked')
         ) {
           setErrorMessage(
             'Your account has been temporarily locked. Please contact support.',
           );
-        } else if (errorMsg.includes('too many')) {
+        } else if (errorMsg && errorMsg.includes('too many')) {
           setErrorMessage('Too many login attempts. Please try again later.');
         } else if (
-          errorMsg.includes('server') ||
-          errorMsg.includes('maintenance')
+          errorMsg &&
+          (errorMsg.includes('server') || errorMsg.includes('maintenance'))
         ) {
           setErrorMessage(
             'Server is temporarily unavailable. Please try again later.',
@@ -164,7 +166,7 @@ const Login = ({ navigation }) => {
         } else {
           // Use the API error message if it's user-friendly, otherwise use a generic message
           setErrorMessage(
-            errorMsg.length < 100
+            errorMsg && errorMsg.length < 100
               ? errorMsg
               : 'Login failed. Please try again.',
           );

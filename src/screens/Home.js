@@ -281,7 +281,7 @@ const Home = ({ navigation }) => {
   const tenants =
     tenantData.top_tenants?.map((tenant, index) => ({
       id: tenant.tenant_id || `t${index + 1}`,
-      name: tenant.name || tenant.tenant_name,
+      name: tenant.name,
       room: tenant.room_number,
       status: tenant.payment_status === 'on_time' ? 'On-time' : 'Overdue',
     })) || [];
@@ -1383,7 +1383,7 @@ const Home = ({ navigation }) => {
           <StandardText size="md" fontWeight="600" style={styles.sectionTitle}>
             Recent Submissions
           </StandardText>
-
+          {console.log(tenantData.recent_kyc_submissions)}
           <View style={styles.kycList}>
             {(tenantData.recent_kyc_submissions || [])
               .slice(0, 3)
@@ -1439,7 +1439,8 @@ const Home = ({ navigation }) => {
                         {kyc.tenant_name}
                       </StandardText>
                       <StandardText size="sm" style={styles.kycSubtext}>
-                        Submitted: {kyc.submission_date}
+                        Submitted:{' '}
+                        {new Date(kyc.submitted_date).toLocaleDateString()}
                       </StandardText>
                     </View>
                   </View>

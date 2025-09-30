@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInput as PaperInput, useTheme } from 'react-native-paper';
 import { ThemeContext } from '../context/ThemeContext';
@@ -10,7 +10,12 @@ import GradientCard from '../components/GradientCard/GradientCard';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
-import { addTenant, updateTenant } from '../services/NetworkUtils';
+import SearchableDropdown from '../components/SearchableDropdown/SearchableDropdown';
+import {
+  addTenant,
+  updateTenant,
+  propertyRooms,
+} from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -30,6 +35,7 @@ const AddTenant = ({ navigation, route }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const [rooms, setRooms] = useState([]);
 
   const [datePicker, setDatePicker] = useState({
     field: '',
@@ -95,6 +101,37 @@ const AddTenant = ({ navigation, route }) => {
       });
     }
   }, [isEdit, editTenant]);
+
+  const fetchRooms = useCallback(async () => {
+    try {
+      const response = await propertyRooms(
+        credentials.accessToken,
+        selectedProperty.property_id,
+      );
+      if (response.success) {
+        setRooms(response.data.items || []);
+      } else {
+        setErrorMsg('Failed to fetch rooms');
+      }
+    } catch (error) {
+      setErrorMsg('Failed to fetch rooms');
+    }
+  }, [credentials.accessToken, selectedProperty.property_id]);
+
+  const getRoomItems = () => {
+    return rooms.map(room => ({
+      label: `${room.name} - ${room.room_id}`,
+      value: room.room_id,
+    }));
+  };
+
+  useEffect(() => {
+    if (selectedProperty && selectedProperty.property_id !== 'all') {
+      fetchRooms();
+    } else {
+      setRooms([]);
+    }
+  }, [selectedProperty, fetchRooms]);
 
   // Validation function
   const validateForm = () => {
@@ -394,13 +431,13 @@ const AddTenant = ({ navigation, route }) => {
               🏠 Room & Agreement Details
             </StandardText>
 
-            <StyledTextInput
-              label="Room ID *"
-              value={tenant.room_id}
-              onChangeText={text => handleChange('room_id', text)}
-              placeholder="Room ID or number"
-              left={<PaperInput.Icon icon="door" />}
-              error={formErrors.room_id}
+            <SearchableDropdown
+              items={getRoomItems()}
+              selectedValue={tenant.room_id}
+              onValueChange={value => handleChange('room_id', value)}
+              placeholder="Select a room"
+              searchPlaceholder="Search rooms..."
+              leftIcon="door"
             />
 
             <View style={styles.formRow}>

@@ -155,45 +155,54 @@ const SignUp = ({ navigation }) => {
       // Call signup API
       const response = await AuthHelpers.signup(userData);
 
-      if (!response.success) {
+      if (!response.success || (response.data && !response.data.success)) {
         // Handle specific error cases
-        const errorMsg = response.message;
+        const errorMsg = response.data?.error || response.message;
 
         // Check for common error patterns and provide user-friendly messages
-        if (errorMsg.includes('email') && errorMsg.includes('already')) {
+        if (
+          errorMsg &&
+          errorMsg.includes('Email') &&
+          errorMsg.includes('already')
+        ) {
           setErrorMessage(
             'An account with this email already exists. Please use a different email or try logging in.',
           );
         } else if (
-          errorMsg.includes('validation') ||
-          errorMsg.includes('required')
+          errorMsg &&
+          (errorMsg.includes('validation') || errorMsg.includes('required'))
         ) {
           setErrorMessage('Please fill in all required fields correctly.');
-        } else if (errorMsg.includes('password') && errorMsg.includes('weak')) {
+        } else if (
+          errorMsg &&
+          errorMsg.includes('password') &&
+          errorMsg.includes('weak')
+        ) {
           setErrorMessage(
             'Password must contain at least 8 characters with letters, numbers, and special characters.',
           );
         } else if (
-          errorMsg.includes('network') ||
-          errorMsg.includes('connection') ||
-          errorMsg.includes('timeout')
+          errorMsg &&
+          (errorMsg.includes('network') ||
+            errorMsg.includes('connection') ||
+            errorMsg.includes('timeout'))
         ) {
           setErrorMessage(
             'Network error. Please check your internet connection and try again.',
           );
         } else if (
-          errorMsg.includes('server') ||
-          errorMsg.includes('maintenance')
+          errorMsg &&
+          (errorMsg.includes('server') || errorMsg.includes('maintenance'))
         ) {
           setErrorMessage(
             'Server is temporarily unavailable. Please try again later.',
           );
-        } else if (errorMsg.includes('too many')) {
+        } else if (errorMsg && errorMsg.includes('too many')) {
           setErrorMessage('Too many signup attempts. Please try again later.');
         } else {
           // Use the API error message if it's user-friendly, otherwise use a generic message
           setErrorMessage(
-            errorMsg.length < 100
+            errorMsg && errorMsg.length < 100
               ? errorMsg
               : 'Account creation failed. Please try again.',
           );
@@ -211,9 +220,10 @@ const SignUp = ({ navigation }) => {
 
       // Store credentials
       const credentials = {
-        ...response.data,
-        ...userData,
+        ...response.data.data.user,
         password: undefined, // Don't store password
+        token: response.data.data.accessToken, // Make sure token is included
+        accessToken: response.data.data.accessToken, // Include both token formats
       };
 
       await setCredentials(credentials);
@@ -289,6 +299,7 @@ const SignUp = ({ navigation }) => {
           style={styles.formContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
         >
           <Card style={[styles.card, { backgroundColor: cardBackground }]}>
             {/* First Name */}
@@ -699,6 +710,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingBottom: 20,
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
   },
   card: {
     padding: 20,

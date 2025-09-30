@@ -29,7 +29,7 @@ const onboardingData = [
     description:
       'Manage your rental properties, tenants, and payments all in one place. Simplify your property management experience.',
     icon: 'home-city',
-    backgroundColor: ['#667eea', '#764ba2'],
+    backgroundColor: ['#001C68', '#003399'],
     iconColor: '#ffffff',
   },
   {
@@ -39,7 +39,7 @@ const onboardingData = [
     description:
       'Add tenant details, track their payments, manage lease agreements, and maintain all important documents securely.',
     icon: 'account-group',
-    backgroundColor: ['#f093fb', '#f5576c'],
+    backgroundColor: ['#EE7B11', '#FFA500'],
     iconColor: '#ffffff',
   },
   {
@@ -49,7 +49,7 @@ const onboardingData = [
     description:
       'Record payments, send reminders, track due dates, and maintain complete payment history for all your tenants.',
     icon: 'cash-multiple',
-    backgroundColor: ['#4facfe', '#00f2fe'],
+    backgroundColor: ['#001C68', '#EE7B11'],
     iconColor: '#ffffff',
   },
   {
@@ -59,7 +59,7 @@ const onboardingData = [
     description:
       'Get detailed analytics about your properties, rental income, occupancy rates, and financial performance.',
     icon: 'chart-line',
-    backgroundColor: ['#43e97b', '#38f9d7'],
+    backgroundColor: ['#EE7B11', '#001C68'],
     iconColor: '#ffffff',
   },
   {
@@ -69,7 +69,7 @@ const onboardingData = [
     description:
       'Start managing your rental properties like a pro. Create your account and begin your property management journey.',
     icon: 'rocket-launch',
-    backgroundColor: ['#fa709a', '#fee140'],
+    backgroundColor: ['#003399', '#0047AB'],
     iconColor: '#ffffff',
   },
 ];

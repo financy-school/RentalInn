@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -16,11 +16,13 @@ import {
   createDocument,
   createTicket,
   uploadToS3,
+  propertyRooms,
 } from '../services/NetworkUtils';
 import StandardText from '../components/StandardText/StandardText';
 import GradientCard from '../components/GradientCard/GradientCard';
 import StyledButton from '../components/StyledButton/StyledButton';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
+import SearchableDropdown from '../components/SearchableDropdown/SearchableDropdown';
 import Gap from '../components/Gap/Gap';
 import * as ImagePicker from 'react-native-image-picker';
 import { ThemeContext } from '../context/ThemeContext';
@@ -42,12 +44,44 @@ const AddTicket = ({ navigation }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [roomImages, setRoomImages] = useState([]);
+  const [rooms, setRooms] = useState([]);
 
   const handleChange = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
     // Clear errors when user starts typing
     if (error) setError('');
   };
+
+  const fetchRooms = useCallback(async () => {
+    try {
+      const response = await propertyRooms(
+        credentials.accessToken,
+        selectedProperty.property_id,
+      );
+      if (response.success) {
+        setRooms(response.data.items || []);
+      } else {
+        setError('Failed to fetch rooms');
+      }
+    } catch (err) {
+      setError('Failed to fetch rooms');
+    }
+  }, [credentials.accessToken, selectedProperty.property_id]);
+
+  const getRoomItems = () => {
+    return rooms.map(room => ({
+      label: `${room.name} - ${room.room_id}`,
+      value: room.room_id,
+    }));
+  };
+
+  useEffect(() => {
+    if (selectedProperty && selectedProperty.property_id !== 'all') {
+      fetchRooms();
+    } else {
+      setRooms([]);
+    }
+  }, [selectedProperty, fetchRooms]);
 
   const validateForm = () => {
     if (!form.issue.trim()) {
@@ -325,13 +359,13 @@ const AddTicket = ({ navigation }) => {
               left={<PaperInput.Icon icon="account" />}
             />
 
-            <StyledTextInput
-              label="Room ID"
-              value={form.room_id}
-              onChangeText={text => handleChange('room_id', text)}
-              placeholder="e.g., 101, A-1, etc."
-              keyboardType="numeric"
-              left={<PaperInput.Icon icon="door" />}
+            <SearchableDropdown
+              items={getRoomItems()}
+              selectedValue={form.room_id}
+              onValueChange={value => handleChange('room_id', value)}
+              placeholder="Select a room"
+              searchPlaceholder="Search rooms..."
+              leftIcon="door"
             />
           </View>
 
