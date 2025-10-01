@@ -228,8 +228,28 @@ const Home = ({ navigation }) => {
   const occupancyPct = occupancyData.occupancy_percentage || 0;
 
   // Revenue trends data
+  const getMonthIndex = monthName => {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months.indexOf(monthName);
+  };
+
   const months = revenueData.monthly_data?.map(item => {
-    const date = new Date(item.year, item.month - 1);
+    const monthIndex = getMonthIndex(item.month);
+    if (monthIndex === -1) return item.month;
+    const date = new Date(item.year, monthIndex);
     return date.toLocaleDateString('en-US', { month: 'short' });
   }) || ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
 
@@ -263,12 +283,13 @@ const Home = ({ navigation }) => {
   ];
 
   // Recent maintenance requests from API
+
   const maintenanceRequests =
     issuesData.recent_issues?.map(issue => ({
       id: issue.issue_id,
       title: issue.title,
       status:
-        issue.status === 'open'
+        issue.status === 'pending'
           ? 'Open'
           : issue.status === 'in_progress'
           ? 'In-progress'
@@ -602,14 +623,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                ₹
-                {Math.round(revenueData.avg_revenue / 1000) ||
-                  Math.round(
-                    revenueByMonth.reduce((a, b) => a + b, 0) /
-                      revenueByMonth.length,
-                  ) ||
-                  0}
-                k
+                ₹{revenueData.avg_revenue || 0}
               </StandardText>
             </View>
 
@@ -632,14 +646,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                ₹
-                {Math.round(revenueData.avg_loss / 1000) ||
-                  Math.round(
-                    vacancyLossByMonth.reduce((a, b) => a + b, 0) /
-                      vacancyLossByMonth.length,
-                  ) ||
-                  0}
-                k
+                ₹{revenueData.avg_loss || 0}
               </StandardText>
             </View>
           </View>
