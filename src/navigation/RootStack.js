@@ -28,6 +28,9 @@ import AppTutorial from '../screens/AppTutorial';
 import Settings from '../screens/Settings';
 import EditProfile from '../screens/EditProfile';
 import Payments from '../screens/Payments';
+import RevenueOverview from '../screens/RevenueOverview';
+import ExpenseTracking from '../screens/ExpenseTracking';
+import PaymentHistory from '../screens/PaymentHistory';
 
 // Context
 import { CredentialsContext } from '../context/CredentialsContext';
@@ -413,6 +416,51 @@ const RootStack = () => {
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Payments',
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="RevenueOverview"
+          component={RevenueOverview}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Revenue Overview',
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="ExpenseTracking"
+          component={ExpenseTracking}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Expense Tracking',
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="PaymentHistory"
+          component={PaymentHistory}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Payment History',
             headerShown: false,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',
