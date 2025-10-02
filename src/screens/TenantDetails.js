@@ -328,66 +328,66 @@ const TenantDetails = ({ navigation, route }) => {
     }
   };
 
-  // Mock ledger data
+  // Ledger data from real tenant data
   const getLedgerData = type => {
-    const baseData = [
-      {
-        id: 1,
-        date: '2025-01-15',
-        description: 'Monthly Rent',
-        amount: 6000,
-        type: 'debit',
-        status: 'paid',
-      },
-      {
-        id: 2,
-        date: '2025-01-10',
-        description: 'Security Deposit',
-        amount: 12000,
-        type: 'credit',
-        status: 'received',
-      },
-      {
-        id: 3,
-        date: '2024-12-15',
-        description: 'Monthly Rent',
-        amount: 6000,
-        type: 'debit',
-        status: 'paid',
-      },
-      {
-        id: 4,
-        date: '2024-12-05',
-        description: 'Late Fee',
-        amount: 500,
-        type: 'debit',
-        status: 'pending',
-      },
-      {
-        id: 5,
-        date: '2024-11-15',
-        description: 'Monthly Rent',
-        amount: 6000,
-        type: 'debit',
-        status: 'paid',
-      },
-    ];
-
     switch (type) {
       case 'dues':
-        return baseData.filter(
-          item => item.type === 'debit' && item.status === 'pending',
-        );
+        return tenant.invoices
+          ? tenant.invoices
+              .filter(inv => parseFloat(inv.outstanding_amount) > 0)
+              .map((inv, index) => ({
+                id: inv.invoice_id,
+                date: new Date(inv.issue_date).toLocaleDateString(),
+                description: inv.description || 'Invoice',
+                amount: parseFloat(inv.outstanding_amount),
+                type: 'debit',
+                status: inv.status === 'PAID' ? 'paid' : 'pending',
+              }))
+          : [];
       case 'collection':
-        return baseData.filter(
-          item => item.status === 'paid' || item.status === 'received',
-        );
+        // Use payments if available, else use paid amounts from invoices
+        if (tenant.payments && tenant.payments.length > 0) {
+          return tenant.payments.map((payment, index) => ({
+            id: payment.payment_id,
+            date: new Date(payment.paymentDate).toLocaleDateString(),
+            description: payment.notes || 'Payment',
+            amount: parseFloat(payment.amount),
+            type: 'credit',
+            status: 'received',
+          }));
+        } else {
+          return tenant.invoices
+            ? tenant.invoices
+                .filter(inv => parseFloat(inv.paid_amount) > 0)
+                .map((inv, index) => ({
+                  id: inv.invoice_id,
+                  date: new Date(inv.issue_date).toLocaleDateString(),
+                  description: inv.description || 'Invoice Payment',
+                  amount: parseFloat(inv.paid_amount),
+                  type: 'credit',
+                  status: 'received',
+                }))
+            : [];
+        }
       case 'deposit':
-        return baseData.filter(item =>
-          item.description.toLowerCase().includes('deposit'),
-        );
+        return tenant.rentals && tenant.rentals.length > 0
+          ? [
+              {
+                id: tenant.rentals[0].rental_id,
+                date: new Date(
+                  tenant.rentals[0].startDate,
+                ).toLocaleDateString(),
+                description: 'Security Deposit',
+                amount: parseFloat(tenant.rentals[0].securityDeposit || 0),
+                type: 'credit',
+                status: tenant.rentals[0].isSecurityDepositPaid
+                  ? 'received'
+                  : 'pending',
+              },
+            ]
+          : [];
       default:
-        return baseData;
+        return [];
     }
   };
 
@@ -655,7 +655,16 @@ const TenantDetails = ({ navigation, route }) => {
               <StandardText
                 style={[styles.financialAmount, { color: colors.error }]}
               >
-                ₹{parseFloat(tenant.due_amount || 0).toLocaleString()}
+                ₹
+                {tenant.invoices
+                  ? tenant.invoices
+                      .reduce(
+                        (sum, inv) =>
+                          sum + parseFloat(inv.outstanding_amount || 0),
+                        0,
+                      )
+                      .toLocaleString()
+                  : '0'}
               </StandardText>
             </View>
 
@@ -675,12 +684,13 @@ const TenantDetails = ({ navigation, route }) => {
                 style={[styles.financialAmount, { color: colors.success }]}
               >
                 ₹
-                {tenant.rentals && tenant.rentals.length > 0
-                  ? parseFloat(
-                      tenant.rentals[0].outstandingAmount || 0,
-                    ).toLocaleString()
-                  : tenant.due_amount
-                  ? parseFloat(tenant.due_amount).toLocaleString()
+                {tenant.invoices
+                  ? tenant.invoices
+                      .reduce(
+                        (sum, inv) => sum + parseFloat(inv.paid_amount || 0),
+                        0,
+                      )
+                      .toLocaleString()
                   : '0'}
               </StandardText>
             </View>
@@ -1028,7 +1038,7 @@ const TenantDetails = ({ navigation, route }) => {
 
             <FlatList
               data={getLedgerData(ledgerType)}
-              keyExtractor={item => item.tenant_id}
+              keyExtractor={item => item.id}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <View

@@ -27,6 +27,7 @@ import ContactSupport from '../screens/ContactSupport';
 import AppTutorial from '../screens/AppTutorial';
 import Settings from '../screens/Settings';
 import EditProfile from '../screens/EditProfile';
+import Payments from '../screens/Payments';
 
 // Context
 import { CredentialsContext } from '../context/CredentialsContext';
@@ -397,6 +398,21 @@ const RootStack = () => {
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Edit Profile',
+            headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name={SCREEN_NAMES.PAYMENTS}
+          component={Payments}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Payments',
             headerShown: false,
             headerTitleStyle: {
               fontFamily: 'Metropolis-Medium',

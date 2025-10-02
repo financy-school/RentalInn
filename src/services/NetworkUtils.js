@@ -826,6 +826,30 @@ export const notifyPasswordChanged = async accessToken => {
 };
 
 /**
+ * Payments API calls
+ */
+export const getPayments = async (accessToken, params = {}) => {
+  const { property_id, page = 1, limit = 50 } = params;
+  const queryParams = {
+    page,
+    limit,
+  };
+
+  if (property_id && property_id !== 'all') {
+    queryParams.property_id = property_id;
+  }
+
+  return handleApiResponse(
+    () =>
+      apiClient.get('/rentals/payments', {
+        headers: getAuthHeaders(accessToken),
+        params: queryParams,
+      }),
+    'GET_PAYMENTS',
+  );
+};
+
+/**
  * KYC Management API calls
  */
 export const fetchKYCData = async (accessToken, property_id) => {
