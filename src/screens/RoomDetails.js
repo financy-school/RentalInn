@@ -493,7 +493,8 @@ const RoomDetails = ({ navigation, route }) => {
                         <StandardText
                           style={[styles.tenantName, { color: textPrimary }]}
                         >
-                          {rental.tenantName || 'Tenant'}
+                          {tenants.find(t => t.tenant_id === rental.tenant_id)
+                            ?.name || 'Tenant'}
                         </StandardText>
                       </View>
                     ))}
@@ -658,7 +659,9 @@ const RoomDetails = ({ navigation, route }) => {
                 >
                   <TouchableOpacity
                     onPress={() =>
-                      navigation.navigate('TenantDetails', { tenant })
+                      navigation.navigate('TenantDetails', {
+                        tenant_id: tenant.tenant_id,
+                      })
                     }
                   >
                     <View style={styles.tenantCardContent}>
