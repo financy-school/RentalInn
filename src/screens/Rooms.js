@@ -330,7 +330,12 @@ const Rooms = ({ navigation }) => {
             filteredRooms.map(room => (
               <StandardCard key={room.room_id} style={styles.card}>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('RoomDetails', { room })}
+                  onPress={() =>
+                    navigation.navigate('RoomDetails', {
+                      room_id: room.room_id,
+                      property_id: room.property_id,
+                    })
+                  }
                 >
                   {/* Image */}
                   {room.imageUrl ? (

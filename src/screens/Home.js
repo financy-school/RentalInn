@@ -310,10 +310,11 @@ const Home = ({ navigation }) => {
   // Room occupancy grid from API
   const occupancyGrid =
     roomData.rooms?.map(room => ({
-      room_id: room.room_number.toString(),
-      room: room.room_number.toString(),
+      room_id: room.room_number,
+      room: room.room_number,
       status: room.status,
       has_issues: room.has_issues,
+      property_id: room.property_id,
     })) || [];
 
   // Colors for occupancy grid
@@ -1562,7 +1563,10 @@ const Home = ({ navigation }) => {
                   { backgroundColor: getRoomColor(room.status) },
                 ]}
                 onPress={() => {
-                  navigation.navigate('RoomDetails', { room_id: room.room_id });
+                  navigation.navigate('RoomDetails', {
+                    room_id: room.room_id,
+                    property_id: room.property_id,
+                  });
                 }}
                 activeOpacity={0.8}
               >
