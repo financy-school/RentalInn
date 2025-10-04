@@ -5,16 +5,17 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
-  FlatList,
   StyleSheet,
-  Platform,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Components
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
+import StandardCard from '../components/StandardCard/StandardCard';
+import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 
 // Context
 import { ThemeContext } from '../context/ThemeContext';
@@ -22,648 +23,13 @@ import { ThemeContext } from '../context/ThemeContext';
 // Theme
 import colors from '../theme/color';
 
-// Payment Notice Card Component
-const PaymentNoticeCard = ({ notice, onPress, mode }) => {
-  const getPriorityColor = priority => {
-    switch (priority) {
-      case 'high':
-        return '#ff4444';
-      case 'medium':
-        return '#ff9500';
-      case 'low':
-        return '#00c851';
-      default:
-        return '#9e9e9e';
-    }
-  };
-
-  const unreadStyle = !notice.isRead
-    ? {
-        borderWidth: 2,
-        borderColor: colors.primary,
-        shadowColor: colors.primary,
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 8,
-      }
-    : {};
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={styles.cardContainer}
-    >
-      <View
-        style={[
-          styles.paymentCard,
-          {
-            backgroundColor: colors.background,
-            borderColor:
-              mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.1)'
-                : 'rgba(0, 0, 0, 0.08)',
-            borderLeftColor: getPriorityColor(notice.priority),
-          },
-          unreadStyle,
-        ]}
-      >
-        {/* Header Row */}
-        <View style={styles.cardHeader}>
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: getPriorityColor(notice.priority) },
-            ]}
-          >
-            <Icon name="cash-outline" size={20} color="white" />
-          </View>
-          <View style={styles.headerContent}>
-            <View style={styles.titleRow}>
-              <StandardText
-                fontWeight="bold"
-                size="medium"
-                style={[styles.title, { color: colors.textPrimary }]}
-              >
-                {notice.title}
-              </StandardText>
-              {!notice.isRead && <View style={styles.unreadDot} />}
-            </View>
-            <StandardText
-              style={[styles.description, { color: colors.textSecondary }]}
-            >
-              {notice.description}
-            </StandardText>
-          </View>
-        </View>
-
-        {/* Amount Section */}
-        <View style={styles.amountSection}>
-          <View style={styles.amountContainer}>
-            <Icon name="wallet-outline" size={16} color={colors.success} />
-            <StandardText
-              fontWeight="bold"
-              style={[styles.amount, { color: colors.success }]}
-            >
-              {notice.amount}
-            </StandardText>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <View
-          style={[
-            styles.cardFooter,
-            {
-              borderTopColor:
-                mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(0, 0, 0, 0.05)',
-            },
-          ]}
-        >
-          <View style={styles.tenantInfo}>
-            <Icon
-              name="person-outline"
-              size={12}
-              color={colors.textSecondary}
-            />
-            <StandardText
-              size="small"
-              style={[styles.tenantText, { color: colors.textSecondary }]}
-            >
-              {notice.tenantName}
-            </StandardText>
-            <Icon
-              name="location-outline"
-              size={12}
-              color={colors.textSecondary}
-              style={styles.roomIcon}
-            />
-            <StandardText
-              size="small"
-              style={[styles.roomText, { color: colors.textSecondary }]}
-            >
-              Room {notice.roomNumber}
-            </StandardText>
-          </View>
-          <StandardText
-            size="small"
-            style={[styles.dateText, { color: colors.textSecondary }]}
-          >
-            {notice.date}
-          </StandardText>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// Maintenance Notice Card Component
-const MaintenanceNoticeCard = ({ notice, onPress, mode }) => {
-  const getPriorityColor = priority => {
-    switch (priority) {
-      case 'high':
-        return '#ff4444';
-      case 'medium':
-        return '#ff9500';
-      case 'low':
-        return '#00c851';
-      default:
-        return '#9e9e9e';
-    }
-  };
-
-  const unreadStyle = !notice.isRead
-    ? {
-        borderWidth: 2,
-        borderColor: colors.primary,
-        shadowColor: colors.primary,
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 8,
-      }
-    : {};
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={styles.cardContainer}
-    >
-      <View
-        style={[
-          styles.maintenanceCard,
-          {
-            backgroundColor: colors.background,
-            borderColor:
-              mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.1)'
-                : 'rgba(0, 0, 0, 0.08)',
-            borderLeftColor: getPriorityColor(notice.priority),
-          },
-          unreadStyle,
-        ]}
-      >
-        {/* Header */}
-        <View style={styles.cardHeader}>
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: getPriorityColor(notice.priority) },
-            ]}
-          >
-            <Icon name="construct-outline" size={20} color="white" />
-          </View>
-          <View style={styles.headerContent}>
-            <View style={styles.titleRow}>
-              <StandardText
-                fontWeight="bold"
-                size="medium"
-                style={[styles.title, { color: colors.textPrimary }]}
-              >
-                {notice.title}
-              </StandardText>
-              {!notice.isRead && <View style={styles.unreadDot} />}
-            </View>
-            <StandardText
-              style={[styles.description, { color: colors.textSecondary }]}
-            >
-              {notice.description}
-            </StandardText>
-          </View>
-        </View>
-
-        {/* Status Section */}
-        <View style={styles.statusSection}>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor:
-                  notice.status === 'completed'
-                    ? 'rgba(0, 200, 81, 0.1)'
-                    : notice.status === 'in-progress'
-                    ? 'rgba(255, 149, 0, 0.1)'
-                    : 'rgba(255, 68, 68, 0.1)',
-              },
-            ]}
-          >
-            <StandardText
-              size="small"
-              fontWeight="semibold"
-              style={{
-                color:
-                  notice.status === 'completed'
-                    ? colors.success
-                    : notice.status === 'in-progress'
-                    ? colors.warning
-                    : colors.error,
-              }}
-            >
-              {notice.status.toUpperCase()}
-            </StandardText>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <View
-          style={[
-            styles.cardFooter,
-            {
-              borderTopColor:
-                mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(0, 0, 0, 0.05)',
-            },
-          ]}
-        >
-          <View style={styles.tenantInfo}>
-            <Icon
-              name="person-outline"
-              size={12}
-              color={colors.textSecondary}
-            />
-            <StandardText
-              size="small"
-              style={[styles.tenantText, { color: colors.textSecondary }]}
-            >
-              {notice.tenantName}
-            </StandardText>
-            <Icon
-              name="location-outline"
-              size={12}
-              color={colors.textSecondary}
-              style={styles.roomIcon}
-            />
-            <StandardText
-              size="small"
-              style={[styles.roomText, { color: colors.textSecondary }]}
-            >
-              Room {notice.roomNumber}
-            </StandardText>
-          </View>
-          <StandardText
-            size="small"
-            style={[styles.dateText, { color: colors.textSecondary }]}
-          >
-            {notice.date}
-          </StandardText>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// Lease Notice Card Component
-const LeaseNoticeCard = ({ notice, onPress, mode }) => {
-  const getPriorityColor = priority => {
-    switch (priority) {
-      case 'high':
-        return '#ff4444';
-      case 'medium':
-        return '#ff9500';
-      case 'low':
-        return '#00c851';
-      default:
-        return '#9e9e9e';
-    }
-  };
-
-  const unreadStyle = !notice.isRead
-    ? {
-        borderWidth: 2,
-        borderColor: colors.primary,
-        shadowColor: colors.primary,
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 8,
-      }
-    : {};
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={styles.cardContainer}
-    >
-      <View
-        style={[
-          styles.leaseCard,
-          {
-            backgroundColor: colors.background,
-            borderColor:
-              mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.1)'
-                : 'rgba(0, 0, 0, 0.08)',
-            borderLeftColor: getPriorityColor(notice.priority),
-          },
-          unreadStyle,
-        ]}
-      >
-        {/* Header */}
-        <View style={styles.cardHeader}>
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: getPriorityColor(notice.priority) },
-            ]}
-          >
-            <Icon name="document-text-outline" size={20} color="white" />
-          </View>
-          <View style={styles.headerContent}>
-            <View style={styles.titleRow}>
-              <StandardText
-                fontWeight="bold"
-                size="medium"
-                style={[styles.title, { color: colors.textPrimary }]}
-              >
-                {notice.title}
-              </StandardText>
-              {!notice.isRead && <View style={styles.unreadDot} />}
-            </View>
-            <StandardText
-              style={[styles.description, { color: colors.textSecondary }]}
-            >
-              {notice.description}
-            </StandardText>
-          </View>
-        </View>
-
-        {/* Lease Info */}
-        <View style={styles.leaseInfo}>
-          <View style={styles.leaseDetail}>
-            <Icon name="calendar-outline" size={14} color={colors.primary} />
-            <StandardText
-              size="small"
-              style={[styles.leaseText, { color: colors.textSecondary }]}
-            >
-              Expires Next Month
-            </StandardText>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <View
-          style={[
-            styles.cardFooter,
-            {
-              borderTopColor:
-                mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(0, 0, 0, 0.05)',
-            },
-          ]}
-        >
-          <View style={styles.tenantInfo}>
-            <Icon
-              name="person-outline"
-              size={12}
-              color={colors.textSecondary}
-            />
-            <StandardText
-              size="small"
-              style={[styles.tenantText, { color: colors.textSecondary }]}
-            >
-              {notice.tenantName}
-            </StandardText>
-            <Icon
-              name="location-outline"
-              size={12}
-              color={colors.textSecondary}
-              style={styles.roomIcon}
-            />
-            <StandardText
-              size="small"
-              style={[styles.roomText, { color: colors.textSecondary }]}
-            >
-              Room {notice.roomNumber}
-            </StandardText>
-          </View>
-          <StandardText
-            size="small"
-            style={[styles.dateText, { color: colors.textSecondary }]}
-          >
-            {notice.date}
-          </StandardText>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// Empty component
-const EmptyNoticesComponent = React.memo(({ selectedFilter }) => (
-  <View style={styles.emptyContainer}>
-    <MaterialCommunityIcons
-      name="bell-outline"
-      size={64}
-      color={colors.textSecondary}
-    />
-    <StandardText
-      fontWeight="semibold"
-      size="large"
-      style={[styles.emptyTitle, { color: colors.textPrimary }]}
-    >
-      No Notices
-    </StandardText>
-    <StandardText
-      style={[styles.emptySubtitle, { color: colors.textSecondary }]}
-    >
-      {selectedFilter === 'all'
-        ? 'You have no notices at the moment'
-        : `No ${selectedFilter} notices found`}
-    </StandardText>
-  </View>
-));
-
-// Main component styles
-const styles = StyleSheet.create({
-  // Card Container
-  cardContainer: {
-    marginBottom: 12,
-  },
-
-  // Common Card Styles
-  paymentCard: {
-    borderWidth: 1,
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  maintenanceCard: {
-    borderWidth: 1,
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  leaseCard: {
-    borderWidth: 1,
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-
-  // Card Header
-  cardHeader: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    flex: 1,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginLeft: 8,
-  },
-  description: {
-    fontSize: 14,
-    lineHeight: 18,
-  },
-
-  // Payment Specific
-  amountSection: {
-    marginBottom: 12,
-    paddingLeft: 52, // Align with content
-  },
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  amount: {
-    marginLeft: 6,
-    fontSize: 16,
-  },
-
-  // Maintenance Specific
-  statusSection: {
-    marginBottom: 12,
-    paddingLeft: 52, // Align with content
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  // Lease Specific
-  leaseInfo: {
-    marginBottom: 12,
-    paddingLeft: 52, // Align with content
-  },
-  leaseDetail: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  leaseText: {
-    marginLeft: 6,
-  },
-
-  // Card Footer
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  tenantInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  tenantText: {
-    marginLeft: 4,
-    maxWidth: 100,
-  },
-  roomIcon: {
-    marginLeft: 12,
-  },
-  roomText: {
-    marginLeft: 4,
-    maxWidth: 70,
-  },
-  dateText: {
-    minWidth: 80,
-    textAlign: 'right',
-  },
-
-  // Filter Chips
-  filterChip: {
-    height: 36,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    marginRight: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    minWidth: 60,
-  },
-  filterIcon: {
-    marginRight: 6,
-  },
-  filterText: {
-    fontSize: 12,
-    lineHeight: 14,
-  },
-
-  // Empty State
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 20,
-  },
-  emptyTitle: {
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    marginTop: 8,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});
-
 const Notices = ({ navigation }) => {
   // Theme
-  const { mode } = useContext(ThemeContext);
+  const { theme: mode } = useContext(ThemeContext);
+  const isDark = mode === 'dark';
+  const cardBackground = isDark ? colors.backgroundDark : colors.white;
+  const textPrimary = isDark ? colors.white : colors.textPrimary;
+  const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
 
   // Mock data
   const mockNotices = React.useMemo(
@@ -740,18 +106,21 @@ const Notices = ({ navigation }) => {
   );
 
   // State
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notices, setNotices] = useState(mockNotices);
   const [selectedFilter, setSelectedFilter] = useState('all');
 
-  // Memoized empty component
-  const EmptyComponent = useCallback(
-    () => <EmptyNoticesComponent selectedFilter={selectedFilter} />,
-    [selectedFilter],
-  );
+  // Filter options with counts matching PaymentHistory style
+  const filterOptions = [
+    { key: 'all', label: 'All Notices', icon: 'bell' },
+    { key: 'unread', label: 'Unread', icon: 'bell-ring' },
+    { key: 'payment', label: 'Payment', icon: 'cash' },
+    { key: 'maintenance', label: 'Maintenance', icon: 'wrench' },
+    { key: 'lease', label: 'Lease', icon: 'file-document' },
+  ];
 
-  // Filter options with counts
-  const getFilterOptions = useCallback(() => {
+  const getFilterCounts = () => {
     const unreadCount = notices.filter(notice => !notice.isRead).length;
     const paymentCount = notices.filter(
       notice => notice.type === 'payment',
@@ -761,43 +130,39 @@ const Notices = ({ navigation }) => {
     ).length;
     const leaseCount = notices.filter(notice => notice.type === 'lease').length;
 
-    return [
-      { key: 'all', label: 'All', icon: 'list-outline', count: notices.length },
-      {
-        key: 'unread',
-        label: 'Unread',
-        icon: 'mail-unread-outline',
-        count: unreadCount,
-      },
-      {
-        key: 'payment',
-        label: 'Payment',
-        icon: 'cash-outline',
-        count: paymentCount,
-      },
-      {
-        key: 'maintenance',
-        label: 'Maintenance',
-        icon: 'construct-outline',
-        count: maintenanceCount,
-      },
-      {
-        key: 'lease',
-        label: 'Lease',
-        icon: 'document-text-outline',
-        count: leaseCount,
-      },
-    ];
-  }, [notices]);
+    return {
+      all: notices.length,
+      unread: unreadCount,
+      payment: paymentCount,
+      maintenance: maintenanceCount,
+      lease: leaseCount,
+    };
+  };
+
+  const filterCounts = getFilterCounts();
+
+  // Stats calculations
+  const totalNotices = notices.length;
+  const unreadNotices = notices.filter(notice => !notice.isRead).length;
+  const highPriorityNotices = notices.filter(
+    notice => notice.priority === 'high',
+  ).length;
+  const pendingActions = notices.filter(
+    notice => notice.status === 'pending',
+  ).length;
 
   // Load notices
   const loadNotices = useCallback(async () => {
     try {
+      setLoading(true);
       await new Promise(resolve => setTimeout(resolve, 1000));
       setNotices(mockNotices);
     } catch (error) {
       console.error('Failed to load notices:', error);
       Alert.alert('Error', 'Failed to load notices. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   }, [mockNotices]);
 
@@ -805,7 +170,6 @@ const Notices = ({ navigation }) => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadNotices();
-    setRefreshing(false);
   }, [loadNotices]);
 
   // Filter notices
@@ -823,129 +187,54 @@ const Notices = ({ navigation }) => {
   });
 
   // Mark notice as read
-  const markAsRead = useCallback(noticeId => {
+  const handleNoticePress = noticeId => {
     setNotices(prev =>
       (prev || []).map(notice =>
         notice.id === noticeId ? { ...notice, isRead: true } : notice,
       ),
     );
-  }, []);
+  };
 
-  // Handle notice action
-  const handleNoticeAction = useCallback(
-    notice => {
-      markAsRead(notice.id);
-      switch (notice.type) {
-        case 'payment':
-          Alert.alert(
-            'Payment Notice',
-            `Handle payment for ${notice.tenantName} - ${notice.amount}`,
-          );
-          break;
-        case 'maintenance':
-          navigation.navigate('Tickets');
-          break;
-        case 'lease':
-          navigation.navigate('TenantDetails', { tenantId: notice.tenantName });
-          break;
-        default:
-          Alert.alert('Notice', notice.description);
-      }
-    },
-    [navigation, markAsRead],
-  );
-
-  // Render notice item based on type
-  const renderNoticeItem = ({ item: notice }) => {
-    const commonProps = {
-      notice,
-      // onPress: () => handleNoticeAction(notice),
-      mode,
-    };
-
-    switch (notice.type) {
-      case 'payment':
-        return <PaymentNoticeCard {...commonProps} />;
-      case 'maintenance':
-        return <MaintenanceNoticeCard {...commonProps} />;
-      case 'lease':
-        return <LeaseNoticeCard {...commonProps} />;
+  // Get priority color
+  const getPriorityColor = priority => {
+    switch (priority) {
+      case 'high':
+        return colors.error;
+      case 'medium':
+        return colors.warning;
+      case 'low':
+        return colors.success;
       default:
-        return <PaymentNoticeCard {...commonProps} />;
+        return colors.textSecondary;
     }
   };
 
-  // Render filter chip
-  const renderFilterChip = filter => {
-    const isSelected = selectedFilter === filter.key;
-    return (
-      <TouchableOpacity
-        key={filter.key}
-        onPress={() => setSelectedFilter(filter.key)}
-        style={[
-          styles.filterChip,
-          {
-            backgroundColor: isSelected
-              ? colors.primary
-              : mode === 'dark'
-              ? 'rgba(255, 255, 255, 0.05)'
-              : 'rgba(0, 0, 0, 0.02)',
-            borderColor: isSelected
-              ? colors.primary
-              : mode === 'dark'
-              ? 'rgba(255, 255, 255, 0.1)'
-              : 'rgba(0, 0, 0, 0.1)',
-          },
-        ]}
-        activeOpacity={0.7}
-      >
-        <Icon
-          name={filter.icon}
-          size={14}
-          color={isSelected ? colors.white : colors.textSecondary}
-          style={styles.filterIcon}
-        />
-        <StandardText
-          style={[
-            styles.filterText,
-            {
-              color: isSelected ? colors.white : colors.textSecondary,
-              fontWeight: isSelected ? '600' : '400',
-            },
-          ]}
-        >
-          {filter.label}
-        </StandardText>
-        {filter.count > 0 && (
-          <View
-            style={{
-              backgroundColor: isSelected
-                ? 'rgba(255, 255, 255, 0.2)'
-                : colors.primary,
-              paddingHorizontal: 6,
-              paddingVertical: 2,
-              borderRadius: 8,
-              marginLeft: 4,
-              minWidth: 18,
-              height: 16,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <StandardText
-              style={{
-                color: colors.white,
-                fontSize: 10,
-                fontWeight: '600',
-                lineHeight: 12,
-              }}
-            >
-              {filter.count}
-            </StandardText>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
+  // Get status color
+  const getStatusColor = status => {
+    switch (status) {
+      case 'completed':
+        return colors.success;
+      case 'in-progress':
+        return colors.warning;
+      case 'pending':
+        return colors.error;
+      default:
+        return colors.textSecondary;
+    }
+  };
+
+  // Get type icon
+  const getTypeIcon = type => {
+    switch (type) {
+      case 'payment':
+        return 'cash';
+      case 'maintenance':
+        return 'wrench';
+      case 'lease':
+        return 'file-document';
+      default:
+        return 'bell';
+    }
   };
 
   // Load notices on mount
@@ -953,88 +242,593 @@ const Notices = ({ navigation }) => {
     loadNotices();
   }, [loadNotices]);
 
-  // Component styles
-  const componentStyles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor:
-        mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-      backgroundColor: colors.background,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    headerTitle: {
-      color: colors.textPrimary,
-    },
-    headerSubtitle: {
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
-    addButton: {
-      backgroundColor: colors.primary,
-      padding: 12,
-      borderRadius: 8,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 5,
-    },
-    filterContainer: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-    },
-    listContainer: {
-      paddingHorizontal: 20,
-      paddingBottom: 100,
-    },
-  });
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StandardHeader
+          navigation={navigation}
+          title="Notices"
+          subtitle="Stay updated with notifications"
+          showBackButton
+        />
+        <AnimatedLoader
+          message="Loading notices..."
+          icon="bell"
+          fullScreen={false}
+        />
+      </View>
+    );
+  }
 
   return (
-    <View style={componentStyles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StandardHeader
         navigation={navigation}
         title="Notices"
-        showBackButton={true}
+        subtitle="Stay updated with notifications"
+        showBackButton
       />
 
-      {/* Filters */}
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={componentStyles.filterContainer}
-      >
-        {getFilterOptions().map(renderFilterChip)}
-      </ScrollView>
-
-      {/* Notices List */}
-      <FlatList
-        data={filteredNotices}
-        renderItem={renderNoticeItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={componentStyles.listContainer}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        ListEmptyComponent={EmptyComponent}
+        style={styles.content}
         showsVerticalScrollIndicator={false}
-      />
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Summary Cards Row 1 */}
+        <View style={styles.summaryContainer}>
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons
+                name="bell"
+                size={24}
+                color={colors.primary}
+              />
+              <StandardText
+                fontWeight="medium"
+                size="sm"
+                style={[styles.cardTitle, { color: textSecondary }]}
+              >
+                Total Notices
+              </StandardText>
+            </View>
+            <StandardText
+              fontWeight="bold"
+              size="xl"
+              style={[styles.cardValue, { color: colors.primary }]}
+            >
+              {totalNotices}
+            </StandardText>
+            <StandardText
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
+            >
+              All notifications
+            </StandardText>
+          </StandardCard>
+
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons
+                name="bell-ring"
+                size={24}
+                color={colors.warning}
+              />
+              <StandardText
+                fontWeight="medium"
+                size="sm"
+                style={[styles.cardTitle, { color: textSecondary }]}
+              >
+                Unread
+              </StandardText>
+            </View>
+            <StandardText
+              fontWeight="bold"
+              size="xl"
+              style={[styles.cardValue, { color: colors.warning }]}
+            >
+              {unreadNotices}
+            </StandardText>
+            <StandardText
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
+            >
+              New notifications
+            </StandardText>
+          </StandardCard>
+        </View>
+
+        <Gap size="md" />
+
+        {/* Summary Cards Row 2 */}
+        <View style={styles.summaryContainer}>
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons
+                name="alert-circle"
+                size={24}
+                color={colors.error}
+              />
+              <StandardText
+                fontWeight="medium"
+                size="sm"
+                style={[styles.cardTitle, { color: textSecondary }]}
+              >
+                High Priority
+              </StandardText>
+            </View>
+            <StandardText
+              fontWeight="bold"
+              size="xl"
+              style={[styles.cardValue, { color: colors.error }]}
+            >
+              {highPriorityNotices}
+            </StandardText>
+            <StandardText
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
+            >
+              Urgent attention
+            </StandardText>
+          </StandardCard>
+
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons
+                name="clock-alert"
+                size={24}
+                color={colors.success}
+              />
+              <StandardText
+                fontWeight="medium"
+                size="sm"
+                style={[styles.cardTitle, { color: textSecondary }]}
+              >
+                Pending Actions
+              </StandardText>
+            </View>
+            <StandardText
+              fontWeight="bold"
+              size="xl"
+              style={[styles.cardValue, { color: colors.success }]}
+            >
+              {pendingActions}
+            </StandardText>
+            <StandardText
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
+            >
+              Requires action
+            </StandardText>
+          </StandardCard>
+        </View>
+
+        <Gap size="lg" />
+
+        {/* Filter Section */}
+        <View style={styles.filterSection}>
+          <StandardText
+            fontWeight="bold"
+            size="sm"
+            style={[styles.filterLabel, { color: textSecondary }]}
+          >
+            Filter By Category
+          </StandardText>
+          <Gap size="sm" />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterContainer}
+          >
+            {filterOptions.map(filter => (
+              <Chip
+                key={filter.key}
+                mode="flat"
+                selected={selectedFilter === filter.key}
+                onPress={() => setSelectedFilter(filter.key)}
+                style={[
+                  styles.filterChip,
+                  {
+                    backgroundColor:
+                      selectedFilter === filter.key
+                        ? colors.primary
+                        : cardBackground,
+                  },
+                ]}
+                textStyle={[
+                  styles.filterChipText,
+                  {
+                    color:
+                      selectedFilter === filter.key
+                        ? colors.white
+                        : textPrimary,
+                  },
+                ]}
+                icon={filter.icon}
+                selectedColor={colors.white}
+              >
+                {filter.label} ({filterCounts[filter.key]})
+              </Chip>
+            ))}
+          </ScrollView>
+        </View>
+
+        <Gap size="lg" />
+
+        {/* Notices List Header */}
+        <View style={styles.listHeader}>
+          <StandardText
+            fontWeight="bold"
+            size="lg"
+            style={{ color: textPrimary }}
+          >
+            Notice Records
+          </StandardText>
+          <View style={styles.countBadge}>
+            <StandardText
+              fontWeight="bold"
+              size="sm"
+              style={{ color: colors.primary }}
+            >
+              {filteredNotices.length}
+            </StandardText>
+          </View>
+        </View>
+
+        <Gap size="md" />
+
+        {/* Notices List */}
+        {filteredNotices.length > 0 ? (
+          filteredNotices.map(notice => (
+            <TouchableOpacity
+              key={notice.id}
+              onPress={() => handleNoticePress(notice.id)}
+              activeOpacity={0.7}
+            >
+              <StandardCard
+                style={[
+                  styles.noticeCard,
+                  { backgroundColor: cardBackground },
+                  !notice.isRead && styles.unreadCard,
+                ]}
+              >
+                <View style={styles.noticeHeader}>
+                  <View style={styles.noticeInfo}>
+                    <View style={styles.noticeTitleRow}>
+                      <MaterialCommunityIcons
+                        name={getTypeIcon(notice.type)}
+                        size={20}
+                        color={getPriorityColor(notice.priority)}
+                      />
+                      <StandardText
+                        fontWeight="bold"
+                        size="lg"
+                        style={{ color: textPrimary, marginLeft: 8, flex: 1 }}
+                      >
+                        {notice.title}
+                      </StandardText>
+                      {!notice.isRead && (
+                        <View style={styles.unreadBadge}>
+                          <StandardText
+                            size="xs"
+                            fontWeight="bold"
+                            style={{ color: colors.white }}
+                          >
+                            NEW
+                          </StandardText>
+                        </View>
+                      )}
+                    </View>
+                    <StandardText
+                      size="sm"
+                      style={{ color: textSecondary, marginTop: 6 }}
+                    >
+                      {notice.description}
+                    </StandardText>
+
+                    {/* Meta Information */}
+                    <View style={styles.noticeMetaRow}>
+                      <View style={styles.noticeMeta}>
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={12}
+                          color={textSecondary}
+                        />
+                        <StandardText
+                          size="xs"
+                          style={{ color: textSecondary, marginLeft: 4 }}
+                        >
+                          {notice.tenantName}
+                        </StandardText>
+                      </View>
+                      <View style={styles.noticeMeta}>
+                        <MaterialCommunityIcons
+                          name="home"
+                          size={12}
+                          color={textSecondary}
+                        />
+                        <StandardText
+                          size="xs"
+                          style={{ color: textSecondary, marginLeft: 4 }}
+                        >
+                          Room {notice.roomNumber}
+                        </StandardText>
+                      </View>
+                      <View style={styles.noticeMeta}>
+                        <MaterialCommunityIcons
+                          name="calendar"
+                          size={12}
+                          color={textSecondary}
+                        />
+                        <StandardText
+                          size="xs"
+                          style={{ color: textSecondary, marginLeft: 4 }}
+                        >
+                          {new Date(notice.date).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                          })}
+                        </StandardText>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Amount or Status */}
+                  <View style={styles.noticeAmount}>
+                    {notice.amount && (
+                      <StandardText
+                        fontWeight="bold"
+                        size="xl"
+                        style={{ color: colors.primary }}
+                      >
+                        {notice.amount}
+                      </StandardText>
+                    )}
+                  </View>
+                </View>
+
+                {/* Footer with badges */}
+                <View style={styles.noticeFooter}>
+                  <Chip
+                    mode="flat"
+                    style={[
+                      styles.categoryChip,
+                      {
+                        backgroundColor:
+                          getPriorityColor(notice.priority) + '20',
+                      },
+                    ]}
+                    textStyle={[
+                      styles.categoryChipText,
+                      { color: getPriorityColor(notice.priority) },
+                    ]}
+                  >
+                    {notice.priority.toUpperCase()}
+                  </Chip>
+
+                  <Chip
+                    mode="flat"
+                    style={[
+                      styles.statusChip,
+                      { backgroundColor: getStatusColor(notice.status) + '20' },
+                    ]}
+                    textStyle={[
+                      styles.statusChipText,
+                      { color: getStatusColor(notice.status) },
+                    ]}
+                  >
+                    {notice.status.toUpperCase().replace('-', ' ')}
+                  </Chip>
+
+                  <Chip
+                    mode="flat"
+                    style={[
+                      styles.typeChip,
+                      { backgroundColor: colors.primary + '20' },
+                    ]}
+                    textStyle={[styles.typeChipText, { color: colors.primary }]}
+                  >
+                    {notice.type.toUpperCase()}
+                  </Chip>
+                </View>
+              </StandardCard>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons
+              name="bell-outline"
+              size={80}
+              color={textSecondary}
+            />
+            <StandardText
+              fontWeight="bold"
+              size="xl"
+              style={{ color: textPrimary, marginTop: 16 }}
+            >
+              No Notices Found
+            </StandardText>
+            <StandardText
+              size="md"
+              style={{
+                color: textSecondary,
+                marginTop: 8,
+                textAlign: 'center',
+              }}
+            >
+              {selectedFilter === 'all'
+                ? 'You have no notices at the moment'
+                : `No ${selectedFilter} notices found`}
+            </StandardText>
+          </View>
+        )}
+
+        <Gap size="xl" />
+      </ScrollView>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  summaryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  summaryCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  cardTitle: {
+    marginLeft: 8,
+    fontSize: 12,
+  },
+  cardValue: {
+    fontSize: 24,
+    marginTop: 4,
+  },
+  cardSubtext: {
+    marginTop: 4,
+    fontSize: 10,
+  },
+  filterSection: {
+    gap: 8,
+  },
+  filterLabel: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  filterContainer: {
+    marginBottom: 8,
+  },
+  filterChip: {
+    marginRight: 8,
+    height: 36,
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontFamily: 'Metropolis-Medium',
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  countBadge: {
+    backgroundColor: colors.primary + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  noticeCard: {
+    marginVertical: 6,
+    padding: 16,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  unreadCard: {
+    borderWidth: 2,
+    borderColor: colors.primary + '40',
+  },
+  noticeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  noticeInfo: {
+    flex: 1,
+  },
+  noticeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  unreadBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  noticeMetaRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  noticeMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  noticeAmount: {
+    alignItems: 'flex-end',
+    marginLeft: 12,
+  },
+  noticeFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  categoryChip: {
+    height: 26,
+    paddingHorizontal: 8,
+  },
+  categoryChipText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  statusChip: {
+    height: 26,
+    paddingHorizontal: 8,
+  },
+  statusChipText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  typeChip: {
+    height: 26,
+    paddingHorizontal: 8,
+  },
+  typeChipText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+});
 
 export default Notices;
