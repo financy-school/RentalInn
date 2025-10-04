@@ -263,7 +263,7 @@ export const menuItems = [
       {
         label: 'All Tickets',
         route: SCREEN_NAMES.TICKETS,
-        badge: 2, // Dynamic badge for pending tickets
+        badge: null,
       },
       {
         label: 'Create Ticket',

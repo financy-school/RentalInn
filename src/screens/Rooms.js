@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   infoText: { marginLeft: 4, fontSize: 13, color: '#555' },
   fab: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 30,
     right: 30,
     borderRadius: 30,
     backgroundColor: colors.secondary,

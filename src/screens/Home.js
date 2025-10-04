@@ -33,6 +33,32 @@ import PropertySelector from '../components/PropertySelector/PropertySelector';
 
 const screenWidth = Dimensions.get('window').width;
 
+// Utility function to format amounts
+const formatAmount = amount => {
+  if (!amount || amount === 0) return '0';
+
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(numAmount)) return amount.toString();
+
+  const absAmount = Math.abs(numAmount);
+
+  if (absAmount >= 10000000) {
+    // 1 crore and above
+    const crores = (absAmount / 10000000).toFixed(1);
+    return `${numAmount < 0 ? '-' : ''}${crores}CR`;
+  } else if (absAmount >= 100000) {
+    // 1 lakh and above
+    const lakhs = (absAmount / 100000).toFixed(1);
+    return `${numAmount < 0 ? '-' : ''}${lakhs}L`;
+  } else if (absAmount >= 1000) {
+    // 1 thousand and above
+    const thousands = (absAmount / 1000).toFixed(1);
+    return `${numAmount < 0 ? '-' : ''}${thousands}k`;
+  } else {
+    return numAmount.toString();
+  }
+};
+
 // Expense category configuration for UI properties
 const EXPENSE_CATEGORY_CONFIG = {
   electricity: {
@@ -458,10 +484,10 @@ const Home = ({ navigation }) => {
           <StandardCard style={styles.kpiCard}>
             <StandardText size="sm">Rent Collected</StandardText>
             <StandardText size="xl" fontWeight="bold">
-              ₹{paid.toLocaleString()}
+              ₹{formatAmount(paid)}
             </StandardText>
             <StandardText size="sm">
-              Overdue: ₹{notPaid.toLocaleString()}
+              Overdue: ₹{formatAmount(notPaid)}
             </StandardText>
           </StandardCard>
           <StandardCard style={styles.kpiCard}>
@@ -517,7 +543,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                ₹{paid.toLocaleString()}
+                ₹{formatAmount(paid)}
               </StandardText>
               <StandardText size="sm" style={styles.statPercentage}>
                 {rentData.collected_percentage ||
@@ -549,7 +575,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                ₹{notPaid.toLocaleString()}
+                ₹{formatAmount(notPaid)}
               </StandardText>
               <StandardText size="sm" style={styles.statPercentage}>
                 {rentData.overdue_percentage ||
@@ -624,7 +650,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                ₹{revenueData.avg_revenue || 0}
+                ₹{formatAmount(revenueData.avg_revenue || 0)}
               </StandardText>
             </View>
 
@@ -647,7 +673,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                ₹{revenueData.avg_loss || 0}
+                ₹{formatAmount(revenueData.avg_loss || 0)}
               </StandardText>
             </View>
           </View>
@@ -878,7 +904,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.success }}
               >
-                ₹{(profitLossData.summary?.total_revenue || 0).toLocaleString()}
+                ₹{formatAmount(profitLossData.summary?.total_revenue || 0)}
               </StandardText>
             </View>
 
@@ -901,8 +927,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.error }}
               >
-                ₹
-                {(profitLossData.summary?.total_expenses || 0).toLocaleString()}
+                ₹{formatAmount(profitLossData.summary?.total_expenses || 0)}
               </StandardText>
             </View>
 
@@ -925,7 +950,7 @@ const Home = ({ navigation }) => {
                 fontWeight="bold"
                 style={{ color: colors.primary }}
               >
-                ₹{(profitLossData.summary?.net_profit || 0).toLocaleString()}
+                ₹{formatAmount(profitLossData.summary?.net_profit || 0)}
               </StandardText>
             </View>
           </View>
@@ -962,7 +987,7 @@ const Home = ({ navigation }) => {
                         { color: colors.success },
                       ]}
                     >
-                      ₹{(row.revenue || 0).toLocaleString()}
+                      ₹{formatAmount(row.revenue || 0)}
                     </DataTable.Cell>
                     <DataTable.Cell
                       numeric
@@ -971,7 +996,7 @@ const Home = ({ navigation }) => {
                         { color: colors.error },
                       ]}
                     >
-                      ₹{(row.expenses || 0).toLocaleString()}
+                      ₹{formatAmount(row.expenses || 0)}
                     </DataTable.Cell>
                     <DataTable.Cell
                       numeric
@@ -983,7 +1008,7 @@ const Home = ({ navigation }) => {
                         styles.boldText,
                       ]}
                     >
-                      ₹{net.toLocaleString()}
+                      ₹{formatAmount(net)}
                     </DataTable.Cell>
                   </DataTable.Row>
                 );

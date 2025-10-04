@@ -503,7 +503,7 @@ const PaymentHistory = ({ navigation }) => {
                     styles.selectedFilterChipText,
                 ]}
                 icon={() => (
-                  // eslint-disable-line react/no-unstable-nested-components
+                   
                   <MaterialCommunityIcons
                     name={filter.icon}
                     size={18}

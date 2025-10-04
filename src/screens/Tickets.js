@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 30,
     right: 30,
     borderRadius: 30,
     backgroundColor: colors.secondary,

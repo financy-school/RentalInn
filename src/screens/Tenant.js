@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 30,
     borderRadius: 30,
-    bottom: 120,
+    bottom: 30,
     backgroundColor: colors.secondary,
   },
 
