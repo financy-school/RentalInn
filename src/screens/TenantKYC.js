@@ -17,6 +17,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import colors from '../theme/color';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
@@ -130,7 +131,7 @@ const TenantKYC = ({ navigation }) => {
 
   const handleTenantPress = tenant => {
     const tenantInfo = tenant.tenant || {};
-    navigation.navigate('TenantDetails', { tenantId: tenantInfo.tenant_id });
+    navigation.navigate('TenantDetails', { tenant_id: tenantInfo.tenant_id });
   };
 
   const onRefresh = () => {
@@ -351,9 +352,11 @@ const TenantKYC = ({ navigation }) => {
 
             {/* Loading State */}
             {loading && (
-              <View style={styles.loadingContainer}>
-                <StandardText>Loading KYC data...</StandardText>
-              </View>
+              <AnimatedLoader
+                message="Loading KYC data..."
+                icon="card-account-details"
+                fullScreen={false}
+              />
             )}
 
             {/* Error State */}

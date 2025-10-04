@@ -23,6 +23,7 @@ import { useProperty } from '../context/PropertyContext';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import SelectPropertyPrompt from '../components/SelectPropertyPrompt/SelectPropertyPrompt';
 import Share from 'react-native-share';
 import {
@@ -292,9 +293,11 @@ const Rooms = ({ navigation }) => {
 
           {/* Loader / Error / Empty */}
           {loading && (
-            <StandardText style={{ textAlign: 'center' }}>
-              Loading rooms...
-            </StandardText>
+            <AnimatedLoader
+              message="Loading rooms..."
+              icon="home-city"
+              fullScreen={false}
+            />
           )}
           {error && (
             <View style={{ alignItems: 'center' }}>
@@ -330,7 +333,12 @@ const Rooms = ({ navigation }) => {
             filteredRooms.map(room => (
               <StandardCard key={room.room_id} style={styles.card}>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('RoomDetails', { room })}
+                  onPress={() =>
+                    navigation.navigate('RoomDetails', {
+                      room_id: room.room_id,
+                      property_id: room.property_id,
+                    })
+                  }
                 >
                   {/* Image */}
                   {room.imageUrl ? (
@@ -578,7 +586,7 @@ const styles = StyleSheet.create({
   infoText: { marginLeft: 4, fontSize: 13, color: '#555' },
   fab: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 30,
     right: 30,
     borderRadius: 30,
     backgroundColor: colors.secondary,

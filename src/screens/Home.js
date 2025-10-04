@@ -26,12 +26,39 @@ import { getDashboardAnalytics } from '../services/NetworkUtils';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { PieChart, StackedBarChart } from 'react-native-chart-kit';
 import * as Progress from 'react-native-progress';
 import colors from '../theme/color';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 
 const screenWidth = Dimensions.get('window').width;
+
+// Utility function to format amounts
+const formatAmount = amount => {
+  if (!amount || amount === 0) return '0';
+
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(numAmount)) return amount.toString();
+
+  const absAmount = Math.abs(numAmount);
+
+  if (absAmount >= 10000000) {
+    // 1 crore and above
+    const crores = (absAmount / 10000000).toFixed(1);
+    return `${numAmount < 0 ? '-' : ''}${crores}CR`;
+  } else if (absAmount >= 100000) {
+    // 1 lakh and above
+    const lakhs = (absAmount / 100000).toFixed(1);
+    return `${numAmount < 0 ? '-' : ''}${lakhs}L`;
+  } else if (absAmount >= 1000) {
+    // 1 thousand and above
+    const thousands = (absAmount / 1000).toFixed(1);
+    return `${numAmount < 0 ? '-' : ''}${thousands}k`;
+  } else {
+    return numAmount.toString();
+  }
+};
 
 // Expense category configuration for UI properties
 const EXPENSE_CATEGORY_CONFIG = {
@@ -301,7 +328,7 @@ const Home = ({ navigation }) => {
   // Top tenants from API
   const tenants =
     tenantData.top_tenants?.map((tenant, index) => ({
-      id: tenant.tenant_id || `t${index + 1}`,
+      tenant_id: tenant.tenant_id || `t${index + 1}`,
       name: tenant.name,
       room: tenant.room_number,
       status: tenant.payment_status === 'on_time' ? 'On-time' : 'Overdue',
@@ -310,10 +337,11 @@ const Home = ({ navigation }) => {
   // Room occupancy grid from API
   const occupancyGrid =
     roomData.rooms?.map(room => ({
-      room_id: room.room_number.toString(),
-      room: room.room_number.toString(),
+      room_id: room.room_number,
+      room: room.room_number,
       status: room.status,
       has_issues: room.has_issues,
+      property_id: room.property_id,
     })) || [];
 
   // Colors for occupancy grid
@@ -332,20 +360,6 @@ const Home = ({ navigation }) => {
 
   // P&L data from API
   const plData = profitLossData.property_breakdown || [];
-
-  // Loading state
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: 'center', alignItems: 'center' },
-        ]}
-      >
-        <StandardText size="lg">Loading dashboard data...</StandardText>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -397,1229 +411,1284 @@ const Home = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Real-time tracking banner */}
-        <Card style={styles.bannerCard}>
-          <MaterialCommunityIcons
-            name="lightning-bolt-outline"
-            size={22}
-            color={colors.white}
+        {/* Loading state - only for content area */}
+        {loading && (
+          <AnimatedLoader
+            message="Loading dashboard data..."
+            icon="view-dashboard"
+            fullScreen={false}
           />
-          <View style={styles.headerLeftContent}>
-            <StandardText style={{ color: colors.white }} fontWeight="bold">
-              {propertyInfo.real_time_tracking_enabled
-                ? 'Real-time tracking enabled'
-                : 'Real-time tracking disabled'}
-            </StandardText>
-            <StandardText style={{ color: colors.white }} size="sm">
-              {propertyInfo.property_name || 'All Properties'} -{' '}
-              {propertyInfo.location || 'Multiple Locations'}
-            </StandardText>
-          </View>
-        </Card>
-
-        {/* Error state */}
-        {error && (
-          <StandardCard style={styles.fullWidthCard}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons
-                name="alert-circle"
-                size={24}
-                color={colors.error}
-              />
-              <StandardText
-                size="lg"
-                fontWeight="bold"
-                style={[styles.sectionTitleText, { color: colors.error }]}
-              >
-                Error Loading Data
-              </StandardText>
-            </View>
-            <StandardText size="sm" style={{ color: colors.textSecondary }}>
-              {error}
-            </StandardText>
-          </StandardCard>
         )}
 
-        {/* KPI Cards */}
-        <View style={styles.kpiGrid}>
-          <StandardCard style={styles.kpiCard}>
-            <StandardText size="sm">Occupancy</StandardText>
-            <StandardText size="xl" fontWeight="bold">
-              {occupancyPct}%
-            </StandardText>
-            <Progress.Bar
-              progress={occupancyPct / 100}
-              width={null}
-              style={styles.progressBarMargin}
-              color={colors.primary}
-            />
-          </StandardCard>
-          <StandardCard style={styles.kpiCard}>
-            <StandardText size="sm">Rent Collected</StandardText>
-            <StandardText size="xl" fontWeight="bold">
-              ₹{paid.toLocaleString()}
-            </StandardText>
-            <StandardText size="sm">
-              Overdue: ₹{notPaid.toLocaleString()}
-            </StandardText>
-          </StandardCard>
-          <StandardCard style={styles.kpiCard}>
-            <StandardText size="sm">Tenants</StandardText>
-            <StandardText size="xl" fontWeight="bold">
-              {totalTenants}
-            </StandardText>
-            <StandardText size="sm">
-              Vacant Units: {vacantRooms}/{totalRooms}
-            </StandardText>
-          </StandardCard>
-        </View>
-
-        <Gap size="md" />
-
-        {/* Enhanced Rent Collection */}
-        <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="cash-multiple"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.sectionTitleText}
-            >
-              Rent Collection
-            </StandardText>
-          </View>
-
-          {/* Collection Summary */}
-          <View style={styles.collectionSummary}>
-            <View style={styles.collectionStat}>
-              <View
-                style={[
-                  styles.statIndicator,
-                  { backgroundColor: colors.success + '20' },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={20}
-                  color={colors.success}
-                />
-              </View>
-              <StandardText size="sm" style={styles.statLabel}>
-                Collected
-              </StandardText>
-              <StandardText
-                size="lg"
-                fontWeight="bold"
-                style={{ color: colors.success }}
-              >
-                ₹{paid.toLocaleString()}
-              </StandardText>
-              <StandardText size="sm" style={styles.statPercentage}>
-                {rentData.collected_percentage ||
-                  Math.round((paid / (paid + notPaid || 1)) * 100)}
-                %
-              </StandardText>
-            </View>
-
-            <View style={styles.collectionDivider} />
-
-            <View style={styles.collectionStat}>
-              <View
-                style={[
-                  styles.statIndicator,
-                  { backgroundColor: colors.error + '20' },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="clock-alert"
-                  size={20}
-                  color={colors.error}
-                />
-              </View>
-              <StandardText size="sm" style={styles.statLabel}>
-                Overdue
-              </StandardText>
-              <StandardText
-                size="lg"
-                fontWeight="bold"
-                style={{ color: colors.error }}
-              >
-                ₹{notPaid.toLocaleString()}
-              </StandardText>
-              <StandardText size="sm" style={styles.statPercentage}>
-                {rentData.overdue_percentage ||
-                  Math.round((notPaid / (paid + notPaid || 1)) * 100)}
-                %
-              </StandardText>
-            </View>
-          </View>
-
-          {/* Collection Progress Bar */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${
-                      rentData.collected_percentage ||
-                      Math.round((paid / (paid + notPaid || 1)) * 100)
-                    }%`,
-                    backgroundColor: colors.success,
-                  },
-                ]}
-              />
-            </View>
-            <StandardText size="sm" style={styles.progressText}>
-              Collection Rate:{' '}
-              {rentData.collection_rate ||
-                Math.round((paid / (paid + notPaid || 1)) * 100)}
-              %
-            </StandardText>
-          </View>
-        </StandardCard>
-
-        <Gap size="md" />
-
-        {/* Enhanced Revenue & Vacancy Loss */}
-        <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="chart-line"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.sectionTitleText}
-            >
-              Revenue & Vacancy Trends
-            </StandardText>
-          </View>
-
-          {/* Revenue Summary Cards */}
-          <View style={styles.revenueSummaryGrid}>
-            <View
-              style={[
-                styles.revenueSummaryCard,
-                { backgroundColor: colors.success + '15' },
-              ]}
-            >
+        {!loading && (
+          <>
+            {/* Real-time tracking banner */}
+            <Card style={styles.bannerCard}>
               <MaterialCommunityIcons
-                name="trending-up"
-                size={20}
-                color={colors.success}
+                name="lightning-bolt-outline"
+                size={22}
+                color={colors.white}
               />
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Avg Revenue
-              </StandardText>
-              <StandardText
-                size="md"
-                fontWeight="bold"
-                style={{ color: colors.success }}
-              >
-                ₹{revenueData.avg_revenue || 0}
-              </StandardText>
-            </View>
-
-            <View
-              style={[
-                styles.revenueSummaryCard,
-                { backgroundColor: colors.error + '15' },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="trending-down"
-                size={20}
-                color={colors.error}
-              />
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Avg Loss
-              </StandardText>
-              <StandardText
-                size="md"
-                fontWeight="bold"
-                style={{ color: colors.error }}
-              >
-                ₹{revenueData.avg_loss || 0}
-              </StandardText>
-            </View>
-          </View>
-
-          {/* Enhanced Chart with Theme Support */}
-          <View style={styles.chartContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chartScrollContainer}
-            >
-              <StackedBarChart
-                data={{
-                  labels: months,
-                  data: revenueByMonth.map((rev, i) => [
-                    rev,
-                    vacancyLossByMonth[i],
-                  ]),
-                  barColors: ['#4CAF50', '#FF7043'],
-                }}
-                width={Math.max(screenWidth - 64, months.length * 80)}
-                height={240}
-                chartConfig={{
-                  backgroundColor: chartBackgroundColor,
-                  backgroundGradientFrom: chartBackgroundColor,
-                  backgroundGradientTo: chartBackgroundColor,
-                  backgroundGradientFromOpacity: 1,
-                  backgroundGradientToOpacity: 1,
-                  decimalPlaces: 0,
-                  color: (opacity = 1) =>
-                    `${chartTextColor}${Math.round(opacity * 255)
-                      .toString(16)
-                      .padStart(2, '0')}`,
-                  labelColor: (opacity = 1) =>
-                    `${chartTextColor}${Math.round(opacity * 255)
-                      .toString(16)
-                      .padStart(2, '0')}`,
-                  strokeWidth: 2,
-                  barPercentage: 0.7,
-                  useShadowColorFromDataset: false,
-                  propsForLabels: {
-                    fontSize: 12,
-                    fontWeight: '600',
-                    color: chartTextColor,
-                  },
-                  propsForVerticalLabels: {
-                    fontSize: 11,
-                    fontWeight: '500',
-                    color: chartTextColor,
-                  },
-                  propsForHorizontalLabels: {
-                    fontSize: 11,
-                    fontWeight: '500',
-                    color: chartTextColor,
-                  },
-                }}
-                style={[
-                  styles.chartStyle,
-                  { backgroundColor: chartBackgroundColor },
-                ]}
-                withHorizontalLabels={true}
-                withVerticalLabels={true}
-                showValuesOnTopOfBars={true}
-                fromZero={true}
-                segments={4}
-              />
-            </ScrollView>
-
-            {/* Custom Enhanced Legend */}
-            <View style={styles.chartLegend}>
-              <View style={styles.chartLegendItem}>
-                <View
-                  style={[
-                    styles.chartLegendDot,
-                    { backgroundColor: '#4CAF50' },
-                  ]}
-                />
-                <StandardText size="sm" style={styles.chartLegendText}>
-                  Revenue (₹k)
+              <View style={styles.headerLeftContent}>
+                <StandardText style={{ color: colors.white }} fontWeight="bold">
+                  {propertyInfo.real_time_tracking_enabled
+                    ? 'Real-time tracking enabled'
+                    : 'Real-time tracking disabled'}
+                </StandardText>
+                <StandardText style={{ color: colors.white }} size="sm">
+                  {propertyInfo.property_name || 'All Properties'} -{' '}
+                  {propertyInfo.location || 'Multiple Locations'}
                 </StandardText>
               </View>
-              <View style={styles.chartLegendItem}>
-                <View
-                  style={[
-                    styles.chartLegendDot,
-                    { backgroundColor: '#FF7043' },
-                  ]}
-                />
-                <StandardText size="sm" style={styles.chartLegendText}>
-                  Vacancy Loss (₹k)
-                </StandardText>
-              </View>
-            </View>
-          </View>
-        </StandardCard>
+            </Card>
 
-        <Gap size="md" />
-
-        {/* Auto-Reconciliation (Payment Inbox Preview) */}
-        <StandardCard style={[styles.kpiCard, styles.premiumCardStyle]}>
-          <View style={styles.messageContainer}>
-            <MaterialCommunityIcons
-              name="sync"
-              size={20}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.messageIcon}
-            >
-              Auto Reconciliation
-            </StandardText>
-          </View>
-          <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
-          <StandardText size="sm" style={styles.messageText}>
-            Securely reads payment messages and updates records instantly.
-          </StandardText>
-
-          <Gap size="sm" />
-          {reconInbox.map(msg => (
-            <List.Item
-              key={msg.id}
-              title={`${msg.from} • ${msg.preview}`}
-              left={MessageLeftIcon}
-              right={createMessageRightChip(msg.matched)}
-            />
-          ))}
-          <Button
-            mode="contained"
-            buttonColor={colors.primary}
-            style={styles.messagesList}
-            disabled
-          >
-            Sync Now
-          </Button>
-
-          {/* Premium Feature Lock Overlay */}
-          <View style={styles.premiumOverlay}>
-            <View style={styles.premiumContent}>
-              <View style={styles.lockIconContainer}>
-                <MaterialCommunityIcons name="lock" size={40} color="#FFD700" />
-                <View style={styles.crownIcon}>
+            {/* Error state */}
+            {error && (
+              <StandardCard style={styles.fullWidthCard}>
+                <View style={styles.sectionHeader}>
                   <MaterialCommunityIcons
-                    name="crown"
+                    name="alert-circle"
                     size={24}
-                    color="#FFD700"
+                    color={colors.error}
                   />
+                  <StandardText
+                    size="lg"
+                    fontWeight="bold"
+                    style={[styles.sectionTitleText, { color: colors.error }]}
+                  >
+                    Error Loading Data
+                  </StandardText>
                 </View>
-              </View>
+                <StandardText size="sm" style={{ color: colors.textSecondary }}>
+                  {error}
+                </StandardText>
+              </StandardCard>
+            )}
 
-              <StandardText
-                fontWeight="bold"
-                size="lg"
-                style={styles.premiumTitle}
-              >
-                Premium Feature
-              </StandardText>
+            {/* KPI Cards */}
+            <View style={styles.kpiGrid}>
+              <StandardCard style={styles.kpiCard}>
+                <StandardText size="sm">Occupancy</StandardText>
+                <StandardText size="xl" fontWeight="bold">
+                  {occupancyPct}%
+                </StandardText>
+                <Progress.Bar
+                  progress={occupancyPct / 100}
+                  width={null}
+                  style={styles.progressBarMargin}
+                  color={colors.primary}
+                />
+              </StandardCard>
+              <StandardCard style={styles.kpiCard}>
+                <StandardText size="sm">Rent Collected</StandardText>
+                <StandardText size="xl" fontWeight="bold">
+                  ₹{formatAmount(paid)}
+                </StandardText>
+                <StandardText size="sm">
+                  Overdue: ₹{formatAmount(notPaid)}
+                </StandardText>
+              </StandardCard>
+              <StandardCard style={styles.kpiCard}>
+                <StandardText size="sm">Tenants</StandardText>
+                <StandardText size="xl" fontWeight="bold">
+                  {totalTenants}
+                </StandardText>
+                <StandardText size="sm">
+                  Vacant Units: {vacantRooms}/{totalRooms}
+                </StandardText>
+              </StandardCard>
+            </View>
 
-              <StandardText
-                size="sm"
-                style={styles.premiumDescription}
-                textAlign="center"
-              >
-                Please contact your sales manager to unlock this feature
-              </StandardText>
+            <Gap size="md" />
 
-              <TouchableOpacity style={styles.contactButton}>
+            {/* Enhanced Rent Collection */}
+            <StandardCard style={styles.fullWidthCard}>
+              <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons
-                  name="phone"
-                  size={16}
-                  color="#fff"
-                  style={styles.messageItemIcon}
+                  name="cash-multiple"
+                  size={24}
+                  color={colors.primary}
                 />
                 <StandardText
-                  fontWeight="semibold"
-                  style={styles.contactButtonText}
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.sectionTitleText}
                 >
-                  Contact Sales
-                </StandardText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </StandardCard>
-
-        <Gap size="md" />
-
-        {/* Enhanced P&L by scope */}
-        <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="chart-bar"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.sectionTitleText}
-            >
-              Profit & Loss —{' '}
-              {scope === 'property'
-                ? 'Property'
-                : scope === 'unit'
-                ? 'Unit'
-                : 'Tenant'}
-            </StandardText>
-          </View>
-
-          {/* P&L Summary Cards */}
-          <View style={styles.plSummaryGrid}>
-            <View
-              style={[
-                styles.plSummaryCard,
-                { backgroundColor: colors.success + '15' },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="cash-plus"
-                size={20}
-                color={colors.success}
-              />
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Total Revenue
-              </StandardText>
-              <StandardText
-                size="md"
-                fontWeight="bold"
-                style={{ color: colors.success }}
-              >
-                ₹{(profitLossData.summary?.total_revenue || 0).toLocaleString()}
-              </StandardText>
-            </View>
-
-            <View
-              style={[
-                styles.plSummaryCard,
-                { backgroundColor: colors.error + '15' },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="cash-minus"
-                size={20}
-                color={colors.error}
-              />
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Total Expenses
-              </StandardText>
-              <StandardText
-                size="md"
-                fontWeight="bold"
-                style={{ color: colors.error }}
-              >
-                ₹
-                {(profitLossData.summary?.total_expenses || 0).toLocaleString()}
-              </StandardText>
-            </View>
-
-            <View
-              style={[
-                styles.plSummaryCard,
-                { backgroundColor: colors.primary + '15' },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="trending-up"
-                size={20}
-                color={colors.primary}
-              />
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Net Profit
-              </StandardText>
-              <StandardText
-                size="md"
-                fontWeight="bold"
-                style={{ color: colors.primary }}
-              >
-                ₹{(profitLossData.summary?.net_profit || 0).toLocaleString()}
-              </StandardText>
-            </View>
-          </View>
-
-          {/* Enhanced Data Table */}
-          <View style={styles.tableContainer}>
-            <DataTable>
-              <DataTable.Header style={styles.tableHeader}>
-                <DataTable.Title textStyle={styles.tableHeaderText}>
-                  Property
-                </DataTable.Title>
-                <DataTable.Title numeric textStyle={styles.tableHeaderText}>
-                  Revenue
-                </DataTable.Title>
-                <DataTable.Title numeric textStyle={styles.tableHeaderText}>
-                  Expenses
-                </DataTable.Title>
-                <DataTable.Title numeric textStyle={styles.tableHeaderText}>
-                  Net
-                </DataTable.Title>
-              </DataTable.Header>
-
-              {plData.slice(0, 3).map((row, idx) => {
-                const net = row.net_profit || row.revenue - row.expenses;
-                return (
-                  <DataTable.Row key={idx} style={styles.tableRow}>
-                    <DataTable.Cell textStyle={styles.tableCellText}>
-                      {row.property_name}
-                    </DataTable.Cell>
-                    <DataTable.Cell
-                      numeric
-                      textStyle={[
-                        styles.tableCellText,
-                        { color: colors.success },
-                      ]}
-                    >
-                      ₹{(row.revenue || 0).toLocaleString()}
-                    </DataTable.Cell>
-                    <DataTable.Cell
-                      numeric
-                      textStyle={[
-                        styles.tableCellText,
-                        { color: colors.error },
-                      ]}
-                    >
-                      ₹{(row.expenses || 0).toLocaleString()}
-                    </DataTable.Cell>
-                    <DataTable.Cell
-                      numeric
-                      textStyle={[
-                        styles.tableCellText,
-                        {
-                          color: net >= 0 ? colors.success : colors.error,
-                        },
-                        styles.boldText,
-                      ]}
-                    >
-                      ₹{net.toLocaleString()}
-                    </DataTable.Cell>
-                  </DataTable.Row>
-                );
-              })}
-            </DataTable>
-          </View>
-
-          <Gap size="sm" />
-
-          {/* Enhanced Expenses Breakdown - Using Dynamic API Data */}
-          <View style={styles.expensesSection}>
-            <StandardText
-              size="md"
-              fontWeight="bold"
-              style={styles.expensesSectionTitle}
-            >
-              Expenses Breakdown
-            </StandardText>
-
-            {expensesBreakdown.length > 0 ? (
-              <PieChart
-                data={expensesBreakdown}
-                width={screenWidth - 64}
-                height={180}
-                accessor="population"
-                backgroundColor="transparent"
-                chartConfig={{
-                  backgroundColor: isDark ? colors.backgroundDark : '#fff',
-                  backgroundGradientFrom: isDark
-                    ? colors.backgroundDark
-                    : '#fff',
-                  backgroundGradientTo: isDark ? colors.backgroundDark : '#fff',
-                  color: (opacity = 1) =>
-                    isDark
-                      ? `rgba(255,255,255,${opacity})`
-                      : `rgba(0,0,0,${opacity})`,
-                }}
-                paddingLeft="12"
-                style={styles.chartStyle}
-              />
-            ) : (
-              <View style={styles.noDataContainer}>
-                <MaterialCommunityIcons
-                  name="chart-pie"
-                  size={48}
-                  color={colors.textSecondary}
-                />
-                <StandardText size="sm" style={styles.noDataText}>
-                  No expense data available
+                  Rent Collection
                 </StandardText>
               </View>
-            )}
-          </View>
-        </StandardCard>
 
-        <Gap size="md" />
-
-        {/* Issues & Maintenance Board */}
-        <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="wrench"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.sectionTitleText}
-            >
-              Issues & Maintenance
-            </StandardText>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Tickets')}
-              style={styles.showMoreButton}
-            >
-              <StandardText style={styles.showMoreText}>Show More</StandardText>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={16}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Issues Summary */}
-          <View style={styles.issuesSummaryGrid}>
-            <View style={styles.issuesSummaryItem}>
-              <StandardText
-                size="xl"
-                fontWeight="bold"
-                style={{ color: colors.primary }}
-              >
-                {issuesData.total_issues || 0}
-              </StandardText>
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Total Issues
-              </StandardText>
-            </View>
-            <View style={styles.issuesSummaryItem}>
-              <StandardText
-                size="xl"
-                fontWeight="bold"
-                style={{ color: colors.error }}
-              >
-                {issuesData.open_issues || 0}
-              </StandardText>
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Open
-              </StandardText>
-            </View>
-            <View style={styles.issuesSummaryItem}>
-              <StandardText
-                size="xl"
-                fontWeight="bold"
-                style={{ color: colors.warning }}
-              >
-                {issuesData.in_progress_issues || 0}
-              </StandardText>
-              <StandardText size="sm" style={styles.summaryLabel}>
-                In Progress
-              </StandardText>
-            </View>
-            <View style={styles.issuesSummaryItem}>
-              <StandardText
-                size="xl"
-                fontWeight="bold"
-                style={{ color: colors.success }}
-              >
-                {issuesData.resolved_issues || 0}
-              </StandardText>
-              <StandardText size="sm" style={styles.summaryLabel}>
-                Resolved
-              </StandardText>
-            </View>
-          </View>
-
-          <View style={styles.maintenanceContainer}>
-            {maintenanceRequests.slice(0, 3).map(req => (
-              <TouchableOpacity
-                key={req.id}
-                style={styles.maintenanceItem}
-                onPress={() => navigation.navigate('Tickets')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.maintenanceLeft}>
+              {/* Collection Summary */}
+              <View style={styles.collectionSummary}>
+                <View style={styles.collectionStat}>
                   <View
                     style={[
-                      styles.maintenanceIcon,
-                      {
-                        backgroundColor:
-                          req.priority === 'High'
-                            ? colors.error + '20'
-                            : req.priority === 'Medium'
-                            ? colors.warning + '20'
-                            : colors.success + '20',
-                      },
+                      styles.statIndicator,
+                      { backgroundColor: colors.success + '20' },
                     ]}
                   >
                     <MaterialCommunityIcons
-                      name="wrench"
-                      size={18}
-                      color={
-                        req.priority === 'High'
-                          ? colors.error
-                          : req.priority === 'Medium'
-                          ? colors.warning
-                          : colors.success
-                      }
+                      name="check-circle"
+                      size={20}
+                      color={colors.success}
                     />
                   </View>
-                  <View style={styles.maintenanceContent}>
-                    <StandardText size="md" fontWeight="600" numberOfLines={1}>
-                      {req.title}
-                    </StandardText>
-                    <StandardText size="sm" style={styles.maintenanceSubtext}>
-                      Priority: {req.priority}
-                    </StandardText>
-                  </View>
-                </View>
-                <View
-                  style={[
-                    styles.statusChip,
-                    {
-                      backgroundColor:
-                        req.status === 'Completed'
-                          ? colors.success + '20'
-                          : req.status === 'In-progress'
-                          ? colors.warning + '20'
-                          : colors.error + '20',
-                    },
-                  ]}
-                >
+                  <StandardText size="sm" style={styles.statLabel}>
+                    Collected
+                  </StandardText>
                   <StandardText
-                    size="xs"
-                    fontWeight="600"
-                    style={{
-                      color:
-                        req.status === 'Completed'
-                          ? colors.success
-                          : req.status === 'In-progress'
-                          ? colors.warning
-                          : colors.error,
-                    }}
+                    size="lg"
+                    fontWeight="bold"
+                    style={{ color: colors.success }}
                   >
-                    {req.status}
+                    ₹{formatAmount(paid)}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.statPercentage}>
+                    {rentData.collected_percentage ||
+                      Math.round((paid / (paid + notPaid || 1)) * 100)}
+                    %
                   </StandardText>
                 </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </StandardCard>
 
-        <Gap size="md" />
+                <View style={styles.collectionDivider} />
 
-        {/* Tenant Leaderboard */}
-        <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="crown"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.sectionTitleText}
-            >
-              Top Tenants
-            </StandardText>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Tenants')}
-              style={styles.showMoreButton}
-            >
-              <StandardText style={styles.showMoreText}>See More</StandardText>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={16}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.tenantsContainer}>
-            {tenants.slice(0, 3).map((t, index) => (
-              <TouchableOpacity
-                key={t.tenant_id}
-                style={styles.tenantItem}
-                onPress={() =>
-                  navigation.navigate('TenantDetails', { tenant: t })
-                }
-                activeOpacity={0.7}
-              >
-                <View style={styles.tenantLeft}>
-                  <View style={styles.tenantRank}>
-                    <StandardText
-                      size="sm"
-                      fontWeight="bold"
-                      style={styles.rankText}
-                    >
-                      #{index + 1}
-                    </StandardText>
-                  </View>
-                  <View style={styles.tenantInfo}>
-                    <StandardText size="md" fontWeight="600" numberOfLines={1}>
-                      {t.name}
-                    </StandardText>
-                    <StandardText size="sm" style={styles.tenantSubtext}>
-                      Room {t.room}
-                    </StandardText>
-                  </View>
-                </View>
-                <View
-                  style={[
-                    styles.statusChip,
-                    {
-                      backgroundColor:
-                        t.status === 'On-time'
-                          ? colors.success + '20'
-                          : colors.error + '20',
-                    },
-                  ]}
-                >
-                  <StandardText
-                    size="xs"
-                    fontWeight="600"
-                    style={{
-                      color:
-                        t.status === 'On-time' ? colors.success : colors.error,
-                    }}
+                <View style={styles.collectionStat}>
+                  <View
+                    style={[
+                      styles.statIndicator,
+                      { backgroundColor: colors.error + '20' },
+                    ]}
                   >
-                    {t.status}
+                    <MaterialCommunityIcons
+                      name="clock-alert"
+                      size={20}
+                      color={colors.error}
+                    />
+                  </View>
+                  <StandardText size="sm" style={styles.statLabel}>
+                    Overdue
+                  </StandardText>
+                  <StandardText
+                    size="lg"
+                    fontWeight="bold"
+                    style={{ color: colors.error }}
+                  >
+                    ₹{formatAmount(notPaid)}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.statPercentage}>
+                    {rentData.overdue_percentage ||
+                      Math.round((notPaid / (paid + notPaid || 1)) * 100)}
+                    %
                   </StandardText>
                 </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </StandardCard>
+              </View>
 
-        <Gap size="md" />
+              {/* Collection Progress Bar */}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${
+                          rentData.collected_percentage ||
+                          Math.round((paid / (paid + notPaid || 1)) * 100)
+                        }%`,
+                        backgroundColor: colors.success,
+                      },
+                    ]}
+                  />
+                </View>
+                <StandardText size="sm" style={styles.progressText}>
+                  Collection Rate:{' '}
+                  {rentData.collection_rate ||
+                    Math.round((paid / (paid + notPaid || 1)) * 100)}
+                  %
+                </StandardText>
+              </View>
+            </StandardCard>
 
-        {/* Tenant KYC Status */}
-        <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="card-account-details"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.sectionTitleText}
-            >
-              Tenant KYC
-            </StandardText>
+            <Gap size="md" />
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('TenantKYC')}
-              style={styles.showMoreButton}
-            >
-              <StandardText style={styles.showMoreText}>See More</StandardText>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={16}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Summary Cards */}
-          <View style={styles.kycSummaryGrid}>
-            <View
-              style={[
-                styles.kycSummaryCard,
-                { backgroundColor: colors.success + '20' },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="check-circle"
-                size={24}
-                color={colors.success}
-              />
-              <StandardText
-                size="lg"
-                fontWeight="bold"
-                style={{ color: colors.success }}
-              >
-                {tenantData.kyc_stats?.verified || 0}
-              </StandardText>
-              <StandardText size="sm" style={{ color: colors.success }}>
-                Verified
-              </StandardText>
-            </View>
-
-            <View
-              style={[
-                styles.kycSummaryCard,
-                { backgroundColor: colors.warning + '20' },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="clock-outline"
-                size={24}
-                color={colors.warning}
-              />
-              <StandardText
-                size="lg"
-                fontWeight="bold"
-                style={{ color: colors.warning }}
-              >
-                {tenantData.kyc_stats?.pending || 0}
-              </StandardText>
-              <StandardText size="sm" style={{ color: colors.warning }}>
-                Pending
-              </StandardText>
-            </View>
-
-            <View
-              style={[
-                styles.kycSummaryCard,
-                { backgroundColor: colors.error + '20' },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={24}
-                color={colors.error}
-              />
-              <StandardText
-                size="lg"
-                fontWeight="bold"
-                style={{ color: colors.error }}
-              >
-                {tenantData.kyc_stats?.rejected || 0}
-              </StandardText>
-              <StandardText size="sm" style={{ color: colors.error }}>
-                Rejected
-              </StandardText>
-            </View>
-          </View>
-
-          {/* Recent KYC Submissions */}
-          <StandardText size="md" fontWeight="600" style={styles.sectionTitle}>
-            Recent Submissions
-          </StandardText>
-          {console.log(tenantData.recent_kyc_submissions)}
-          <View style={styles.kycList}>
-            {(tenantData.recent_kyc_submissions || [])
-              .slice(0, 3)
-              .map((kyc, index) => (
-                <TouchableOpacity
-                  key={kyc.kyc_id}
-                  style={styles.kycItem}
-                  onPress={() =>
-                    navigation.navigate('TenantDetails', {
-                      tenantId: kyc.tenant_id,
-                    })
-                  }
-                  activeOpacity={0.7}
+            {/* Enhanced Revenue & Vacancy Loss */}
+            <StandardCard style={styles.fullWidthCard}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons
+                  name="chart-line"
+                  size={24}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.sectionTitleText}
                 >
-                  <View style={styles.kycLeft}>
+                  Revenue & Vacancy Trends
+                </StandardText>
+              </View>
+
+              {/* Revenue Summary Cards */}
+              <View style={styles.revenueSummaryGrid}>
+                <View
+                  style={[
+                    styles.revenueSummaryCard,
+                    { backgroundColor: colors.success + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="trending-up"
+                    size={20}
+                    color={colors.success}
+                  />
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Avg Revenue
+                  </StandardText>
+                  <StandardText
+                    size="md"
+                    fontWeight="bold"
+                    style={{ color: colors.success }}
+                  >
+                    ₹{formatAmount(revenueData.avg_revenue || 0)}
+                  </StandardText>
+                </View>
+
+                <View
+                  style={[
+                    styles.revenueSummaryCard,
+                    { backgroundColor: colors.error + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="trending-down"
+                    size={20}
+                    color={colors.error}
+                  />
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Avg Loss
+                  </StandardText>
+                  <StandardText
+                    size="md"
+                    fontWeight="bold"
+                    style={{ color: colors.error }}
+                  >
+                    ₹{formatAmount(revenueData.avg_loss || 0)}
+                  </StandardText>
+                </View>
+              </View>
+
+              {/* Enhanced Chart with Theme Support */}
+              <View style={styles.chartContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chartScrollContainer}
+                >
+                  <StackedBarChart
+                    data={{
+                      labels: months,
+                      data: revenueByMonth.map((rev, i) => [
+                        rev,
+                        vacancyLossByMonth[i],
+                      ]),
+                      barColors: ['#4CAF50', '#FF7043'],
+                    }}
+                    width={Math.max(screenWidth - 64, months.length * 80)}
+                    height={240}
+                    chartConfig={{
+                      backgroundColor: chartBackgroundColor,
+                      backgroundGradientFrom: chartBackgroundColor,
+                      backgroundGradientTo: chartBackgroundColor,
+                      backgroundGradientFromOpacity: 1,
+                      backgroundGradientToOpacity: 1,
+                      decimalPlaces: 0,
+                      color: (opacity = 1) =>
+                        `${chartTextColor}${Math.round(opacity * 255)
+                          .toString(16)
+                          .padStart(2, '0')}`,
+                      labelColor: (opacity = 1) =>
+                        `${chartTextColor}${Math.round(opacity * 255)
+                          .toString(16)
+                          .padStart(2, '0')}`,
+                      strokeWidth: 2,
+                      barPercentage: 0.7,
+                      useShadowColorFromDataset: false,
+                      propsForLabels: {
+                        fontSize: 12,
+                        fontWeight: '600',
+                        color: chartTextColor,
+                      },
+                      propsForVerticalLabels: {
+                        fontSize: 11,
+                        fontWeight: '500',
+                        color: chartTextColor,
+                      },
+                      propsForHorizontalLabels: {
+                        fontSize: 11,
+                        fontWeight: '500',
+                        color: chartTextColor,
+                      },
+                    }}
+                    style={[
+                      styles.chartStyle,
+                      { backgroundColor: chartBackgroundColor },
+                    ]}
+                    withHorizontalLabels={true}
+                    withVerticalLabels={true}
+                    showValuesOnTopOfBars={true}
+                    fromZero={true}
+                    segments={4}
+                  />
+                </ScrollView>
+
+                {/* Custom Enhanced Legend */}
+                <View style={styles.chartLegend}>
+                  <View style={styles.chartLegendItem}>
                     <View
                       style={[
-                        styles.kycStatusIcon,
+                        styles.chartLegendDot,
+                        { backgroundColor: '#4CAF50' },
+                      ]}
+                    />
+                    <StandardText size="sm" style={styles.chartLegendText}>
+                      Revenue (₹k)
+                    </StandardText>
+                  </View>
+                  <View style={styles.chartLegendItem}>
+                    <View
+                      style={[
+                        styles.chartLegendDot,
+                        { backgroundColor: '#FF7043' },
+                      ]}
+                    />
+                    <StandardText size="sm" style={styles.chartLegendText}>
+                      Vacancy Loss (₹k)
+                    </StandardText>
+                  </View>
+                </View>
+              </View>
+            </StandardCard>
+
+            <Gap size="md" />
+
+            {/* Auto-Reconciliation (Payment Inbox Preview) */}
+            <StandardCard style={[styles.kpiCard, styles.premiumCardStyle]}>
+              <View style={styles.messageContainer}>
+                <MaterialCommunityIcons
+                  name="sync"
+                  size={20}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.messageIcon}
+                >
+                  Auto Reconciliation
+                </StandardText>
+              </View>
+              <Switch value={autoRecon} onValueChange={setAutoRecon} disabled />
+              <StandardText size="sm" style={styles.messageText}>
+                Securely reads payment messages and updates records instantly.
+              </StandardText>
+
+              <Gap size="sm" />
+              {reconInbox.map(msg => (
+                <List.Item
+                  key={msg.id}
+                  title={`${msg.from} • ${msg.preview}`}
+                  left={MessageLeftIcon}
+                  right={createMessageRightChip(msg.matched)}
+                />
+              ))}
+              <Button
+                mode="contained"
+                buttonColor={colors.primary}
+                style={styles.messagesList}
+                disabled
+              >
+                Sync Now
+              </Button>
+
+              {/* Premium Feature Lock Overlay */}
+              <View style={styles.premiumOverlay}>
+                <View style={styles.premiumContent}>
+                  <View style={styles.lockIconContainer}>
+                    <MaterialCommunityIcons
+                      name="lock"
+                      size={40}
+                      color="#FFD700"
+                    />
+                    <View style={styles.crownIcon}>
+                      <MaterialCommunityIcons
+                        name="crown"
+                        size={24}
+                        color="#FFD700"
+                      />
+                    </View>
+                  </View>
+
+                  <StandardText
+                    fontWeight="bold"
+                    size="lg"
+                    style={styles.premiumTitle}
+                  >
+                    Premium Feature
+                  </StandardText>
+
+                  <StandardText
+                    size="sm"
+                    style={styles.premiumDescription}
+                    textAlign="center"
+                  >
+                    Please contact your sales manager to unlock this feature
+                  </StandardText>
+
+                  <TouchableOpacity style={styles.contactButton}>
+                    <MaterialCommunityIcons
+                      name="phone"
+                      size={16}
+                      color="#fff"
+                      style={styles.messageItemIcon}
+                    />
+                    <StandardText
+                      fontWeight="semibold"
+                      style={styles.contactButtonText}
+                    >
+                      Contact Sales
+                    </StandardText>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </StandardCard>
+
+            <Gap size="md" />
+
+            {/* Enhanced P&L by scope */}
+            <StandardCard style={styles.fullWidthCard}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons
+                  name="chart-bar"
+                  size={24}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.sectionTitleText}
+                >
+                  Profit & Loss —{' '}
+                  {scope === 'property'
+                    ? 'Property'
+                    : scope === 'unit'
+                    ? 'Unit'
+                    : 'Tenant'}
+                </StandardText>
+              </View>
+
+              {/* P&L Summary Cards */}
+              <View style={styles.plSummaryGrid}>
+                <View
+                  style={[
+                    styles.plSummaryCard,
+                    { backgroundColor: colors.success + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="cash-plus"
+                    size={20}
+                    color={colors.success}
+                  />
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Total Revenue
+                  </StandardText>
+                  <StandardText
+                    size="md"
+                    fontWeight="bold"
+                    style={{ color: colors.success }}
+                  >
+                    ₹{formatAmount(profitLossData.summary?.total_revenue || 0)}
+                  </StandardText>
+                </View>
+
+                <View
+                  style={[
+                    styles.plSummaryCard,
+                    { backgroundColor: colors.error + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="cash-minus"
+                    size={20}
+                    color={colors.error}
+                  />
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Total Expenses
+                  </StandardText>
+                  <StandardText
+                    size="md"
+                    fontWeight="bold"
+                    style={{ color: colors.error }}
+                  >
+                    ₹{formatAmount(profitLossData.summary?.total_expenses || 0)}
+                  </StandardText>
+                </View>
+
+                <View
+                  style={[
+                    styles.plSummaryCard,
+                    { backgroundColor: colors.primary + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="trending-up"
+                    size={20}
+                    color={colors.primary}
+                  />
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Net Profit
+                  </StandardText>
+                  <StandardText
+                    size="md"
+                    fontWeight="bold"
+                    style={{ color: colors.primary }}
+                  >
+                    ₹{formatAmount(profitLossData.summary?.net_profit || 0)}
+                  </StandardText>
+                </View>
+              </View>
+
+              {/* Enhanced Data Table */}
+              <View style={styles.tableContainer}>
+                <DataTable>
+                  <DataTable.Header style={styles.tableHeader}>
+                    <DataTable.Title textStyle={styles.tableHeaderText}>
+                      Property
+                    </DataTable.Title>
+                    <DataTable.Title numeric textStyle={styles.tableHeaderText}>
+                      Revenue
+                    </DataTable.Title>
+                    <DataTable.Title numeric textStyle={styles.tableHeaderText}>
+                      Expenses
+                    </DataTable.Title>
+                    <DataTable.Title numeric textStyle={styles.tableHeaderText}>
+                      Net
+                    </DataTable.Title>
+                  </DataTable.Header>
+
+                  {plData.slice(0, 3).map((row, idx) => {
+                    const net = row.net_profit || row.revenue - row.expenses;
+                    return (
+                      <DataTable.Row key={idx} style={styles.tableRow}>
+                        <DataTable.Cell textStyle={styles.tableCellText}>
+                          {row.property_name}
+                        </DataTable.Cell>
+                        <DataTable.Cell
+                          numeric
+                          textStyle={[
+                            styles.tableCellText,
+                            { color: colors.success },
+                          ]}
+                        >
+                          ₹{formatAmount(row.revenue || 0)}
+                        </DataTable.Cell>
+                        <DataTable.Cell
+                          numeric
+                          textStyle={[
+                            styles.tableCellText,
+                            { color: colors.error },
+                          ]}
+                        >
+                          ₹{formatAmount(row.expenses || 0)}
+                        </DataTable.Cell>
+                        <DataTable.Cell
+                          numeric
+                          textStyle={[
+                            styles.tableCellText,
+                            {
+                              color: net >= 0 ? colors.success : colors.error,
+                            },
+                            styles.boldText,
+                          ]}
+                        >
+                          ₹{formatAmount(net)}
+                        </DataTable.Cell>
+                      </DataTable.Row>
+                    );
+                  })}
+                </DataTable>
+              </View>
+
+              <Gap size="sm" />
+
+              {/* Enhanced Expenses Breakdown - Using Dynamic API Data */}
+              <View style={styles.expensesSection}>
+                <StandardText
+                  size="md"
+                  fontWeight="bold"
+                  style={styles.expensesSectionTitle}
+                >
+                  Expenses Breakdown
+                </StandardText>
+
+                {expensesBreakdown.length > 0 ? (
+                  <PieChart
+                    data={expensesBreakdown}
+                    width={screenWidth - 64}
+                    height={180}
+                    accessor="population"
+                    backgroundColor="transparent"
+                    chartConfig={{
+                      backgroundColor: isDark ? colors.backgroundDark : '#fff',
+                      backgroundGradientFrom: isDark
+                        ? colors.backgroundDark
+                        : '#fff',
+                      backgroundGradientTo: isDark
+                        ? colors.backgroundDark
+                        : '#fff',
+                      color: (opacity = 1) =>
+                        isDark
+                          ? `rgba(255,255,255,${opacity})`
+                          : `rgba(0,0,0,${opacity})`,
+                    }}
+                    paddingLeft="12"
+                    style={styles.chartStyle}
+                  />
+                ) : (
+                  <View style={styles.noDataContainer}>
+                    <MaterialCommunityIcons
+                      name="chart-pie"
+                      size={48}
+                      color={colors.textSecondary}
+                    />
+                    <StandardText size="sm" style={styles.noDataText}>
+                      No expense data available
+                    </StandardText>
+                  </View>
+                )}
+              </View>
+            </StandardCard>
+
+            <Gap size="md" />
+
+            {/* Issues & Maintenance Board */}
+            <StandardCard style={styles.fullWidthCard}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons
+                  name="wrench"
+                  size={24}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.sectionTitleText}
+                >
+                  Issues & Maintenance
+                </StandardText>
+
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Tickets')}
+                  style={styles.showMoreButton}
+                >
+                  <StandardText style={styles.showMoreText}>
+                    Show More
+                  </StandardText>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Issues Summary */}
+              <View style={styles.issuesSummaryGrid}>
+                <View style={styles.issuesSummaryItem}>
+                  <StandardText
+                    size="xl"
+                    fontWeight="bold"
+                    style={{ color: colors.primary }}
+                  >
+                    {issuesData.total_issues || 0}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Total Issues
+                  </StandardText>
+                </View>
+                <View style={styles.issuesSummaryItem}>
+                  <StandardText
+                    size="xl"
+                    fontWeight="bold"
+                    style={{ color: colors.error }}
+                  >
+                    {issuesData.open_issues || 0}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Open
+                  </StandardText>
+                </View>
+                <View style={styles.issuesSummaryItem}>
+                  <StandardText
+                    size="xl"
+                    fontWeight="bold"
+                    style={{ color: colors.warning }}
+                  >
+                    {issuesData.in_progress_issues || 0}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    In Progress
+                  </StandardText>
+                </View>
+                <View style={styles.issuesSummaryItem}>
+                  <StandardText
+                    size="xl"
+                    fontWeight="bold"
+                    style={{ color: colors.success }}
+                  >
+                    {issuesData.resolved_issues || 0}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.summaryLabel}>
+                    Resolved
+                  </StandardText>
+                </View>
+              </View>
+
+              <View style={styles.maintenanceContainer}>
+                {maintenanceRequests.slice(0, 3).map(req => (
+                  <TouchableOpacity
+                    key={req.id}
+                    style={styles.maintenanceItem}
+                    onPress={() => navigation.navigate('Tickets')}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.maintenanceLeft}>
+                      <View
+                        style={[
+                          styles.maintenanceIcon,
+                          {
+                            backgroundColor:
+                              req.priority === 'High'
+                                ? colors.error + '20'
+                                : req.priority === 'Medium'
+                                ? colors.warning + '20'
+                                : colors.success + '20',
+                          },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name="wrench"
+                          size={18}
+                          color={
+                            req.priority === 'High'
+                              ? colors.error
+                              : req.priority === 'Medium'
+                              ? colors.warning
+                              : colors.success
+                          }
+                        />
+                      </View>
+                      <View style={styles.maintenanceContent}>
+                        <StandardText
+                          size="md"
+                          fontWeight="600"
+                          numberOfLines={1}
+                        >
+                          {req.title}
+                        </StandardText>
+                        <StandardText
+                          size="sm"
+                          style={styles.maintenanceSubtext}
+                        >
+                          Priority: {req.priority}
+                        </StandardText>
+                      </View>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusChip,
                         {
                           backgroundColor:
-                            kyc.status === 'verified'
+                            req.status === 'Completed'
                               ? colors.success + '20'
-                              : kyc.status === 'pending'
+                              : req.status === 'In-progress'
                               ? colors.warning + '20'
                               : colors.error + '20',
                         },
                       ]}
                     >
-                      <MaterialCommunityIcons
-                        name={
-                          kyc.status === 'verified'
-                            ? 'check'
-                            : kyc.status === 'pending'
-                            ? 'clock'
-                            : 'close'
-                        }
-                        size={16}
-                        color={
-                          kyc.status === 'verified'
-                            ? colors.success
-                            : kyc.status === 'pending'
-                            ? colors.warning
-                            : colors.error
-                        }
-                      />
-                    </View>
-                    <View style={styles.kycContent}>
                       <StandardText
-                        size="md"
+                        size="xs"
                         fontWeight="600"
-                        numberOfLines={1}
+                        style={{
+                          color:
+                            req.status === 'Completed'
+                              ? colors.success
+                              : req.status === 'In-progress'
+                              ? colors.warning
+                              : colors.error,
+                        }}
                       >
-                        {kyc.tenant_name}
-                      </StandardText>
-                      <StandardText size="sm" style={styles.kycSubtext}>
-                        Submitted:{' '}
-                        {new Date(kyc.submitted_date).toLocaleDateString()}
+                        {req.status}
                       </StandardText>
                     </View>
-                  </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </StandardCard>
+
+            <Gap size="md" />
+
+            {/* Tenant Leaderboard */}
+            <StandardCard style={styles.fullWidthCard}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons
+                  name="crown"
+                  size={24}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.sectionTitleText}
+                >
+                  Top Tenants
+                </StandardText>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Tenants')}
+                  style={styles.showMoreButton}
+                >
+                  <StandardText style={styles.showMoreText}>
+                    See More
+                  </StandardText>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.tenantsContainer}>
+                {tenants.slice(0, 3).map((t, index) => (
+                  <TouchableOpacity
+                    key={t.tenant_id}
+                    style={styles.tenantItem}
+                    onPress={() =>
+                      navigation.navigate('TenantDetails', {
+                        tenant_id: t.tenant_id,
+                      })
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.tenantLeft}>
+                      <View style={styles.tenantRank}>
+                        <StandardText
+                          size="sm"
+                          fontWeight="bold"
+                          style={styles.rankText}
+                        >
+                          #{index + 1}
+                        </StandardText>
+                      </View>
+                      <View style={styles.tenantInfo}>
+                        <StandardText
+                          size="md"
+                          fontWeight="600"
+                          numberOfLines={1}
+                        >
+                          {t.name}
+                        </StandardText>
+                        <StandardText size="sm" style={styles.tenantSubtext}>
+                          Room {t.room}
+                        </StandardText>
+                      </View>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusChip,
+                        {
+                          backgroundColor:
+                            t.status === 'On-time'
+                              ? colors.success + '20'
+                              : colors.error + '20',
+                        },
+                      ]}
+                    >
+                      <StandardText
+                        size="xs"
+                        fontWeight="600"
+                        style={{
+                          color:
+                            t.status === 'On-time'
+                              ? colors.success
+                              : colors.error,
+                        }}
+                      >
+                        {t.status}
+                      </StandardText>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </StandardCard>
+
+            <Gap size="md" />
+
+            {/* Tenant KYC Status */}
+            <StandardCard style={styles.fullWidthCard}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons
+                  name="card-account-details"
+                  size={24}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.sectionTitleText}
+                >
+                  Tenant KYC
+                </StandardText>
+
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('TenantKYC')}
+                  style={styles.showMoreButton}
+                >
+                  <StandardText style={styles.showMoreText}>
+                    See More
+                  </StandardText>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Summary Cards */}
+              <View style={styles.kycSummaryGrid}>
+                <View
+                  style={[
+                    styles.kycSummaryCard,
+                    { backgroundColor: colors.success + '20' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={24}
+                    color={colors.success}
+                  />
+                  <StandardText
+                    size="lg"
+                    fontWeight="bold"
+                    style={{ color: colors.success }}
+                  >
+                    {tenantData.kyc_stats?.verified || 0}
+                  </StandardText>
+                  <StandardText size="sm" style={{ color: colors.success }}>
+                    Verified
+                  </StandardText>
+                </View>
+
+                <View
+                  style={[
+                    styles.kycSummaryCard,
+                    { backgroundColor: colors.warning + '20' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="clock-outline"
+                    size={24}
+                    color={colors.warning}
+                  />
+                  <StandardText
+                    size="lg"
+                    fontWeight="bold"
+                    style={{ color: colors.warning }}
+                  >
+                    {tenantData.kyc_stats?.pending || 0}
+                  </StandardText>
+                  <StandardText size="sm" style={{ color: colors.warning }}>
+                    Pending
+                  </StandardText>
+                </View>
+
+                <View
+                  style={[
+                    styles.kycSummaryCard,
+                    { backgroundColor: colors.error + '20' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="close-circle"
+                    size={24}
+                    color={colors.error}
+                  />
+                  <StandardText
+                    size="lg"
+                    fontWeight="bold"
+                    style={{ color: colors.error }}
+                  >
+                    {tenantData.kyc_stats?.rejected || 0}
+                  </StandardText>
+                  <StandardText size="sm" style={{ color: colors.error }}>
+                    Rejected
+                  </StandardText>
+                </View>
+              </View>
+
+              {/* Recent KYC Submissions */}
+              <StandardText
+                size="md"
+                fontWeight="600"
+                style={styles.sectionTitle}
+              >
+                Recent Submissions
+              </StandardText>
+              {console.log(tenantData.recent_kyc_submissions)}
+              <View style={styles.kycList}>
+                {(tenantData.recent_kyc_submissions || [])
+                  .slice(0, 3)
+                  .map((kyc, index) => (
+                    <TouchableOpacity
+                      key={kyc.kyc_id}
+                      style={styles.kycItem}
+                      onPress={() =>
+                        navigation.navigate('TenantDetails', {
+                          tenant_id: kyc.tenant_id,
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.kycLeft}>
+                        <View
+                          style={[
+                            styles.kycStatusIcon,
+                            {
+                              backgroundColor:
+                                kyc.status === 'verified'
+                                  ? colors.success + '20'
+                                  : kyc.status === 'pending'
+                                  ? colors.warning + '20'
+                                  : colors.error + '20',
+                            },
+                          ]}
+                        >
+                          <MaterialCommunityIcons
+                            name={
+                              kyc.status === 'verified'
+                                ? 'check'
+                                : kyc.status === 'pending'
+                                ? 'clock'
+                                : 'close'
+                            }
+                            size={16}
+                            color={
+                              kyc.status === 'verified'
+                                ? colors.success
+                                : kyc.status === 'pending'
+                                ? colors.warning
+                                : colors.error
+                            }
+                          />
+                        </View>
+                        <View style={styles.kycContent}>
+                          <StandardText
+                            size="md"
+                            fontWeight="600"
+                            numberOfLines={1}
+                          >
+                            {kyc.tenant_name}
+                          </StandardText>
+                          <StandardText size="sm" style={styles.kycSubtext}>
+                            Submitted:{' '}
+                            {new Date(kyc.submitted_date).toLocaleDateString()}
+                          </StandardText>
+                        </View>
+                      </View>
+                      <View
+                        style={[
+                          styles.statusChip,
+                          {
+                            backgroundColor:
+                              kyc.status === 'verified'
+                                ? colors.success + '20'
+                                : kyc.status === 'pending'
+                                ? colors.warning + '20'
+                                : colors.error + '20',
+                          },
+                        ]}
+                      >
+                        <StandardText
+                          size="xs"
+                          fontWeight="600"
+                          style={{
+                            color:
+                              kyc.status === 'verified'
+                                ? colors.success
+                                : kyc.status === 'pending'
+                                ? colors.warning
+                                : colors.error,
+                          }}
+                        >
+                          {kyc.status.charAt(0).toUpperCase() +
+                            kyc.status.slice(1)}
+                        </StandardText>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+              </View>
+            </StandardCard>
+
+            <Gap size="md" />
+
+            {/* Enhanced Room Occupancy Map */}
+            <StandardCard style={styles.fullWidthCard}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons
+                  name="home-variant"
+                  size={24}
+                  color={colors.primary}
+                />
+                <StandardText
+                  size="lg"
+                  fontWeight="bold"
+                  style={styles.sectionTitleText}
+                >
+                  Room Occupancy Map
+                </StandardText>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Rooms')}
+                  style={styles.showMoreButton}
+                >
+                  <StandardText style={styles.showMoreText}>
+                    View All
+                  </StandardText>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.occupancyStats}>
+                <View style={styles.occupancyStatItem}>
+                  <StandardText
+                    size="xl"
+                    fontWeight="bold"
+                    style={{ color: colors.success }}
+                  >
+                    {roomData.occupied_rooms || totalRooms - vacantRooms}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.occupancyStatLabel}>
+                    Occupied
+                  </StandardText>
+                </View>
+                <View style={styles.occupancyStatItem}>
+                  <StandardText
+                    size="xl"
+                    fontWeight="bold"
+                    style={{ color: colors.error }}
+                  >
+                    {roomData.vacant_rooms || vacantRooms}
+                  </StandardText>
+                  <StandardText size="sm" style={styles.occupancyStatLabel}>
+                    Vacant
+                  </StandardText>
+                </View>
+                <View style={styles.occupancyStatItem}>
+                  <StandardText
+                    size="xl"
+                    fontWeight="bold"
+                    style={{ color: colors.primary }}
+                  >
+                    {Math.round(occupancyPct)}%
+                  </StandardText>
+                  <StandardText size="sm" style={styles.occupancyStatLabel}>
+                    Occupancy
+                  </StandardText>
+                </View>
+              </View>
+
+              <View style={styles.roomGrid}>
+                {occupancyGrid.slice(0, 9).map((room, idx) => (
+                  <TouchableOpacity
+                    key={room.room_id}
+                    style={[
+                      styles.roomCard,
+                      { backgroundColor: getRoomColor(room.status) },
+                    ]}
+                    onPress={() => {
+                      navigation.navigate('RoomDetails', {
+                        room_id: room.room_id,
+                        property_id: room.property_id,
+                      });
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <StandardText fontWeight="bold" style={styles.roomNumber}>
+                      {room.room}
+                    </StandardText>
+                    <MaterialCommunityIcons
+                      name={
+                        room.status === 'occupied'
+                          ? 'account'
+                          : room.status === 'overdue'
+                          ? 'account-alert'
+                          : 'home-outline'
+                      }
+                      size={16}
+                      color="#fff"
+                      style={styles.roomIcon}
+                    />
+                    {room.has_issues && (
+                      <View style={styles.issueIndicator}>
+                        <MaterialCommunityIcons
+                          name="alert-circle"
+                          size={12}
+                          color={colors.warning}
+                        />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.roomLegend}>
+                <View style={styles.legendItem}>
                   <View
                     style={[
-                      styles.statusChip,
-                      {
-                        backgroundColor:
-                          kyc.status === 'verified'
-                            ? colors.success + '20'
-                            : kyc.status === 'pending'
-                            ? colors.warning + '20'
-                            : colors.error + '20',
-                      },
+                      styles.legendDot,
+                      { backgroundColor: colors.success },
                     ]}
-                  >
-                    <StandardText
-                      size="xs"
-                      fontWeight="600"
-                      style={{
-                        color:
-                          kyc.status === 'verified'
-                            ? colors.success
-                            : kyc.status === 'pending'
-                            ? colors.warning
-                            : colors.error,
-                      }}
-                    >
-                      {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
-                    </StandardText>
-                  </View>
-                </TouchableOpacity>
-              ))}
-          </View>
-        </StandardCard>
+                  />
+                  <StandardText size="sm">Occupied</StandardText>
+                </View>
+                <View style={styles.legendItem}>
+                  <View
+                    style={[
+                      styles.legendDot,
+                      { backgroundColor: colors.error },
+                    ]}
+                  />
+                  <StandardText size="sm">Overdue</StandardText>
+                </View>
+                <View style={styles.legendItem}>
+                  <View
+                    style={[
+                      styles.legendDot,
+                      { backgroundColor: colors.light_gray },
+                    ]}
+                  />
+                  <StandardText size="sm">Vacant</StandardText>
+                </View>
+              </View>
+            </StandardCard>
 
-        <Gap size="md" />
-
-        {/* Enhanced Room Occupancy Map */}
-        <StandardCard style={styles.fullWidthCard}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="home-variant"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              size="lg"
-              fontWeight="bold"
-              style={styles.sectionTitleText}
-            >
-              Room Occupancy Map
-            </StandardText>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Rooms')}
-              style={styles.showMoreButton}
-            >
-              <StandardText style={styles.showMoreText}>View All</StandardText>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={16}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.occupancyStats}>
-            <View style={styles.occupancyStatItem}>
-              <StandardText
-                size="xl"
-                fontWeight="bold"
-                style={{ color: colors.success }}
-              >
-                {roomData.occupied_rooms || totalRooms - vacantRooms}
-              </StandardText>
-              <StandardText size="sm" style={styles.occupancyStatLabel}>
-                Occupied
-              </StandardText>
-            </View>
-            <View style={styles.occupancyStatItem}>
-              <StandardText
-                size="xl"
-                fontWeight="bold"
-                style={{ color: colors.error }}
-              >
-                {roomData.vacant_rooms || vacantRooms}
-              </StandardText>
-              <StandardText size="sm" style={styles.occupancyStatLabel}>
-                Vacant
-              </StandardText>
-            </View>
-            <View style={styles.occupancyStatItem}>
-              <StandardText
-                size="xl"
-                fontWeight="bold"
-                style={{ color: colors.primary }}
-              >
-                {Math.round(occupancyPct)}%
-              </StandardText>
-              <StandardText size="sm" style={styles.occupancyStatLabel}>
-                Occupancy
-              </StandardText>
-            </View>
-          </View>
-
-          <View style={styles.roomGrid}>
-            {occupancyGrid.slice(0, 9).map((room, idx) => (
-              <TouchableOpacity
-                key={room.room_id}
-                style={[
-                  styles.roomCard,
-                  { backgroundColor: getRoomColor(room.status) },
-                ]}
-                onPress={() => {
-                  navigation.navigate('RoomDetails', { room_id: room.room_id });
-                }}
-                activeOpacity={0.8}
-              >
-                <StandardText fontWeight="bold" style={styles.roomNumber}>
-                  {room.room}
-                </StandardText>
-                <MaterialCommunityIcons
-                  name={
-                    room.status === 'occupied'
-                      ? 'account'
-                      : room.status === 'overdue'
-                      ? 'account-alert'
-                      : 'home-outline'
-                  }
-                  size={16}
-                  color="#fff"
-                  style={styles.roomIcon}
-                />
-                {room.has_issues && (
-                  <View style={styles.issueIndicator}>
-                    <MaterialCommunityIcons
-                      name="alert-circle"
-                      size={12}
-                      color={colors.warning}
-                    />
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={styles.roomLegend}>
-            <View style={styles.legendItem}>
-              <View
-                style={[styles.legendDot, { backgroundColor: colors.success }]}
-              />
-              <StandardText size="sm">Occupied</StandardText>
-            </View>
-            <View style={styles.legendItem}>
-              <View
-                style={[styles.legendDot, { backgroundColor: colors.error }]}
-              />
-              <StandardText size="sm">Overdue</StandardText>
-            </View>
-            <View style={styles.legendItem}>
-              <View
-                style={[
-                  styles.legendDot,
-                  { backgroundColor: colors.light_gray },
-                ]}
-              />
-              <StandardText size="sm">Vacant</StandardText>
-            </View>
-          </View>
-        </StandardCard>
-
-        <Gap size="xl" />
+            <Gap size="xl" />
+          </>
+        )}
       </ScrollView>
     </View>
   );

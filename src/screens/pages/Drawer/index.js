@@ -1,4 +1,10 @@
-import React, { useContext, useState, useMemo, useCallback } from 'react';
+import React, {
+  useContext,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from 'react';
 import {
   View,
   Image,
@@ -17,10 +23,12 @@ import StandardText from '../../../components/StandardText/StandardText';
 // Context
 import { CredentialsContext } from '../../../context/CredentialsContext';
 import { ThemeContext } from '../../../context/ThemeContext';
+import { PropertyContext } from '../../../context/PropertyContext';
 
 // Constants and utilities
 import { SCREEN_NAMES, menuItems } from '../../../navigation/constants';
 import { navigateToRoute } from '../../../navigation/navigationUtils';
+import { fetchTickets } from '../../../services/NetworkUtils';
 import colors from '../../../theme/color';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -29,9 +37,11 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
   const navigation = useNavigation();
   const { credentials, clearCredentials } = useContext(CredentialsContext);
   const { theme: mode } = useContext(ThemeContext);
+  const { selectedProperty } = useContext(PropertyContext);
 
   const [expandedMenus, setExpandedMenus] = useState({});
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [ticketCount, setTicketCount] = useState(0);
 
   // Memoize user info
   const userInfo = useMemo(() => {
@@ -46,6 +56,53 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
         : 'U',
     };
   }, [credentials]);
+
+  useEffect(() => {
+    const fetchTicketCount = async () => {
+      if (!credentials?.accessToken || !selectedProperty?.property_id) {
+        setTicketCount(0);
+        return;
+      }
+
+      try {
+        const response = await fetchTickets(
+          credentials.accessToken,
+          selectedProperty.property_id,
+        );
+        const tickets = response?.data?.items || [];
+        const openTickets = tickets.filter(
+          ticket => ticket.status === 'PENDING' || ticket.status === 'ACTIVE',
+        );
+        setTicketCount(openTickets.length);
+      } catch (error) {
+        console.error('Error fetching ticket count:', error);
+        setTicketCount(0);
+      }
+    };
+
+    fetchTicketCount();
+  }, [credentials?.accessToken, selectedProperty?.property_id]);
+
+  // Create menu items with dynamic badge
+  const menuItemsWithBadge = useMemo(() => {
+    return menuItems.map(item => {
+      if (item.label === 'Support & Maintenance' && item.children) {
+        return {
+          ...item,
+          children: item.children.map(child => {
+            if (child.label === 'All Tickets') {
+              return {
+                ...child,
+                badge: ticketCount > 0 ? ticketCount : null,
+              };
+            }
+            return child;
+          }),
+        };
+      }
+      return item;
+    });
+  }, [ticketCount]);
 
   // Theme-aware colors
   const themeColors = useMemo(
@@ -334,7 +391,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
 
         {/* Menu Section */}
         <View style={styles.menuContainer}>
-          {menuItems.map(renderMenuItem)}
+          {menuItemsWithBadge.map(renderMenuItem)}
         </View>
       </ScrollView>
 

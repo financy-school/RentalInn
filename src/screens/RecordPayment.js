@@ -17,6 +17,7 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { recordPayment, getTenant } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/color';
@@ -208,14 +209,12 @@ const RecordPayment = ({ navigation, route }) => {
         {/* Tenant Info Card */}
         <Card style={[styles.tenantCard, { backgroundColor: cardBackground }]}>
           {loadingTenant ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <StandardText
-                style={[styles.loadingText, { color: textSecondary }]}
-              >
-                Loading tenant details...
-              </StandardText>
-            </View>
+            <AnimatedLoader
+              message="Loading tenant details..."
+              icon="account-search"
+              fullScreen={false}
+              size={40}
+            />
           ) : (
             <View style={styles.tenantHeader}>
               <View style={styles.tenantInfo}>

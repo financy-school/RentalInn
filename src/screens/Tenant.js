@@ -21,6 +21,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 import SelectPropertyPrompt from '../components/SelectPropertyPrompt/SelectPropertyPrompt';
 import {
@@ -73,6 +74,7 @@ const Tenants = ({ navigation }) => {
         // Don't show error when no property is selected - just clear data
         setTenants([]);
         setLoading(false);
+        setRefreshing(false);
         return;
       }
 
@@ -99,6 +101,7 @@ const Tenants = ({ navigation }) => {
       setTenants([]);
     }
     setLoading(false);
+    setRefreshing(false);
   }, [credentials, selectedProperty]);
 
   // Filter tenants based on selectedFilter and search
@@ -278,9 +281,11 @@ const Tenants = ({ navigation }) => {
 
           {/* Loader */}
           {loading && (
-            <View style={{ padding: 20, alignItems: 'center' }}>
-              <StandardText>Loading tenants...</StandardText>
-            </View>
+            <AnimatedLoader
+              message="Loading tenants..."
+              icon="account-group"
+              fullScreen={false}
+            />
           )}
 
           {/* Empty State */}
@@ -571,7 +576,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 30,
     borderRadius: 30,
-    bottom: 120,
+    bottom: 30,
     backgroundColor: colors.secondary,
   },
 

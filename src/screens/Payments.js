@@ -7,6 +7,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
 import colors from '../theme/color';
@@ -128,19 +129,11 @@ const Payments = ({ navigation }) => {
         ]}
       >
         <StandardHeader navigation={navigation} title="Payments" />
-        <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons
-            name="cash-multiple"
-            size={64}
-            color={isDark ? colors.light_gray : colors.secondary}
-          />
-          <StandardText
-            style={[styles.loadingText, { color: textPrimary }]}
-            fontWeight="medium"
-          >
-            Loading payments...
-          </StandardText>
-        </View>
+        <AnimatedLoader
+          message="Loading payments..."
+          icon="cash-multiple"
+          fullScreen={false}
+        />
       </View>
     );
   }
