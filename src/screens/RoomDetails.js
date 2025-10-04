@@ -93,7 +93,7 @@ const RoomDetails = ({ navigation, route }) => {
             try {
               const res = await getDocument(
                 credentials.accessToken,
-                credentials.property_id,
+                property_id,
                 docId,
               );
               return res.data.download_url;
@@ -111,7 +111,7 @@ const RoomDetails = ({ navigation, route }) => {
       try {
         const res = await getTenants(
           credentials.accessToken,
-          credentials.property_id,
+          property_id,
           room.room_id,
         );
         if (res.success) {
@@ -128,7 +128,7 @@ const RoomDetails = ({ navigation, route }) => {
 
     fetchImageUrls();
     fetchTenants();
-  }, [room, credentials]);
+  }, [room, credentials, property_id]);
 
   // ===== CUSTOM MENU STATE =====
   const [activeMenuTenantId, setActiveMenuTenantId] = useState(null);
@@ -850,7 +850,7 @@ const RoomDetails = ({ navigation, route }) => {
                 closeMenu();
                 const res = await getTenants(
                   credentials.accessToken,
-                  credentials.property_id,
+                  property_id,
                   room.room_id,
                 );
                 setTenants(res.data);
