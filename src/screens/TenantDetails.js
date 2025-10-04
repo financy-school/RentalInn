@@ -19,6 +19,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import colors from '../theme/color';
 import {
   deleteTenant,
@@ -396,12 +397,11 @@ const TenantDetails = ({ navigation, route }) => {
     return (
       <View style={[styles.container, { backgroundColor }]}>
         <StandardHeader navigation={navigation} title="Tenant Details" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <StandardText style={[styles.loadingText, { color: textSecondary }]}>
-            Loading tenant details...
-          </StandardText>
-        </View>
+        <AnimatedLoader
+          message="Loading tenant details..."
+          icon="account-details"
+          fullScreen={false}
+        />
       </View>
     );
   }

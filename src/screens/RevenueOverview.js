@@ -17,6 +17,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
 import colors from '../theme/color';
@@ -235,17 +236,11 @@ const RevenueOverview = ({ navigation }) => {
           subtitle="Financial analytics and insights"
           showBackButton
         />
-        <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons
-            name="chart-line"
-            size={64}
-            color={colors.primary}
-          />
-          <Gap size="md" />
-          <StandardText style={{ color: textPrimary }} fontWeight="medium">
-            Loading revenue data...
-          </StandardText>
-        </View>
+        <AnimatedLoader
+          message="Loading revenue data..."
+          icon="chart-line"
+          fullScreen={false}
+        />
       </View>
     );
   }

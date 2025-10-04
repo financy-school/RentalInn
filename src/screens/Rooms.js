@@ -23,6 +23,7 @@ import { useProperty } from '../context/PropertyContext';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import SelectPropertyPrompt from '../components/SelectPropertyPrompt/SelectPropertyPrompt';
 import Share from 'react-native-share';
 import {
@@ -292,9 +293,11 @@ const Rooms = ({ navigation }) => {
 
           {/* Loader / Error / Empty */}
           {loading && (
-            <StandardText style={{ textAlign: 'center' }}>
-              Loading rooms...
-            </StandardText>
+            <AnimatedLoader
+              message="Loading rooms..."
+              icon="home-city"
+              fullScreen={false}
+            />
           )}
           {error && (
             <View style={{ alignItems: 'center' }}>

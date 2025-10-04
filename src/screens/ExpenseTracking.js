@@ -23,6 +23,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/color';
 import Gap from '../components/Gap/Gap';
@@ -381,17 +382,11 @@ const ExpenseTracking = ({ navigation }) => {
           subtitle="Monitor and manage expenses"
           showBackButton
         />
-        <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons
-            name="receipt"
-            size={64}
-            color={colors.error}
-          />
-          <Gap size="md" />
-          <StandardText style={{ color: textPrimary }} fontWeight="medium">
-            Loading expenses...
-          </StandardText>
-        </View>
+        <AnimatedLoader
+          message="Loading expenses..."
+          icon="receipt"
+          fullScreen={false}
+        />
       </View>
     );
   }

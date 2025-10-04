@@ -14,6 +14,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 import SelectPropertyPrompt from '../components/SelectPropertyPrompt/SelectPropertyPrompt';
 import {
@@ -296,15 +297,11 @@ const Tickets = ({ navigation }) => {
 
           {/* Loading Indicator or Ticket List */}
           {loading ? (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <StandardText>Loading tickets...</StandardText>
-            </View>
+            <AnimatedLoader
+              message="Loading tickets..."
+              icon="ticket"
+              fullScreen={false}
+            />
           ) : (
             <>
               {/* Empty State */}

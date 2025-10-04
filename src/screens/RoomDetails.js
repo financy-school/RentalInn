@@ -15,6 +15,7 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import colors from '../theme/color';
 import {
   deleteTenant,
@@ -179,19 +180,11 @@ const RoomDetails = ({ navigation, route }) => {
     return (
       <View style={styles.container}>
         <StandardHeader navigation={navigation} title="Room Details" />
-        <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons
-            name="home-search"
-            size={64}
-            color={isDark ? colors.light_gray : colors.primary}
-          />
-          <StandardText
-            style={[styles.loadingText, { color: textPrimary }]}
-            fontWeight="medium"
-          >
-            Loading room details...
-          </StandardText>
-        </View>
+        <AnimatedLoader
+          message="Loading room details..."
+          icon="home-search"
+          fullScreen={false}
+        />
       </View>
     );
   }

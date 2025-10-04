@@ -16,6 +16,7 @@ import { CredentialsContext } from '../context/CredentialsContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import {
   getAppInfo,
   updateNotificationSettings,
@@ -667,13 +668,11 @@ What's New:
     return (
       <View style={styles.container}>
         <StandardHeader navigation={navigation} title="Settings" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Gap size="md" />
-          <StandardText style={[styles.loadingText, { color: textPrimary }]}>
-            Loading settings...
-          </StandardText>
-        </View>
+        <AnimatedLoader
+          message="Loading settings..."
+          icon="cog"
+          fullScreen={false}
+        />
       </View>
     );
   }

@@ -15,6 +15,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
+import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/color';
 import Gap from '../components/Gap/Gap';
@@ -366,17 +367,11 @@ const PaymentHistory = ({ navigation }) => {
           subtitle="Track all payment transactions"
           showBackButton
         />
-        <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons
-            name="loading"
-            size={48}
-            color={colors.primary}
-          />
-          <Gap size="md" />
-          <StandardText style={{ color: textPrimary }} fontWeight="medium">
-            Loading payment history...
-          </StandardText>
-        </View>
+        <AnimatedLoader
+          message="Loading payment history..."
+          icon="history"
+          fullScreen={false}
+        />
       </View>
     );
   }
