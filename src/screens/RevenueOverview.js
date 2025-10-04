@@ -6,10 +6,12 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
-import { Card, Button } from 'react-native-paper';
+import { Card, Button, Portal, Modal, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Share from 'react-native-share';
+import RNFS from 'react-native-fs';
 import DatePicker from 'react-native-ui-datepicker';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
@@ -21,10 +23,11 @@ import colors from '../theme/color';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 
+const { width } = Dimensions.get('window');
+
 const RevenueOverview = ({ navigation }) => {
   const { credentials } = useContext(CredentialsContext);
   const { theme: mode } = useContext(ThemeContext);
-  const {} = useProperty();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -34,13 +37,18 @@ const RevenueOverview = ({ navigation }) => {
     yearlyRevenue: 0,
     pendingPayments: 0,
     overduePayments: 0,
+    averageMonthly: 0,
+    totalProperties: 0,
+    occupiedUnits: 0,
     monthlyTrend: [],
-    yearlyTrend: [],
+    categoryBreakdown: [],
+    topTenants: [],
   });
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('month'); // month, year, all
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -55,33 +63,72 @@ const RevenueOverview = ({ navigation }) => {
     try {
       setLoading(true);
 
-      // Mock data for now - replace with actual API call
+      // Mock data - replace with actual API call
       const mockData = {
-        totalRevenue: 125000,
-        monthlyRevenue: 15000,
-        yearlyRevenue: 180000,
-        pendingPayments: 2500,
-        overduePayments: 1200,
+        totalRevenue: 450000,
+        monthlyRevenue: 75000,
+        yearlyRevenue: 900000,
+        pendingPayments: 25000,
+        overduePayments: 12000,
+        averageMonthly: 75000,
+        totalProperties: 3,
+        occupiedUnits: 24,
         monthlyTrend: [
-          { month: 'Jan', amount: 12000 },
-          { month: 'Feb', amount: 13500 },
-          { month: 'Mar', amount: 14200 },
-          { month: 'Apr', amount: 13800 },
-          { month: 'May', amount: 15200 },
-          { month: 'Jun', amount: 15800 },
+          { month: 'Jul', amount: 68000, received: 65000, pending: 3000 },
+          { month: 'Aug', amount: 72000, received: 70000, pending: 2000 },
+          { month: 'Sep', amount: 70000, received: 68000, pending: 2000 },
+          { month: 'Oct', amount: 75000, received: 72000, pending: 3000 },
+          { month: 'Nov', amount: 78000, received: 75000, pending: 3000 },
+          { month: 'Dec', amount: 80000, received: 75000, pending: 5000 },
         ],
-        yearlyTrend: [
-          { year: '2022', amount: 145000 },
-          { year: '2023', amount: 168000 },
-          { year: '2024', amount: 175000 },
-          { year: '2025', amount: 180000 },
+        categoryBreakdown: [
+          { category: 'Rent', amount: 360000, percentage: 80, count: 144 },
+          { category: 'Deposit', amount: 60000, percentage: 13, count: 12 },
+          { category: 'Maintenance', amount: 20000, percentage: 4, count: 24 },
+          { category: 'Utilities', amount: 10000, percentage: 3, count: 18 },
+        ],
+        topTenants: [
+          {
+            name: 'John Doe',
+            property: 'Apt 101',
+            amount: 18000,
+            payments: 12,
+          },
+          {
+            name: 'Jane Smith',
+            property: 'Apt 102',
+            amount: 20000,
+            payments: 10,
+          },
+          {
+            name: 'Mike Johnson',
+            property: 'Apt 103',
+            amount: 15000,
+            payments: 12,
+          },
+          {
+            name: 'Sarah Wilson',
+            property: 'Apt 104',
+            amount: 18000,
+            payments: 12,
+          },
+          {
+            name: 'David Brown',
+            property: 'Apt 105',
+            amount: 16500,
+            payments: 11,
+          },
         ],
       };
 
-      setRevenueData(mockData);
+      setTimeout(() => {
+        setRevenueData(mockData);
+        setLoading(false);
+        setRefreshing(false);
+      }, 1000);
     } catch (error) {
       console.error('Error fetching revenue data:', error);
-    } finally {
+      Alert.alert('Error', 'Failed to fetch revenue data. Please try again.');
       setLoading(false);
       setRefreshing(false);
     }
@@ -91,7 +138,6 @@ const RevenueOverview = ({ navigation }) => {
     fetchRevenueData();
   }, [fetchRevenueData]);
 
-  // Refresh handler
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchRevenueData();
@@ -100,92 +146,103 @@ const RevenueOverview = ({ navigation }) => {
   // Download revenue report
   const downloadReport = useCallback(async () => {
     try {
-      // Filter data based on date range if selected
-      let filteredMonthlyTrend = revenueData.monthlyTrend;
-      let filteredYearlyTrend = revenueData.yearlyTrend;
+      const headers = ['Report Type', 'Value'];
 
-      if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+      const summaryData = [
+        ['Total Revenue', revenueData.totalRevenue],
+        ['Monthly Revenue', revenueData.monthlyRevenue],
+        ['Yearly Revenue', revenueData.yearlyRevenue],
+        ['Pending Payments', revenueData.pendingPayments],
+        ['Overdue Payments', revenueData.overduePayments],
+        ['Average Monthly', revenueData.averageMonthly],
+        ['Total Properties', revenueData.totalProperties],
+        ['Occupied Units', revenueData.occupiedUnits],
+      ];
 
-        // Filter monthly trend
-        filteredMonthlyTrend = revenueData.monthlyTrend.filter(trend => {
-          const trendDate = new Date(trend.month + '-01');
-          return trendDate >= start && trendDate <= end;
-        });
-
-        // Filter yearly trend
-        filteredYearlyTrend = revenueData.yearlyTrend.filter(trend => {
-          const trendDate = new Date(trend.year + '-01-01');
-          return trendDate >= start && trendDate <= end;
-        });
-      }
-
-      // Create CSV content with revenue summary
-      const headers = ['Metric', 'Value'];
       const csvContent = [
+        'Revenue Overview Report',
+        `Generated on: ${new Date().toLocaleDateString('en-IN')}`,
+        `Date Range: ${startDate || 'All'} to ${endDate || 'All'}`,
+        '',
+        'Summary',
         headers.join(','),
-        `Total Revenue,${revenueData.totalRevenue}`,
-        `Monthly Revenue,${revenueData.monthlyRevenue}`,
-        `Yearly Revenue,${revenueData.yearlyRevenue}`,
-        `Pending Payments,${revenueData.pendingPayments}`,
-        `Overdue Payments,${revenueData.overduePayments}`,
-        `Date Range,${startDate ? startDate : 'All'} to ${
-          endDate ? endDate : 'All'
-        }`,
+        ...summaryData.map(row => row.join(',')),
         '',
         'Monthly Trend',
-        'Month,Amount',
-        ...filteredMonthlyTrend.map(trend => `${trend.month},${trend.amount}`),
+        'Month,Total Amount,Received,Pending',
+        ...revenueData.monthlyTrend.map(
+          trend =>
+            `${trend.month},${trend.amount},${trend.received},${trend.pending}`,
+        ),
         '',
-        'Yearly Trend',
-        'Year,Amount',
-        ...filteredYearlyTrend.map(trend => `${trend.year},${trend.amount}`),
+        'Category Breakdown',
+        'Category,Amount,Percentage,Count',
+        ...revenueData.categoryBreakdown.map(
+          cat =>
+            `${cat.category},${cat.amount},${cat.percentage}%,${cat.count}`,
+        ),
+        '',
+        'Top Tenants',
+        'Name,Property,Total Amount,Payments',
+        ...revenueData.topTenants.map(
+          tenant =>
+            `"${tenant.name}","${tenant.property}",${tenant.amount},${tenant.payments}`,
+        ),
       ].join('\n');
 
-      // Generate filename with date range
-      const dateRange =
-        startDate && endDate ? `${startDate}_to_${endDate}` : 'all_time';
-      const filename = `revenue_report_${dateRange}.csv`;
+      const date = new Date().toISOString().split('T')[0];
+      const filename = `revenue_overview_${date}.csv`;
+      const filePath = `${RNFS.CachesDirectoryPath}/${filename}`;
 
-      // Share the CSV file
+      await RNFS.writeFile(filePath, csvContent, 'utf8');
+
       await Share.open({
-        title: 'Revenue Report',
-        message: 'Revenue Report',
-        url: `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`,
+        title: 'Revenue Overview Report',
+        message: 'Revenue Overview Report',
+        urls: [`file://${filePath}`],
         filename: filename,
         type: 'text/csv',
       });
     } catch (error) {
-      console.error('Error downloading report:', error);
-      Alert.alert('Error', 'Failed to download the report. Please try again.');
+      if (error.message !== 'User did not share') {
+        console.error('Error downloading report:', error);
+        Alert.alert(
+          'Error',
+          'Failed to download the report. Please try again.',
+        );
+      }
     }
   }, [revenueData, startDate, endDate]);
 
-  // Loading state
+  // Calculate growth percentage
+  const calculateGrowth = () => {
+    if (revenueData.monthlyTrend.length < 2) return 0;
+    const current =
+      revenueData.monthlyTrend[revenueData.monthlyTrend.length - 1].amount;
+    const previous =
+      revenueData.monthlyTrend[revenueData.monthlyTrend.length - 2].amount;
+    return (((current - previous) / previous) * 100).toFixed(1);
+  };
+
+  const growth = calculateGrowth();
+
   if (loading) {
     return (
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: isDark
-              ? colors.backgroundDark
-              : colors.backgroundLight,
-          },
-        ]}
-      >
-        <StandardHeader navigation={navigation} title="Revenue Overview" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StandardHeader
+          navigation={navigation}
+          title="Revenue Overview"
+          subtitle="Financial analytics and insights"
+          showBackButton
+        />
         <View style={styles.loadingContainer}>
           <MaterialCommunityIcons
             name="chart-line"
             size={64}
-            color={isDark ? colors.light_gray : colors.secondary}
+            color={colors.primary}
           />
-          <StandardText
-            style={[styles.loadingText, { color: textPrimary }]}
-            fontWeight="medium"
-          >
+          <Gap size="md" />
+          <StandardText style={{ color: textPrimary }} fontWeight="medium">
             Loading revenue data...
           </StandardText>
         </View>
@@ -194,17 +251,13 @@ const RevenueOverview = ({ navigation }) => {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.background,
-        },
-      ]}
-    >
-      <StandardHeader navigation={navigation} title="Revenue Overview" />
-
-      <PropertySelector />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StandardHeader
+        navigation={navigation}
+        title="Revenue Overview"
+        subtitle="Financial analytics and insights"
+        showBackButton
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -213,113 +266,225 @@ const RevenueOverview = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Summary Cards */}
-        <View style={styles.summaryContainer}>
-          <Card
-            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
-          >
-            <View style={styles.cardHeader}>
-              <MaterialCommunityIcons
-                name="cash-multiple"
-                size={24}
-                color={colors.success}
-              />
-              <StandardText
-                style={[styles.cardTitle, { color: textPrimary }]}
-                fontWeight="bold"
-                size="md"
-              >
-                Total Revenue
-              </StandardText>
-            </View>
-            <StandardText
-              style={[styles.cardValue, { color: colors.success }]}
-              fontWeight="bold"
-              size="xl"
-            >
-              ₹{revenueData.totalRevenue.toLocaleString()}
-            </StandardText>
-          </Card>
+        <PropertySelector />
 
-          <Card
-            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
-          >
-            <View style={styles.cardHeader}>
+        <Gap size="lg" />
+
+        {/* Period Selector */}
+        <View style={styles.periodSelector}>
+          {[
+            { key: 'month', label: 'This Month', icon: 'calendar-month' },
+            { key: 'year', label: 'This Year', icon: 'calendar' },
+            { key: 'all', label: 'All Time', icon: 'clock-outline' },
+          ].map(period => (
+            <TouchableOpacity
+              key={period.key}
+              style={[
+                styles.periodButton,
+                selectedPeriod === period.key && {
+                  backgroundColor: colors.primary,
+                },
+              ]}
+              onPress={() => setSelectedPeriod(period.key)}
+            >
               <MaterialCommunityIcons
-                name="calendar-month"
-                size={24}
-                color={colors.primary}
+                name={period.icon}
+                size={18}
+                color={
+                  selectedPeriod === period.key ? colors.white : textSecondary
+                }
               />
               <StandardText
-                style={[styles.cardTitle, { color: textPrimary }]}
-                fontWeight="bold"
-                size="md"
+                size="sm"
+                fontWeight={selectedPeriod === period.key ? 'bold' : 'medium'}
+                style={{
+                  color:
+                    selectedPeriod === period.key ? colors.white : textPrimary,
+                  marginLeft: 6,
+                }}
               >
-                This Month
+                {period.label}
               </StandardText>
-            </View>
-            <StandardText
-              style={[styles.cardValue, { color: colors.primary }]}
-              fontWeight="bold"
-              size="xl"
-            >
-              ₹{revenueData.monthlyRevenue.toLocaleString()}
-            </StandardText>
-          </Card>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <View style={styles.summaryContainer}>
-          <Card
-            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
-          >
-            <View style={styles.cardHeader}>
-              <MaterialCommunityIcons
-                name="calendar-today"
-                size={24}
-                color={colors.info}
-              />
-              <StandardText
-                style={[styles.cardTitle, { color: textPrimary }]}
-                fontWeight="bold"
-                size="md"
-              >
-                This Year
-              </StandardText>
-            </View>
-            <StandardText
-              style={[styles.cardValue, { color: colors.info }]}
-              fontWeight="bold"
-              size="xl"
-            >
-              ₹{revenueData.yearlyRevenue.toLocaleString()}
-            </StandardText>
-          </Card>
+        <Gap size="lg" />
 
-          <Card
-            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
-          >
-            <View style={styles.cardHeader}>
-              <MaterialCommunityIcons
-                name="clock-outline"
-                size={24}
-                color={colors.warning}
-              />
+        {/* Main Revenue Card */}
+        <StandardCard
+          style={[styles.mainRevenueCard, { backgroundColor: cardBackground }]}
+        >
+          <View style={styles.mainRevenueHeader}>
+            <View>
+              <StandardText size="sm" style={{ color: textSecondary }}>
+                {selectedPeriod === 'month'
+                  ? 'Monthly'
+                  : selectedPeriod === 'year'
+                  ? 'Yearly'
+                  : 'Total'}{' '}
+                Revenue
+              </StandardText>
               <StandardText
-                style={[styles.cardTitle, { color: textPrimary }]}
                 fontWeight="bold"
-                size="md"
+                style={[styles.mainRevenueAmount, { color: colors.success }]}
               >
-                Pending
+                ₹
+                {(selectedPeriod === 'month'
+                  ? revenueData.monthlyRevenue
+                  : selectedPeriod === 'year'
+                  ? revenueData.yearlyRevenue
+                  : revenueData.totalRevenue
+                ).toLocaleString()}
               </StandardText>
             </View>
+            <View
+              style={[
+                styles.growthBadge,
+                {
+                  backgroundColor:
+                    growth >= 0 ? colors.success + '20' : colors.error + '20',
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={growth >= 0 ? 'trending-up' : 'trending-down'}
+                size={20}
+                color={growth >= 0 ? colors.success : colors.error}
+              />
+              <StandardText
+                fontWeight="bold"
+                size="sm"
+                style={{
+                  color: growth >= 0 ? colors.success : colors.error,
+                  marginLeft: 4,
+                }}
+              >
+                {Math.abs(growth)}%
+              </StandardText>
+            </View>
+          </View>
+
+          <Gap size="sm" />
+
+          <View style={styles.revenueStats}>
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons
+                name="home-city"
+                size={16}
+                color={textSecondary}
+              />
+              <StandardText
+                size="xs"
+                style={{ color: textSecondary, marginLeft: 4 }}
+              >
+                {revenueData.totalProperties} Properties
+              </StandardText>
+            </View>
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons
+                name="account-group"
+                size={16}
+                color={textSecondary}
+              />
+              <StandardText
+                size="xs"
+                style={{ color: textSecondary, marginLeft: 4 }}
+              >
+                {revenueData.occupiedUnits} Tenants
+              </StandardText>
+            </View>
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons
+                name="chart-line"
+                size={16}
+                color={textSecondary}
+              />
+              <StandardText
+                size="xs"
+                style={{ color: textSecondary, marginLeft: 4 }}
+              >
+                ₹{revenueData.averageMonthly.toLocaleString()}/mo avg
+              </StandardText>
+            </View>
+          </View>
+        </StandardCard>
+
+        <Gap size="md" />
+
+        {/* Summary Cards Grid */}
+        <View style={styles.summaryGrid}>
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <MaterialCommunityIcons
+              name="cash-multiple"
+              size={24}
+              color={colors.success}
+            />
             <StandardText
-              style={[styles.cardValue, { color: colors.warning }]}
+              size="xs"
+              style={[styles.summaryLabel, { color: textSecondary }]}
+            >
+              Collected
+            </StandardText>
+            <StandardText
               fontWeight="bold"
-              size="xl"
+              size="lg"
+              style={{ color: colors.success }}
+            >
+              ₹
+              {(
+                revenueData.monthlyRevenue - revenueData.pendingPayments
+              ).toLocaleString()}
+            </StandardText>
+          </StandardCard>
+
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <MaterialCommunityIcons
+              name="clock-outline"
+              size={24}
+              color={colors.warning}
+            />
+            <StandardText
+              size="xs"
+              style={[styles.summaryLabel, { color: textSecondary }]}
+            >
+              Pending
+            </StandardText>
+            <StandardText
+              fontWeight="bold"
+              size="lg"
+              style={{ color: colors.warning }}
             >
               ₹{revenueData.pendingPayments.toLocaleString()}
             </StandardText>
-          </Card>
+          </StandardCard>
+
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={24}
+              color={colors.error}
+            />
+            <StandardText
+              size="xs"
+              style={[styles.summaryLabel, { color: textSecondary }]}
+            >
+              Overdue
+            </StandardText>
+            <StandardText
+              fontWeight="bold"
+              size="lg"
+              style={{ color: colors.error }}
+            >
+              ₹{revenueData.overduePayments.toLocaleString()}
+            </StandardText>
+          </StandardCard>
         </View>
 
         <Gap size="lg" />
@@ -329,102 +494,110 @@ const RevenueOverview = ({ navigation }) => {
           style={[styles.downloadCard, { backgroundColor: cardBackground }]}
         >
           <View style={styles.downloadHeader}>
-            <MaterialCommunityIcons
-              name="file-chart"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              style={[styles.downloadTitle, { color: textPrimary }]}
-              fontWeight="bold"
-              size="lg"
-            >
-              Download Revenue Report
-            </StandardText>
+            <View style={styles.downloadHeaderLeft}>
+              <MaterialCommunityIcons
+                name="file-chart"
+                size={24}
+                color={colors.primary}
+              />
+              <View style={styles.downloadHeaderText}>
+                <StandardText
+                  fontWeight="bold"
+                  size="lg"
+                  style={{ color: textPrimary }}
+                >
+                  Export Report
+                </StandardText>
+                <StandardText size="sm" style={{ color: textSecondary }}>
+                  Download detailed revenue analytics
+                </StandardText>
+              </View>
+            </View>
           </View>
-
-          <StandardText
-            style={[styles.downloadSubtitle, { color: textSecondary }]}
-            size="sm"
-          >
-            Export revenue data with custom date ranges
-          </StandardText>
 
           <Gap size="md" />
 
-          {/* Date Range Selection */}
           <View style={styles.dateRangeContainer}>
-            <View style={styles.dateButtonContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowStartDatePicker(true)}
-                style={[styles.dateButton, { borderColor: colors.primary }]}
-                labelStyle={{ color: colors.primary }}
-                icon="calendar-start"
-              >
-                {startDate ? startDate : 'Start Date'}
-              </Button>
-            </View>
-
-            <View style={styles.dateSeparator}>
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={20}
-                color={textSecondary}
-              />
-            </View>
-
-            <View style={styles.dateButtonContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowEndDatePicker(true)}
-                style={[styles.dateButton, { borderColor: colors.primary }]}
-                labelStyle={{ color: colors.primary }}
-                icon="calendar-end"
-              >
-                {endDate ? endDate : 'End Date'}
-              </Button>
-            </View>
-          </View>
-
-          <Gap size="sm" />
-
-          {/* Clear Filters */}
-          {(startDate || endDate) && (
             <TouchableOpacity
-              style={styles.clearFiltersButton}
-              onPress={() => {
-                setStartDate(null);
-                setEndDate(null);
-              }}
+              style={[styles.dateButton, { borderColor: colors.primary }]}
+              onPress={() => setShowStartDatePicker(true)}
             >
               <MaterialCommunityIcons
-                name="filter-remove"
-                size={16}
-                color={colors.error}
+                name="calendar-start"
+                size={20}
+                color={colors.primary}
               />
               <StandardText
-                style={[styles.clearFiltersText, { color: colors.error }]}
                 size="sm"
+                style={{
+                  color: startDate ? textPrimary : textSecondary,
+                  marginLeft: 8,
+                }}
               >
-                Clear Date Filters
+                {startDate || 'Start Date'}
               </StandardText>
             </TouchableOpacity>
+
+            <MaterialCommunityIcons
+              name="arrow-right"
+              size={20}
+              color={textSecondary}
+            />
+
+            <TouchableOpacity
+              style={[styles.dateButton, { borderColor: colors.primary }]}
+              onPress={() => setShowEndDatePicker(true)}
+            >
+              <MaterialCommunityIcons
+                name="calendar-end"
+                size={20}
+                color={colors.primary}
+              />
+              <StandardText
+                size="sm"
+                style={{
+                  color: endDate ? textPrimary : textSecondary,
+                  marginLeft: 8,
+                }}
+              >
+                {endDate || 'End Date'}
+              </StandardText>
+            </TouchableOpacity>
+          </View>
+
+          {(startDate || endDate) && (
+            <>
+              <Gap size="sm" />
+              <TouchableOpacity
+                style={styles.clearFiltersButton}
+                onPress={() => {
+                  setStartDate(null);
+                  setEndDate(null);
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="filter-remove"
+                  size={16}
+                  color={colors.error}
+                />
+                <StandardText
+                  size="sm"
+                  style={{ color: colors.error, marginLeft: 4 }}
+                >
+                  Clear Date Filters
+                </StandardText>
+              </TouchableOpacity>
+            </>
           )}
 
           <Gap size="md" />
 
-          {/* Download Button */}
           <Button
             mode="contained"
             onPress={downloadReport}
-            style={[
-              styles.downloadActionButton,
-              { backgroundColor: colors.primary },
-            ]}
+            style={{ backgroundColor: colors.primary }}
             labelStyle={{ color: colors.white }}
             icon="download"
-            disabled={loading}
           >
             Download CSV Report
           </Button>
@@ -433,81 +606,269 @@ const RevenueOverview = ({ navigation }) => {
         <Gap size="lg" />
 
         {/* Monthly Trend */}
-        <StandardText
-          fontWeight="bold"
-          size="xl"
-          style={[styles.sectionTitle, { color: textPrimary }]}
-        >
-          Monthly Revenue Trend
-        </StandardText>
+        <View style={styles.sectionHeader}>
+          <StandardText
+            fontWeight="bold"
+            size="lg"
+            style={{ color: textPrimary }}
+          >
+            Revenue Trend
+          </StandardText>
+          <StandardText size="sm" style={{ color: textSecondary }}>
+            Last 6 months
+          </StandardText>
+        </View>
 
         <Gap size="md" />
 
         <StandardCard
           style={[styles.chartCard, { backgroundColor: cardBackground }]}
         >
-          <View style={styles.chartPlaceholder}>
-            <MaterialCommunityIcons
-              name="chart-line"
-              size={48}
-              color={colors.secondary}
+          {revenueData.monthlyTrend.map((trend, index) => {
+            const maxAmount = Math.max(
+              ...revenueData.monthlyTrend.map(t => t.amount),
+            );
+            const barHeight = (trend.amount / maxAmount) * 120;
+            const receivedHeight = (trend.received / maxAmount) * 120;
+
+            return (
+              <View key={index} style={styles.barGroup}>
+                <View style={styles.barContainer}>
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height: barHeight,
+                        backgroundColor: colors.primary + '30',
+                      },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.bar,
+                      styles.barOverlay,
+                      {
+                        height: receivedHeight,
+                        backgroundColor: colors.success,
+                      },
+                    ]}
+                  />
+                </View>
+                <StandardText
+                  size="xs"
+                  fontWeight="medium"
+                  style={{ color: textPrimary, marginTop: 4 }}
+                >
+                  {trend.month}
+                </StandardText>
+                <StandardText size="xs" style={{ color: textSecondary }}>
+                  ₹{(trend.amount / 1000).toFixed(0)}k
+                </StandardText>
+              </View>
+            );
+          })}
+        </StandardCard>
+
+        <Gap size="sm" />
+
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View
+              style={[styles.legendColor, { backgroundColor: colors.success }]}
             />
-            <StandardText
-              style={[styles.chartText, { color: textSecondary }]}
-              fontWeight="medium"
-            >
-              Revenue Chart
-            </StandardText>
-            <StandardText
-              style={[styles.chartSubtext, { color: textSecondary }]}
-            >
-              Interactive chart will be displayed here
+            <StandardText size="xs" style={{ color: textSecondary }}>
+              Received
             </StandardText>
           </View>
+          <View style={styles.legendItem}>
+            <View
+              style={[
+                styles.legendColor,
+                { backgroundColor: colors.primary + '30' },
+              ]}
+            />
+            <StandardText size="xs" style={{ color: textSecondary }}>
+              Expected
+            </StandardText>
+          </View>
+        </View>
+
+        <Gap size="lg" />
+
+        {/* Category Breakdown */}
+        <StandardText
+          fontWeight="bold"
+          size="lg"
+          style={[styles.sectionTitle, { color: textPrimary }]}
+        >
+          Revenue by Category
+        </StandardText>
+
+        <Gap size="md" />
+
+        <StandardCard
+          style={[styles.categoryCard, { backgroundColor: cardBackground }]}
+        >
+          {revenueData.categoryBreakdown.map((category, index) => (
+            <View key={index}>
+              {index > 0 && <View style={styles.categoryDivider} />}
+              <View style={styles.categoryItem}>
+                <View style={styles.categoryLeft}>
+                  <View
+                    style={[
+                      styles.categoryIcon,
+                      {
+                        backgroundColor:
+                          index === 0
+                            ? colors.primary + '20'
+                            : index === 1
+                            ? colors.success + '20'
+                            : index === 2
+                            ? colors.warning + '20'
+                            : colors.secondary + '20',
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={
+                        category.category === 'Rent'
+                          ? 'home'
+                          : category.category === 'Deposit'
+                          ? 'shield-check'
+                          : category.category === 'Maintenance'
+                          ? 'wrench'
+                          : 'flash'
+                      }
+                      size={20}
+                      color={
+                        index === 0
+                          ? colors.primary
+                          : index === 1
+                          ? colors.success
+                          : index === 2
+                          ? colors.warning
+                          : colors.secondary
+                      }
+                    />
+                  </View>
+                  <View style={styles.categoryInfo}>
+                    <StandardText
+                      fontWeight="bold"
+                      size="md"
+                      style={{ color: textPrimary }}
+                    >
+                      {category.category}
+                    </StandardText>
+                    <StandardText size="xs" style={{ color: textSecondary }}>
+                      {category.count} transactions
+                    </StandardText>
+                  </View>
+                </View>
+                <View style={styles.categoryRight}>
+                  <StandardText
+                    fontWeight="bold"
+                    size="md"
+                    style={{ color: textPrimary }}
+                  >
+                    ₹{category.amount.toLocaleString()}
+                  </StandardText>
+                  <View
+                    style={[
+                      styles.percentageBadge,
+                      {
+                        backgroundColor:
+                          index === 0
+                            ? colors.primary + '15'
+                            : index === 1
+                            ? colors.success + '15'
+                            : index === 2
+                            ? colors.warning + '15'
+                            : colors.secondary + '15',
+                      },
+                    ]}
+                  >
+                    <StandardText
+                      size="xs"
+                      fontWeight="bold"
+                      style={{
+                        color:
+                          index === 0
+                            ? colors.primary
+                            : index === 1
+                            ? colors.success
+                            : index === 2
+                            ? colors.warning
+                            : colors.secondary,
+                      }}
+                    >
+                      {category.percentage}%
+                    </StandardText>
+                  </View>
+                </View>
+              </View>
+            </View>
+          ))}
         </StandardCard>
 
         <Gap size="lg" />
 
-        {/* Yearly Trend */}
+        {/* Top Tenants */}
         <StandardText
           fontWeight="bold"
-          size="xl"
+          size="lg"
           style={[styles.sectionTitle, { color: textPrimary }]}
         >
-          Yearly Revenue Trend
+          Top Contributing Tenants
         </StandardText>
 
         <Gap size="md" />
 
-        <StandardCard
-          style={[styles.chartCard, { backgroundColor: cardBackground }]}
-        >
-          <View style={styles.chartPlaceholder}>
-            <MaterialCommunityIcons
-              name="chart-bar"
-              size={48}
-              color={colors.secondary}
-            />
+        {revenueData.topTenants.map((tenant, index) => (
+          <StandardCard
+            key={index}
+            style={[styles.tenantCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.tenantRank}>
+              <StandardText
+                fontWeight="bold"
+                size="lg"
+                style={{ color: colors.primary }}
+              >
+                #{index + 1}
+              </StandardText>
+            </View>
+            <View style={styles.tenantInfo}>
+              <StandardText
+                fontWeight="bold"
+                size="md"
+                style={{ color: textPrimary }}
+              >
+                {tenant.name}
+              </StandardText>
+              <StandardText size="sm" style={{ color: textSecondary }}>
+                {tenant.property} • {tenant.payments} payments
+              </StandardText>
+            </View>
             <StandardText
-              style={[styles.chartText, { color: textSecondary }]}
-              fontWeight="medium"
+              fontWeight="bold"
+              size="lg"
+              style={{ color: colors.success }}
             >
-              Yearly Chart
+              ₹{tenant.amount.toLocaleString()}
             </StandardText>
-            <StandardText
-              style={[styles.chartSubtext, { color: textSecondary }]}
-            >
-              Annual revenue comparison chart
-            </StandardText>
-          </View>
-        </StandardCard>
+          </StandardCard>
+        ))}
 
         <Gap size="xxl" />
       </ScrollView>
 
-      {/* Start Date Picker Modal */}
-      {showStartDatePicker && (
-        <View style={styles.modalOverlay}>
+      {/* Date Pickers */}
+      <Portal>
+        <Modal
+          visible={showStartDatePicker}
+          onDismiss={() => setShowStartDatePicker(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
           <View
             style={[
               styles.datePickerContainer,
@@ -516,9 +877,9 @@ const RevenueOverview = ({ navigation }) => {
           >
             <View style={styles.datePickerHeader}>
               <StandardText
-                style={[styles.datePickerTitle, { color: textPrimary }]}
                 fontWeight="bold"
                 size="lg"
+                style={{ color: textPrimary }}
               >
                 Select Start Date
               </StandardText>
@@ -542,17 +903,18 @@ const RevenueOverview = ({ navigation }) => {
               }}
               selectedItemColor={colors.primary}
               headerButtonColor={colors.primary}
-              headerTextColor={textPrimary}
-              calendarTextColor={textPrimary}
-              todayTextColor={colors.primary}
+              calendarTextStyle={{ color: textPrimary }}
+              headerTextStyle={{ color: textPrimary }}
+              weekDaysTextStyle={{ color: textSecondary }}
             />
           </View>
-        </View>
-      )}
+        </Modal>
 
-      {/* End Date Picker Modal */}
-      {showEndDatePicker && (
-        <View style={styles.modalOverlay}>
+        <Modal
+          visible={showEndDatePicker}
+          onDismiss={() => setShowEndDatePicker(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
           <View
             style={[
               styles.datePickerContainer,
@@ -561,9 +923,9 @@ const RevenueOverview = ({ navigation }) => {
           >
             <View style={styles.datePickerHeader}>
               <StandardText
-                style={[styles.datePickerTitle, { color: textPrimary }]}
                 fontWeight="bold"
                 size="lg"
+                style={{ color: textPrimary }}
               >
                 Select End Date
               </StandardText>
@@ -587,13 +949,13 @@ const RevenueOverview = ({ navigation }) => {
               }}
               selectedItemColor={colors.primary}
               headerButtonColor={colors.primary}
-              headerTextColor={textPrimary}
-              calendarTextColor={textPrimary}
-              todayTextColor={colors.primary}
+              calendarTextStyle={{ color: textPrimary }}
+              headerTextStyle={{ color: textPrimary }}
+              weekDaysTextStyle={{ color: textSecondary }}
             />
           </View>
-        </View>
-      )}
+        </Modal>
+      </Portal>
     </View>
   );
 };
@@ -610,107 +972,99 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
   },
-  loadingText: {
-    marginTop: 16,
-    textAlign: 'center',
+  periodSelector: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  summaryContainer: {
+  periodButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  mainRevenueCard: {
+    padding: 20,
+    borderRadius: 12,
+    elevation: 3,
+  },
+  mainRevenueHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  mainRevenueAmount: {
+    fontSize: 32,
+    marginTop: 4,
+  },
+  growthBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  revenueStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  summaryGrid: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 16,
   },
   summaryCard: {
     flex: 1,
     padding: 16,
     borderRadius: 12,
     elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  cardHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  cardTitle: {
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  cardValue: {
-    fontSize: 20,
-    marginTop: 4,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-  },
-  chartCard: {
-    padding: 24,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  chartPlaceholder: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  chartText: {
-    marginTop: 12,
-    fontSize: 16,
-  },
-  chartSubtext: {
-    marginTop: 4,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  downloadButton: {
-    padding: 8,
-    marginLeft: 8,
+  summaryLabel: {
+    marginTop: 8,
+    marginBottom: 4,
   },
   downloadCard: {
     padding: 20,
     borderRadius: 12,
     elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
   },
   downloadHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  downloadTitle: {
-    marginLeft: 12,
-    fontSize: 18,
+  downloadHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
   },
-  downloadSubtitle: {
-    marginLeft: 36,
-    fontSize: 14,
+  downloadHeaderText: {
+    flex: 1,
   },
   dateRangeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  dateButtonContainer: {
-    flex: 1,
+    gap: 8,
   },
   dateButton: {
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-  dateSeparator: {
-    paddingHorizontal: 12,
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   clearFiltersButton: {
     flexDirection: 'row',
@@ -721,48 +1075,132 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: 'rgba(244, 67, 54, 0.1)',
   },
-  clearFiltersText: {
-    marginLeft: 4,
-    fontSize: 12,
-    fontWeight: '500',
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  downloadActionButton: {
-    borderRadius: 8,
-    paddingVertical: 6,
+  sectionTitle: {
+    marginBottom: 8,
   },
-  modalOverlay: {
+  chartCard: {
+    padding: 20,
+    borderRadius: 12,
+    elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  barGroup: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  barContainer: {
+    width: 32,
+    height: 120,
+    justifyContent: 'flex-end',
+    position: 'relative',
+  },
+  bar: {
+    width: '100%',
+    borderRadius: 4,
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  barOverlay: {
+    zIndex: 1,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+  },
+  categoryCard: {
+    padding: 16,
+    borderRadius: 12,
+    elevation: 3,
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  categoryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  categoryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryRight: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  percentageBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  categoryDivider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+  },
+  tenantCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    marginBottom: 8,
+    gap: 12,
+  },
+  tenantRank: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tenantInfo: {
+    flex: 1,
+  },
+  modalContainer: {
+    padding: 20,
   },
   datePickerContainer: {
-    width: '90%',
-    maxWidth: 400,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
-    elevation: 5,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    maxHeight: '80%',
   },
   datePickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  datePickerTitle: {
-    fontSize: 18,
+    marginBottom: 20,
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
   },
 });
 

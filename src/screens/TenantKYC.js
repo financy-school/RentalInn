@@ -130,7 +130,7 @@ const TenantKYC = ({ navigation }) => {
 
   const handleTenantPress = tenant => {
     const tenantInfo = tenant.tenant || {};
-    navigation.navigate('TenantDetails', { tenantId: tenantInfo.tenant_id });
+    navigation.navigate('TenantDetails', { tenant_id: tenantInfo.tenant_id });
   };
 
   const onRefresh = () => {

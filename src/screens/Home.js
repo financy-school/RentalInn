@@ -327,7 +327,7 @@ const Home = ({ navigation }) => {
   // Top tenants from API
   const tenants =
     tenantData.top_tenants?.map((tenant, index) => ({
-      id: tenant.tenant_id || `t${index + 1}`,
+      tenant_id: tenant.tenant_id || `t${index + 1}`,
       name: tenant.name,
       room: tenant.room_number,
       status: tenant.payment_status === 'on_time' ? 'On-time' : 'Overdue',
@@ -1259,7 +1259,9 @@ const Home = ({ navigation }) => {
                 key={t.tenant_id}
                 style={styles.tenantItem}
                 onPress={() =>
-                  navigation.navigate('TenantDetails', { tenant: t })
+                  navigation.navigate('TenantDetails', {
+                    tenant_id: t.tenant_id,
+                  })
                 }
                 activeOpacity={0.7}
               >
@@ -1426,7 +1428,7 @@ const Home = ({ navigation }) => {
                   style={styles.kycItem}
                   onPress={() =>
                     navigation.navigate('TenantDetails', {
-                      tenantId: kyc.tenant_id,
+                      tenant_id: kyc.tenant_id,
                     })
                   }
                   activeOpacity={0.7}

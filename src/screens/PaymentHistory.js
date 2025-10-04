@@ -7,9 +7,10 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
-import { TextInput, Chip, Button, Card } from 'react-native-paper';
+import { TextInput, Chip, Button, Portal, Modal } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Share from 'react-native-share';
+import RNFS from 'react-native-fs';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
@@ -19,6 +20,7 @@ import colors from '../theme/color';
 import Gap from '../components/Gap/Gap';
 import DatePicker from 'react-native-ui-datepicker';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
+import PaymentDetailModal from '../components/PaymentDetailModal/PaymentDetailModal';
 
 const PaymentHistory = ({ navigation }) => {
   const { credentials } = useContext(CredentialsContext);
@@ -34,8 +36,11 @@ const PaymentHistory = ({ navigation }) => {
   const [endDate, setEndDate] = useState(null);
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [showPaymentDetail, setShowPaymentDetail] = useState(false);
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
 
-  // Theme variables
   const isDark = mode === 'dark';
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
@@ -46,16 +51,20 @@ const PaymentHistory = ({ navigation }) => {
     { key: 'rent', label: 'Rent', icon: 'home' },
     { key: 'deposit', label: 'Security Deposit', icon: 'shield-check' },
     { key: 'maintenance', label: 'Maintenance', icon: 'wrench' },
+    { key: 'utility', label: 'Utilities', icon: 'flash' },
     { key: 'other', label: 'Other', icon: 'dots-horizontal' },
   ];
 
-  // Calculate summary statistics
   const totalReceived = payments
     .filter(payment => payment.status === 'received')
     .reduce((sum, payment) => sum + payment.amount, 0);
 
   const pendingAmount = payments
     .filter(payment => payment.status === 'pending')
+    .reduce((sum, payment) => sum + payment.amount, 0);
+
+  const overdueAmount = payments
+    .filter(payment => payment.status === 'overdue')
     .reduce((sum, payment) => sum + payment.amount, 0);
 
   const thisMonthReceived = payments
@@ -70,28 +79,26 @@ const PaymentHistory = ({ navigation }) => {
     })
     .reduce((sum, payment) => sum + payment.amount, 0);
 
-  // Filter payments based on search, filter, and date
   useEffect(() => {
     let filtered = payments;
 
-    // Apply filter
     if (selectedFilter !== 'all') {
       filtered = filtered.filter(
         payment => payment.category === selectedFilter,
       );
     }
 
-    // Apply date filter
     if (startDate) {
       filtered = filtered.filter(
-        payment => new Date(payment.date) >= startDate,
+        payment => new Date(payment.date) >= new Date(startDate),
       );
     }
     if (endDate) {
-      filtered = filtered.filter(payment => new Date(payment.date) <= endDate);
+      filtered = filtered.filter(
+        payment => new Date(payment.date) <= new Date(endDate),
+      );
     }
 
-    // Apply search
     if (searchQuery.trim()) {
       filtered = filtered.filter(
         payment =>
@@ -103,76 +110,138 @@ const PaymentHistory = ({ navigation }) => {
             .includes(searchQuery.toLowerCase()) ||
           payment.propertyName
             ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          payment.receiptNumber
+            ?.toLowerCase()
             .includes(searchQuery.toLowerCase()),
       );
     }
 
-    setFilteredPayments(filtered);
-  }, [payments, selectedFilter, searchQuery, startDate, endDate]);
+    filtered.sort((a, b) => {
+      let comparison = 0;
 
-  // Fetch payment data
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.date) - new Date(b.date);
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'tenant':
+          comparison = a.tenantName.localeCompare(b.tenantName);
+          break;
+        default:
+          comparison = new Date(a.date) - new Date(b.date);
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    setFilteredPayments(filtered);
+  }, [
+    payments,
+    selectedFilter,
+    searchQuery,
+    startDate,
+    endDate,
+    sortBy,
+    sortOrder,
+  ]);
+
   const fetchPayments = useCallback(async () => {
     if (!credentials?.accessToken) return;
 
     try {
       setLoading(true);
 
-      // Mock data for now - replace with actual API call
       const mockPayments = [
         {
           id: 1,
           tenantName: 'John Doe',
+          tenantPhone: '+91 98765 43210',
           propertyName: 'Sunset Apartments - Room 101',
           amount: 15000,
           category: 'rent',
           date: '2025-01-15',
-          description: 'Monthly rent payment',
+          dueDate: '2025-01-10',
+          description: 'Monthly rent payment for January 2025',
           status: 'received',
           paymentMethod: 'UPI',
+          transactionId: 'UPI2025011512345',
+          receiptNumber: 'RCP-2025-001',
         },
         {
           id: 2,
           tenantName: 'Jane Smith',
+          tenantPhone: '+91 98765 43211',
           propertyName: 'Sunset Apartments - Room 102',
           amount: 20000,
           category: 'deposit',
           date: '2025-01-10',
-          description: 'Security deposit',
+          dueDate: '2025-01-10',
+          description: 'Security deposit - New tenant onboarding',
           status: 'received',
           paymentMethod: 'Bank Transfer',
+          transactionId: 'NEFT202501101234567',
+          receiptNumber: 'RCP-2025-002',
         },
         {
           id: 3,
           tenantName: 'Mike Johnson',
+          tenantPhone: '+91 98765 43212',
           propertyName: 'Sunset Apartments - Room 103',
           amount: 12000,
           category: 'rent',
-          date: '2025-01-08',
-          description: 'Monthly rent payment',
+          date: '2025-01-25',
+          dueDate: '2025-01-10',
+          description: 'Monthly rent payment - Delayed',
           status: 'pending',
           paymentMethod: 'Cash',
+          receiptNumber: 'RCP-2025-003',
         },
         {
           id: 4,
           tenantName: 'Sarah Wilson',
+          tenantPhone: '+91 98765 43213',
           propertyName: 'Sunset Apartments - Room 104',
           amount: 5000,
           category: 'maintenance',
           date: '2025-01-05',
-          description: 'Maintenance fee',
+          dueDate: '2025-01-05',
+          description: 'AC repair and servicing charges',
           status: 'received',
           paymentMethod: 'UPI',
+          transactionId: 'UPI2025010512345',
+          receiptNumber: 'RCP-2025-004',
         },
         {
           id: 5,
           tenantName: 'David Brown',
+          tenantPhone: '+91 98765 43214',
           propertyName: 'Sunset Apartments - Room 105',
           amount: 18000,
           category: 'rent',
           date: '2025-01-01',
-          description: 'Monthly rent payment',
+          dueDate: '2024-12-10',
+          description: 'Monthly rent payment - January 2025',
           status: 'received',
           paymentMethod: 'Bank Transfer',
+          transactionId: 'IMPS202501011234567',
+          receiptNumber: 'RCP-2025-005',
+        },
+        {
+          id: 6,
+          tenantName: 'Emily Davis',
+          tenantPhone: '+91 98765 43215',
+          propertyName: 'Sunset Apartments - Room 106',
+          amount: 15000,
+          category: 'rent',
+          date: null,
+          dueDate: '2024-12-20',
+          description: 'December rent - Overdue',
+          status: 'overdue',
+          paymentMethod: 'Pending',
+          receiptNumber: 'RCP-2025-006',
         },
       ];
 
@@ -183,18 +252,17 @@ const PaymentHistory = ({ navigation }) => {
       }, 1000);
     } catch (error) {
       console.error('Error fetching payments:', error);
+      Alert.alert('Error', 'Failed to fetch payments. Please try again.');
       setLoading(false);
       setRefreshing(false);
     }
   }, [credentials]);
 
-  // Handle refresh
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchPayments();
   }, [fetchPayments]);
 
-  // Download payment history report
   const downloadReport = useCallback(async () => {
     try {
       if (filteredPayments.length === 0) {
@@ -202,50 +270,88 @@ const PaymentHistory = ({ navigation }) => {
         return;
       }
 
-      // Create CSV content
       const headers = [
+        'Receipt No',
         'Tenant Name',
         'Property',
         'Amount',
         'Category',
         'Payment Method',
+        'Transaction ID',
         'Status',
-        'Date',
+        'Due Date',
+        'Payment Date',
         'Description',
       ];
+
       const csvContent = [
         headers.join(','),
         ...filteredPayments.map(payment =>
           [
+            `"${payment.receiptNumber}"`,
             `"${payment.tenantName}"`,
             `"${payment.propertyName}"`,
             payment.amount,
             payment.category,
             payment.paymentMethod,
+            `"${payment.transactionId || 'N/A'}"`,
             payment.status,
-            new Date(payment.date).toLocaleDateString(),
+            payment.dueDate,
+            payment.date || 'Not Paid',
             `"${payment.description || ''}"`,
           ].join(','),
         ),
+        '',
+        'Summary',
+        `Total Received,${totalReceived}`,
+        `Pending Amount,${pendingAmount}`,
+        `Overdue Amount,${overdueAmount}`,
+        `This Month Received,${thisMonthReceived}`,
       ].join('\n');
 
-      // Generate filename with current date
       const date = new Date().toISOString().split('T')[0];
       const filename = `payment_history_${date}.csv`;
+      const filePath = `${RNFS.CachesDirectoryPath}/${filename}`;
 
-      // Share the CSV file
+      await RNFS.writeFile(filePath, csvContent, 'utf8');
+
       await Share.open({
         title: 'Payment History Report',
         message: 'Payment History Report',
-        url: `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`,
+        urls: [`file://${filePath}`],
         filename: filename,
         type: 'text/csv',
       });
     } catch (error) {
-      console.error('Error downloading report:', error);
-      Alert.alert('Error', 'Failed to download the report. Please try again.');
+      if (error.message !== 'User did not share') {
+        console.error('Error downloading report:', error);
+        Alert.alert(
+          'Error',
+          'Failed to download the report. Please try again.',
+        );
+      }
     }
-  }, [filteredPayments]);
+  }, [
+    filteredPayments,
+    totalReceived,
+    pendingAmount,
+    overdueAmount,
+    thisMonthReceived,
+  ]);
+
+  const handlePaymentClick = payment => {
+    setSelectedPayment(payment);
+    setShowPaymentDetail(true);
+  };
+
+  const toggleSort = newSortBy => {
+    if (sortBy === newSortBy) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder('desc');
+    }
+  };
 
   useEffect(() => {
     fetchPayments();
@@ -266,6 +372,10 @@ const PaymentHistory = ({ navigation }) => {
             size={48}
             color={colors.primary}
           />
+          <Gap size="md" />
+          <StandardText style={{ color: textPrimary }} fontWeight="medium">
+            Loading payment history...
+          </StandardText>
         </View>
       </View>
     );
@@ -282,113 +392,15 @@ const PaymentHistory = ({ navigation }) => {
 
       <ScrollView
         style={styles.content}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Property Selector */}
         <PropertySelector />
-
         <Gap size="lg" />
 
-        {/* Download & Filter Section */}
-        <StandardCard
-          style={[styles.downloadCard, { backgroundColor: cardBackground }]}
-        >
-          <View style={styles.downloadHeader}>
-            <MaterialCommunityIcons
-              name="file-download-outline"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              fontWeight="bold"
-              size="lg"
-              style={[styles.downloadTitle, { color: textPrimary }]}
-            >
-              Export Report
-            </StandardText>
-          </View>
-
-          <StandardText
-            style={[styles.downloadSubtitle, { color: textSecondary }]}
-          >
-            Download payment history with custom date range
-          </StandardText>
-
-          <Gap size="md" />
-
-          {/* Date Range Selection */}
-          <View style={styles.dateRangeContainer}>
-            <View style={styles.dateButtonContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowStartDatePicker(true)}
-                style={[styles.dateButton, { borderColor: colors.primary }]}
-                labelStyle={{ color: colors.primary }}
-                icon="calendar-start"
-              >
-                {startDate ? startDate : 'Start Date'}
-              </Button>
-            </View>
-
-            <View style={styles.dateSeparator}>
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={20}
-                color={textSecondary}
-              />
-            </View>
-
-            <View style={styles.dateButtonContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowEndDatePicker(true)}
-                style={[styles.dateButton, { borderColor: colors.primary }]}
-                labelStyle={{ color: colors.primary }}
-                icon="calendar-end"
-              >
-                {endDate ? endDate : 'End Date'}
-              </Button>
-            </View>
-          </View>
-
-          <Gap size="md" />
-
-          {/* Clear Filters & Download */}
-          <View style={styles.downloadActions}>
-            <Button
-              mode="outlined"
-              onPress={() => {
-                setStartDate(null);
-                setEndDate(null);
-                setSearchQuery('');
-                setSelectedFilter('all');
-              }}
-              style={styles.clearButton}
-              labelStyle={{ color: colors.primary }}
-            >
-              Clear Filters
-            </Button>
-
-            <Button
-              mode="contained"
-              onPress={downloadReport}
-              style={[
-                styles.downloadButton,
-                { backgroundColor: colors.primary },
-              ]}
-              disabled={filteredPayments.length === 0}
-              icon="download"
-            >
-              Download CSV ({filteredPayments.length})
-            </Button>
-          </View>
-        </StandardCard>
-
-        <Gap size="lg" />
-
-        {/* Summary Cards */}
+        {/* Summary Cards Row 1 */}
         <View style={styles.summaryContainer}>
           <StandardCard
             style={[styles.summaryCard, { backgroundColor: cardBackground }]}
@@ -414,31 +426,11 @@ const PaymentHistory = ({ navigation }) => {
             >
               ₹{totalReceived.toLocaleString()}
             </StandardText>
-          </StandardCard>
-
-          <StandardCard
-            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
-          >
-            <View style={styles.cardHeader}>
-              <MaterialCommunityIcons
-                name="clock-outline"
-                size={24}
-                color={colors.warning}
-              />
-              <StandardText
-                fontWeight="medium"
-                size="sm"
-                style={[styles.cardTitle, { color: textSecondary }]}
-              >
-                Pending Amount
-              </StandardText>
-            </View>
             <StandardText
-              fontWeight="bold"
-              size="xl"
-              style={[styles.cardValue, { color: colors.warning }]}
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
             >
-              ₹{pendingAmount.toLocaleString()}
+              All time
             </StandardText>
           </StandardCard>
 
@@ -466,22 +458,230 @@ const PaymentHistory = ({ navigation }) => {
             >
               ₹{thisMonthReceived.toLocaleString()}
             </StandardText>
+            <StandardText
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
+            >
+              {new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                year: 'numeric',
+              })}
+            </StandardText>
           </StandardCard>
         </View>
 
-        {/* Search and Filters */}
-        <View style={styles.controlsContainer}>
-          <TextInput
-            placeholder="Search payments..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={styles.searchBar}
-            contentStyle={styles.searchInput}
-            left={<TextInput.Icon icon="magnify" color={textSecondary} />}
-          />
+        <Gap size="md" />
+
+        {/* Summary Cards Row 2 */}
+        <View style={styles.summaryContainer}>
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons
+                name="clock-outline"
+                size={24}
+                color={colors.warning}
+              />
+              <StandardText
+                fontWeight="medium"
+                size="sm"
+                style={[styles.cardTitle, { color: textSecondary }]}
+              >
+                Pending
+              </StandardText>
+            </View>
+            <StandardText
+              fontWeight="bold"
+              size="xl"
+              style={[styles.cardValue, { color: colors.warning }]}
+            >
+              ₹{pendingAmount.toLocaleString()}
+            </StandardText>
+            <StandardText
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
+            >
+              Awaiting payment
+            </StandardText>
+          </StandardCard>
+
+          <StandardCard
+            style={[styles.summaryCard, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons
+                name="alert-circle"
+                size={24}
+                color={colors.error}
+              />
+              <StandardText
+                fontWeight="medium"
+                size="sm"
+                style={[styles.cardTitle, { color: textSecondary }]}
+              >
+                Overdue
+              </StandardText>
+            </View>
+            <StandardText
+              fontWeight="bold"
+              size="xl"
+              style={[styles.cardValue, { color: colors.error }]}
+            >
+              ₹{overdueAmount.toLocaleString()}
+            </StandardText>
+            <StandardText
+              size="xs"
+              style={[styles.cardSubtext, { color: textSecondary }]}
+            >
+              Requires attention
+            </StandardText>
+          </StandardCard>
+        </View>
+
+        <Gap size="lg" />
+
+        {/* Download & Filter Section */}
+        <StandardCard
+          style={[styles.downloadCard, { backgroundColor: cardBackground }]}
+        >
+          <View style={styles.downloadHeader}>
+            <View style={styles.downloadHeaderLeft}>
+              <MaterialCommunityIcons
+                name="file-download-outline"
+                size={24}
+                color={colors.primary}
+              />
+              <View style={styles.downloadHeaderText}>
+                <StandardText
+                  fontWeight="bold"
+                  size="lg"
+                  style={{ color: textPrimary }}
+                >
+                  Export Report
+                </StandardText>
+                <StandardText size="sm" style={{ color: textSecondary }}>
+                  Download detailed payment history
+                </StandardText>
+              </View>
+            </View>
+          </View>
 
           <Gap size="md" />
 
+          <View style={styles.dateRangeContainer}>
+            <TouchableOpacity
+              style={[styles.dateButton, { borderColor: colors.primary }]}
+              onPress={() => setShowStartDatePicker(true)}
+            >
+              <MaterialCommunityIcons
+                name="calendar-start"
+                size={20}
+                color={colors.primary}
+              />
+              <StandardText
+                size="sm"
+                style={[
+                  styles.dateButtonText,
+                  { color: startDate ? textPrimary : textSecondary },
+                ]}
+              >
+                {startDate || 'Start Date'}
+              </StandardText>
+            </TouchableOpacity>
+
+            <MaterialCommunityIcons
+              name="arrow-right"
+              size={20}
+              color={textSecondary}
+            />
+
+            <TouchableOpacity
+              style={[styles.dateButton, { borderColor: colors.primary }]}
+              onPress={() => setShowEndDatePicker(true)}
+            >
+              <MaterialCommunityIcons
+                name="calendar-end"
+                size={20}
+                color={colors.primary}
+              />
+              <StandardText
+                size="sm"
+                style={[
+                  styles.dateButtonText,
+                  { color: endDate ? textPrimary : textSecondary },
+                ]}
+              >
+                {endDate || 'End Date'}
+              </StandardText>
+            </TouchableOpacity>
+          </View>
+
+          <Gap size="md" />
+
+          <View style={styles.downloadActions}>
+            <Button
+              mode="outlined"
+              onPress={() => {
+                setStartDate(null);
+                setEndDate(null);
+                setSearchQuery('');
+                setSelectedFilter('all');
+              }}
+              style={[styles.clearButton, { borderColor: colors.primary }]}
+              labelStyle={{ color: colors.primary }}
+              icon="filter-remove"
+            >
+              Clear
+            </Button>
+
+            <Button
+              mode="contained"
+              onPress={downloadReport}
+              style={[
+                styles.downloadButton,
+                { backgroundColor: colors.primary },
+              ]}
+              disabled={filteredPayments.length === 0}
+              icon="download"
+            >
+              Export ({filteredPayments.length})
+            </Button>
+          </View>
+        </StandardCard>
+
+        <Gap size="lg" />
+
+        {/* Search Bar */}
+        <TextInput
+          placeholder="Search by tenant, property, or receipt..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={[styles.searchBar, { backgroundColor: cardBackground }]}
+          contentStyle={styles.searchInput}
+          left={<TextInput.Icon icon="magnify" color={textSecondary} />}
+          right={
+            searchQuery ? (
+              <TextInput.Icon
+                icon="close"
+                color={textSecondary}
+                onPress={() => setSearchQuery('')}
+              />
+            ) : null
+          }
+        />
+
+        <Gap size="md" />
+
+        {/* Category Filters */}
+        <View style={styles.filterSection}>
+          <StandardText
+            fontWeight="bold"
+            size="sm"
+            style={[styles.filterLabel, { color: textPrimary }]}
+          >
+            Category
+          </StandardText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -491,24 +691,30 @@ const PaymentHistory = ({ navigation }) => {
               <Chip
                 key={filter.key}
                 selected={selectedFilter === filter.key}
-                selectedColor="#fff"
                 onPress={() => setSelectedFilter(filter.key)}
                 style={[
                   styles.filterChip,
-                  selectedFilter === filter.key && styles.selectedFilterChip,
+                  selectedFilter === filter.key && {
+                    backgroundColor: colors.primary,
+                  },
                 ]}
                 textStyle={[
                   styles.filterChipText,
-                  selectedFilter === filter.key &&
-                    styles.selectedFilterChipText,
+                  {
+                    color:
+                      selectedFilter === filter.key
+                        ? colors.white
+                        : textPrimary,
+                  },
                 ]}
                 icon={() => (
-                   
                   <MaterialCommunityIcons
                     name={filter.icon}
-                    size={18}
+                    size={16}
                     color={
-                      selectedFilter === filter.key ? '#fff' : textSecondary
+                      selectedFilter === filter.key
+                        ? colors.white
+                        : textSecondary
                     }
                   />
                 )}
@@ -521,144 +727,336 @@ const PaymentHistory = ({ navigation }) => {
 
         <Gap size="md" />
 
-        {/* Payments List */}
-        <StandardText
-          fontWeight="bold"
-          size="xl"
-          style={[styles.sectionTitle, { color: textPrimary }]}
-        >
-          Payment Records ({filteredPayments.length})
-        </StandardText>
+        {/* Sort Options */}
+        <View style={styles.sortContainer}>
+          <StandardText
+            fontWeight="bold"
+            size="sm"
+            style={[styles.filterLabel, { color: textPrimary }]}
+          >
+            Sort By
+          </StandardText>
+          <View style={styles.sortButtons}>
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === 'date' && { backgroundColor: colors.primary + '20' },
+              ]}
+              onPress={() => toggleSort('date')}
+            >
+              <StandardText
+                size="sm"
+                style={{
+                  color: sortBy === 'date' ? colors.primary : textSecondary,
+                }}
+              >
+                Date
+              </StandardText>
+              {sortBy === 'date' && (
+                <MaterialCommunityIcons
+                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  size={16}
+                  color={colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === 'amount' && {
+                  backgroundColor: colors.primary + '20',
+                },
+              ]}
+              onPress={() => toggleSort('amount')}
+            >
+              <StandardText
+                size="sm"
+                style={{
+                  color: sortBy === 'amount' ? colors.primary : textSecondary,
+                }}
+              >
+                Amount
+              </StandardText>
+              {sortBy === 'amount' && (
+                <MaterialCommunityIcons
+                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  size={16}
+                  color={colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === 'tenant' && {
+                  backgroundColor: colors.primary + '20',
+                },
+              ]}
+              onPress={() => toggleSort('tenant')}
+            >
+              <StandardText
+                size="sm"
+                style={{
+                  color: sortBy === 'tenant' ? colors.primary : textSecondary,
+                }}
+              >
+                Tenant
+              </StandardText>
+              {sortBy === 'tenant' && (
+                <MaterialCommunityIcons
+                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  size={16}
+                  color={colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Gap size="lg" />
+
+        {/* Payments List Header */}
+        <View style={styles.listHeader}>
+          <StandardText
+            fontWeight="bold"
+            size="lg"
+            style={{ color: textPrimary }}
+          >
+            Payment Records
+          </StandardText>
+          <View style={styles.countBadge}>
+            <StandardText
+              fontWeight="bold"
+              size="sm"
+              style={{ color: colors.primary }}
+            >
+              {filteredPayments.length}
+            </StandardText>
+          </View>
+        </View>
 
         <Gap size="md" />
 
+        {/* Payments List */}
         {filteredPayments.length > 0 ? (
           filteredPayments.map(payment => (
-            <StandardCard
+            <TouchableOpacity
               key={payment.id}
-              style={[styles.paymentCard, { backgroundColor: cardBackground }]}
+              onPress={() => handlePaymentClick(payment)}
+              activeOpacity={0.7}
             >
-              <View style={styles.paymentHeader}>
-                <View style={styles.paymentInfo}>
-                  <StandardText
-                    fontWeight="bold"
-                    size="lg"
-                    style={[styles.paymentTitle, { color: textPrimary }]}
-                  >
-                    {payment.tenantName}
-                  </StandardText>
-                  <StandardText
-                    style={[styles.paymentProperty, { color: textSecondary }]}
-                  >
-                    {payment.propertyName}
-                  </StandardText>
-                  <StandardText
-                    style={[styles.paymentDate, { color: textSecondary }]}
-                  >
-                    {new Date(payment.date).toLocaleDateString()}
-                  </StandardText>
-                </View>
-                <View style={styles.paymentAmount}>
-                  <StandardText
-                    fontWeight="bold"
-                    size="lg"
-                    style={[styles.amount, { color: colors.success }]}
-                  >
-                    +₹{payment.amount.toLocaleString()}
-                  </StandardText>
-                  <Chip
-                    style={[
-                      styles.statusChip,
-                      {
-                        backgroundColor:
-                          payment.status === 'received'
-                            ? colors.success + '20'
-                            : colors.warning + '20',
-                      },
-                    ]}
-                    textStyle={[
-                      styles.statusChipText,
-                      {
+              <StandardCard
+                style={[
+                  styles.paymentCard,
+                  { backgroundColor: cardBackground },
+                ]}
+              >
+                <View style={styles.paymentHeader}>
+                  <View style={styles.paymentInfo}>
+                    <StandardText
+                      fontWeight="bold"
+                      size="lg"
+                      style={{ color: textPrimary }}
+                    >
+                      {payment.tenantName}
+                    </StandardText>
+                    <StandardText
+                      size="sm"
+                      style={{ color: textSecondary, marginTop: 2 }}
+                    >
+                      {payment.propertyName}
+                    </StandardText>
+                    <View style={styles.paymentMetaRow}>
+                      <View style={styles.paymentMeta}>
+                        <MaterialCommunityIcons
+                          name="receipt"
+                          size={12}
+                          color={textSecondary}
+                        />
+                        <StandardText
+                          size="xs"
+                          style={{ color: textSecondary, marginLeft: 4 }}
+                        >
+                          {payment.receiptNumber}
+                        </StandardText>
+                      </View>
+                      <View style={styles.paymentMeta}>
+                        <MaterialCommunityIcons
+                          name="calendar"
+                          size={12}
+                          color={textSecondary}
+                        />
+                        <StandardText
+                          size="xs"
+                          style={{ color: textSecondary, marginLeft: 4 }}
+                        >
+                          {payment.date
+                            ? new Date(payment.date).toLocaleDateString(
+                                'en-IN',
+                                {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                },
+                              )
+                            : 'Not Paid'}
+                        </StandardText>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.paymentAmount}>
+                    <StandardText
+                      fontWeight="bold"
+                      size="xl"
+                      style={{
                         color:
                           payment.status === 'received'
                             ? colors.success
+                            : payment.status === 'overdue'
+                            ? colors.error
                             : colors.warning,
-                      },
-                    ]}
-                  >
-                    {payment.status === 'received' ? 'Received' : 'Pending'}
-                  </Chip>
+                      }}
+                    >
+                      ₹{payment.amount.toLocaleString()}
+                    </StandardText>
+                    <Chip
+                      style={[
+                        styles.statusChip,
+                        {
+                          backgroundColor:
+                            payment.status === 'received'
+                              ? colors.success + '20'
+                              : payment.status === 'overdue'
+                              ? colors.error + '20'
+                              : colors.warning + '20',
+                        },
+                      ]}
+                      textStyle={[
+                        styles.statusChipText,
+                        {
+                          color:
+                            payment.status === 'received'
+                              ? colors.success
+                              : payment.status === 'overdue'
+                              ? colors.error
+                              : colors.warning,
+                        },
+                      ]}
+                    >
+                      {payment.status.charAt(0).toUpperCase() +
+                        payment.status.slice(1)}
+                    </Chip>
+                  </View>
                 </View>
-              </View>
 
-              <Gap size="sm" />
+                <Gap size="sm" />
 
-              <StandardText
-                style={[styles.paymentDescription, { color: textSecondary }]}
-              >
-                {payment.description}
-              </StandardText>
+                <View style={styles.paymentFooter}>
+                  <Chip
+                    style={[
+                      styles.categoryChip,
+                      { backgroundColor: colors.primary + '15' },
+                    ]}
+                    textStyle={[
+                      styles.categoryChipText,
+                      { color: colors.primary },
+                    ]}
+                    icon={() => (
+                      <MaterialCommunityIcons
+                        name={
+                          filterOptions.find(f => f.key === payment.category)
+                            ?.icon || 'cash'
+                        }
+                        size={14}
+                        color={colors.primary}
+                      />
+                    )}
+                  >
+                    {payment.category.charAt(0).toUpperCase() +
+                      payment.category.slice(1)}
+                  </Chip>
 
-              <Gap size="sm" />
+                  <Chip
+                    style={[
+                      styles.methodChip,
+                      { backgroundColor: colors.secondary + '15' },
+                    ]}
+                    textStyle={[
+                      styles.methodChipText,
+                      { color: colors.secondary },
+                    ]}
+                    icon={() => (
+                      <MaterialCommunityIcons
+                        name={
+                          payment.paymentMethod === 'UPI'
+                            ? 'bank-transfer'
+                            : payment.paymentMethod === 'Cash'
+                            ? 'cash'
+                            : 'bank'
+                        }
+                        size={14}
+                        color={colors.secondary}
+                      />
+                    )}
+                  >
+                    {payment.paymentMethod}
+                  </Chip>
 
-              <View style={styles.paymentFooter}>
-                <Chip
-                  style={[
-                    styles.categoryChip,
-                    { backgroundColor: colors.primary + '20' },
-                  ]}
-                  textStyle={[
-                    styles.categoryChipText,
-                    { color: colors.primary },
-                  ]}
-                >
-                  {payment.category}
-                </Chip>
-                <Chip
-                  style={[
-                    styles.methodChip,
-                    { backgroundColor: colors.secondary + '20' },
-                  ]}
-                  textStyle={[
-                    styles.methodChipText,
-                    { color: colors.secondary },
-                  ]}
-                >
-                  {payment.paymentMethod}
-                </Chip>
-              </View>
-            </StandardCard>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={20}
+                    color={textSecondary}
+                  />
+                </View>
+              </StandardCard>
+            </TouchableOpacity>
           ))
         ) : (
           <View style={styles.emptyContainer}>
             <MaterialCommunityIcons
-              name="cash-multiple"
+              name="cash-remove"
               size={64}
               color={textSecondary}
             />
+            <Gap size="md" />
             <StandardText
               fontWeight="bold"
               size="lg"
-              style={[styles.emptyText, { color: textPrimary }]}
+              style={{ color: textPrimary, textAlign: 'center' }}
             >
-              {searchQuery || selectedFilter !== 'all'
+              {searchQuery || selectedFilter !== 'all' || startDate || endDate
                 ? 'No payments found'
                 : 'No payment records yet'}
             </StandardText>
+            <Gap size="sm" />
             <StandardText
-              style={[styles.emptySubtext, { color: textSecondary }]}
+              size="sm"
+              style={{
+                color: textSecondary,
+                textAlign: 'center',
+                paddingHorizontal: 32,
+              }}
             >
-              {searchQuery || selectedFilter !== 'all'
+              {searchQuery || selectedFilter !== 'all' || startDate || endDate
                 ? 'Try adjusting your search or filter criteria'
                 : 'Payment transactions will appear here once tenants make payments'}
             </StandardText>
           </View>
         )}
+
+        <Gap size="xxl" />
       </ScrollView>
 
       {/* Date Picker Modals */}
-      {showStartDatePicker && (
-        <View style={styles.datePickerOverlay}>
+      <Portal>
+        <Modal
+          visible={showStartDatePicker}
+          onDismiss={() => setShowStartDatePicker(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
           <View
             style={[
               styles.datePickerContainer,
@@ -669,7 +1067,7 @@ const PaymentHistory = ({ navigation }) => {
               <StandardText
                 fontWeight="bold"
                 size="lg"
-                style={[styles.datePickerTitle, { color: textPrimary }]}
+                style={{ color: textPrimary }}
               >
                 Select Start Date
               </StandardText>
@@ -698,11 +1096,13 @@ const PaymentHistory = ({ navigation }) => {
               headerButtonColor={colors.primary}
             />
           </View>
-        </View>
-      )}
+        </Modal>
 
-      {showEndDatePicker && (
-        <View style={styles.datePickerOverlay}>
+        <Modal
+          visible={showEndDatePicker}
+          onDismiss={() => setShowEndDatePicker(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
           <View
             style={[
               styles.datePickerContainer,
@@ -713,7 +1113,7 @@ const PaymentHistory = ({ navigation }) => {
               <StandardText
                 fontWeight="bold"
                 size="lg"
-                style={[styles.datePickerTitle, { color: textPrimary }]}
+                style={{ color: textPrimary }}
               >
                 Select End Date
               </StandardText>
@@ -742,7 +1142,20 @@ const PaymentHistory = ({ navigation }) => {
               headerButtonColor={colors.primary}
             />
           </View>
-        </View>
+        </Modal>
+      </Portal>
+
+      {/* Payment Detail Modal */}
+      {selectedPayment && (
+        <PaymentDetailModal
+          visible={showPaymentDetail}
+          payment={selectedPayment}
+          onDismiss={() => {
+            setShowPaymentDetail(false);
+            setSelectedPayment(null);
+          }}
+          theme={mode}
+        />
       )}
     </View>
   );
@@ -755,6 +1168,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   summaryContainer: {
     flexDirection: 'row',
@@ -778,25 +1196,85 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: 12,
   },
   cardValue: {
-    fontSize: 20,
+    fontSize: 18,
     marginTop: 4,
   },
-  controlsContainer: {
+  cardSubtext: {
+    marginTop: 4,
+    fontSize: 10,
+  },
+  downloadCard: {
+    padding: 20,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  downloadHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  downloadHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
     gap: 12,
-    marginTop: 30,
+  },
+  downloadHeaderText: {
+    flex: 1,
+  },
+  dateRangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  dateButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  dateButtonText: {
+    fontSize: 13,
+  },
+  downloadActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  clearButton: {
+    flex: 1,
+    borderWidth: 1,
+  },
+  downloadButton: {
+    flex: 2,
   },
   searchBar: {
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 25,
+    borderRadius: 12,
     elevation: 2,
     fontFamily: 'Metropolis-Medium',
   },
   searchInput: {
     fontFamily: 'Metropolis-Medium',
+  },
+  filterSection: {
+    gap: 8,
+  },
+  filterLabel: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   filterContainer: {
     marginBottom: 8,
@@ -805,21 +1283,36 @@ const styles = StyleSheet.create({
     marginRight: 8,
     backgroundColor: '#f5f5f5',
   },
-  selectedFilterChip: {
-    backgroundColor: colors.secondary,
-  },
   filterChipText: {
-    color: '#000',
+    fontSize: 12,
     fontFamily: 'Metropolis-Medium',
-    fontWeight: '400',
   },
-  selectedFilterChipText: {
-    color: '#fff',
-    fontFamily: 'Metropolis-Medium',
-    fontWeight: '600',
+  sortContainer: {
+    gap: 8,
   },
-  sectionTitle: {
-    marginBottom: 8,
+  sortButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    gap: 4,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  countBadge: {
+    backgroundColor: colors.primary + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
   },
   paymentCard: {
     marginVertical: 6,
@@ -839,93 +1332,56 @@ const styles = StyleSheet.create({
   paymentInfo: {
     flex: 1,
   },
-  paymentTitle: {
-    marginBottom: 4,
+  paymentMetaRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 6,
   },
-  paymentProperty: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  paymentDate: {
-    fontSize: 12,
+  paymentMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   paymentAmount: {
     alignItems: 'flex-end',
   },
-  amount: {
-    marginBottom: 4,
-  },
   statusChip: {
     height: 24,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    marginTop: 4,
   },
   statusChipText: {
     fontSize: 10,
     fontWeight: 'bold',
   },
-  paymentDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
   paymentFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   categoryChip: {
     height: 28,
     paddingHorizontal: 12,
-    paddingVertical: 4,
   },
   categoryChipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   methodChip: {
     height: 28,
     paddingHorizontal: 12,
-    paddingVertical: 4,
   },
   methodChipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 48,
   },
-  emptyText: {
-    fontSize: 18,
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  downloadButton: {
-    flex: 2,
-  },
-  datePickerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
+  modalContainer: {
+    padding: 20,
   },
   datePickerContainer: {
-    margin: 20,
     borderRadius: 16,
     padding: 20,
     maxHeight: '80%',
@@ -936,28 +1392,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  datePickerTitle: {
-    flex: 1,
-  },
   closeButton: {
     padding: 8,
-  },
-  dateRangeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dateButtonContainer: {
-    flex: 1,
-  },
-  dateButton: {
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-  dateSeparator: {
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
 
