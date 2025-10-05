@@ -799,7 +799,7 @@ const RoomDetails = ({ navigation, route }) => {
               onPress={() => {
                 closeMenu();
                 navigation.navigate('EditTenant', {
-                  tenantId: activeMenuTenantId,
+                  tenant_id: activeMenuTenantId,
                 });
               }}
             >

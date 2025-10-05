@@ -789,6 +789,15 @@ What's New:
             onToggle={() => toggleSetting('notifications', 'payments')}
             textColor={textPrimary}
             subtitleColor={textSecondary}
+          />
+
+          <SettingActionItem
+            title="Advanced Notification Settings"
+            subtitle="Manage notification permissions and preferences"
+            icon="chevron-right"
+            onPress={() => navigation.navigate('NotificationSettings')}
+            textColor={textPrimary}
+            subtitleColor={textSecondary}
             isLast
           />
         </Card>

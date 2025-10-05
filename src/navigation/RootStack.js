@@ -31,6 +31,7 @@ import Payments from '../screens/Payments';
 import RevenueOverview from '../screens/RevenueOverview';
 import ExpenseTracking from '../screens/ExpenseTracking';
 import PaymentHistory from '../screens/PaymentHistory';
+import NotificationSettings from '../screens/NotificationSettings';
 
 // Context
 import { CredentialsContext } from '../context/CredentialsContext';
@@ -41,6 +42,9 @@ import colors from '../theme/color';
 // Constants
 import { SCREEN_NAMES } from './constants';
 
+// Notification Service
+import NotificationService from '../services/NotificationService';
+
 // Constants
 const SPLASH_SCREEN_DURATION = 2000;
 
@@ -49,8 +53,19 @@ const Stack = createNativeStackNavigator();
 const RootStack = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { isAuthenticated } = useContext(CredentialsContext);
+  const { isAuthenticated, credentials } = useContext(CredentialsContext);
   const navigationRef = React.useRef(null);
+
+  // Set credentials in NotificationService when user is authenticated
+  useEffect(() => {
+    const updateCredentials = async () => {
+      if (isAuthenticated && credentials) {
+        await NotificationService.setCredentials(credentials);
+      }
+    };
+
+    updateCredentials();
+  }, [isAuthenticated, credentials]);
 
   // Default screen options for better consistency
   const defaultScreenOptions = {
@@ -524,6 +539,21 @@ const RootStack = () => {
             component={AddTicket}
             options={{
               headerTitle: 'Add Ticket',
+              headerLeft: () => null,
+              headerShown: false,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="NotificationSettings"
+            component={NotificationSettings}
+            options={{
+              headerTitle: 'Notification Settings',
               headerLeft: () => null,
               headerShown: false,
               headerTitleStyle: {

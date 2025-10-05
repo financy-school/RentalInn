@@ -195,6 +195,14 @@ const Home = ({ navigation }) => {
     fetchAnalyticsData,
   ]);
 
+  // Fetch data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchAnalyticsData();
+    });
+    return unsubscribe;
+  }, [navigation, fetchAnalyticsData]);
+
   // Handle pull to refresh
   const onRefresh = () => {
     setRefreshing(true);
@@ -467,7 +475,11 @@ const Home = ({ navigation }) => {
 
             {/* KPI Cards */}
             <View style={styles.kpiGrid}>
-              <StandardCard style={styles.kpiCard}>
+              <TouchableOpacity
+                style={styles.kpiCard}
+                onPress={() => navigation.navigate('Rooms')}
+                activeOpacity={0.7}
+              >
                 <StandardText size="sm">Occupancy</StandardText>
                 <StandardText size="xl" fontWeight="bold">
                   {occupancyPct}%
@@ -478,8 +490,12 @@ const Home = ({ navigation }) => {
                   style={styles.progressBarMargin}
                   color={colors.primary}
                 />
-              </StandardCard>
-              <StandardCard style={styles.kpiCard}>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.kpiCard}
+                onPress={() => navigation.navigate('Payments')}
+                activeOpacity={0.7}
+              >
                 <StandardText size="sm">Rent Collected</StandardText>
                 <StandardText size="xl" fontWeight="bold">
                   ₹{formatAmount(paid)}
@@ -487,8 +503,13 @@ const Home = ({ navigation }) => {
                 <StandardText size="sm">
                   Overdue: ₹{formatAmount(notPaid)}
                 </StandardText>
-              </StandardCard>
-              <StandardCard style={styles.kpiCard}>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCard}
+                onPress={() => navigation.navigate('Tenants')}
+                activeOpacity={0.7}
+              >
                 <StandardText size="sm">Tenants</StandardText>
                 <StandardText size="xl" fontWeight="bold">
                   {totalTenants}
@@ -496,7 +517,7 @@ const Home = ({ navigation }) => {
                 <StandardText size="sm">
                   Vacant Units: {vacantRooms}/{totalRooms}
                 </StandardText>
-              </StandardCard>
+              </TouchableOpacity>
             </View>
 
             <Gap size="md" />

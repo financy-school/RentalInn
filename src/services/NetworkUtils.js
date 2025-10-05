@@ -214,6 +214,32 @@ export const getOwnerDetails = async credentials => {
   );
 };
 
+export const updateUserFirebaseToken = async (
+  accessToken,
+  userId,
+  firebaseToken,
+) => {
+  if (__DEV__) {
+    console.log('updateUserFirebaseToken called:', {
+      userId,
+      hasToken: !!accessToken,
+      hasFirebaseToken: !!firebaseToken,
+    });
+  }
+
+  return handleApiResponse(
+    () =>
+      apiClient.patch(
+        `/users/${userId}`,
+        { firebaseToken },
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'UPDATE_FIREBASE_TOKEN',
+  );
+};
+
 /**
  * Analytics API calls
  */

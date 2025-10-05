@@ -19,6 +19,9 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 // Utilities
 import helpers from './src/navigation/helpers';
 
+// Notification Service
+import NotificationService from './src/services/NotificationService';
+
 const { ErrorHelper, NetworkHelper } = helpers;
 
 // Debug log to ensure helpers are imported correctly
@@ -45,6 +48,9 @@ const App = () => {
   useEffect(() => {
     // Initialize app lifecycle logging
     ErrorHelper.logInfo('App Started', 'APP_LIFECYCLE');
+
+    // Initialize Firebase Notifications
+    NotificationService.initializeNotifications();
 
     // Setup network monitoring
     const unsubscribeNetwork = NetworkHelper.subscribeToNetworkChanges(
