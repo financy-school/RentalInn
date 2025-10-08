@@ -6,8 +6,8 @@
 // ============================================
 // PRIMARY BRAND COLORS
 // ============================================
-export const PRIMARY = '#EE7B11'; // Orange
-export const SECONDARY = '#001C68'; // Deep Navy
+export const PRIMARY = '#001C68'; // Deep Navy
+export const SECONDARY = '#EE7B11'; // Orange
 export const ACCENT = '#F9FAFB'; // Light Gray
 
 // ============================================

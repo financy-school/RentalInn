@@ -300,7 +300,7 @@ Thank you for your payment!
                 <MaterialCommunityIcons
                   name="tag"
                   size={20}
-                  color={colors.secondary}
+                  color={colors.primary}
                 />
                 <View style={styles.infoContent}>
                   <StandardText size="xs" style={{ color: textSecondary }}>
@@ -322,7 +322,7 @@ Thank you for your payment!
                 <MaterialCommunityIcons
                   name="wallet"
                   size={20}
-                  color={colors.secondary}
+                  color={colors.primary}
                 />
                 <View style={styles.infoContent}>
                   <StandardText size="xs" style={{ color: textSecondary }}>
@@ -345,7 +345,7 @@ Thank you for your payment!
                     <MaterialCommunityIcons
                       name="identifier"
                       size={20}
-                      color={colors.secondary}
+                      color={colors.primary}
                     />
                     <View style={styles.infoContent}>
                       <StandardText size="xs" style={{ color: textSecondary }}>
@@ -368,7 +368,7 @@ Thank you for your payment!
                 <MaterialCommunityIcons
                   name="calendar-clock"
                   size={20}
-                  color={colors.secondary}
+                  color={colors.primary}
                 />
                 <View style={styles.infoContent}>
                   <StandardText size="xs" style={{ color: textSecondary }}>
@@ -395,7 +395,7 @@ Thank you for your payment!
                     <MaterialCommunityIcons
                       name="calendar-check"
                       size={20}
-                      color={colors.secondary}
+                      color={colors.primary}
                     />
                     <View style={styles.infoContent}>
                       <StandardText size="xs" style={{ color: textSecondary }}>

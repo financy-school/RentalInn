@@ -339,7 +339,7 @@ Property Management System
                 <MaterialCommunityIcons
                   name="wallet"
                   size={20}
-                  color={colors.secondary}
+                  color={colors.primary}
                 />
                 <View style={styles.infoContent}>
                   <StandardText size="xs" style={{ color: textSecondary }}>
@@ -360,7 +360,7 @@ Property Management System
                 <MaterialCommunityIcons
                   name="calendar-clock"
                   size={20}
-                  color={colors.secondary}
+                  color={colors.primary}
                 />
                 <View style={styles.infoContent}>
                   <StandardText size="xs" style={{ color: textSecondary }}>
@@ -387,7 +387,7 @@ Property Management System
                     <MaterialCommunityIcons
                       name="calendar-check"
                       size={20}
-                      color={colors.secondary}
+                      color={colors.primary}
                     />
                     <View style={styles.infoContent}>
                       <StandardText size="xs" style={{ color: textSecondary }}>
@@ -470,8 +470,8 @@ Property Management System
               <Button
                 mode="outlined"
                 onPress={handleEditExpense}
-                style={[styles.actionButton, { borderColor: colors.secondary }]}
-                labelStyle={{ color: colors.secondary }}
+                style={[styles.actionButton, { borderColor: colors.primary }]}
+                labelStyle={{ color: colors.primary }}
                 icon="pencil"
               >
                 Edit

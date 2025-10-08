@@ -30,7 +30,7 @@ const SplashScreen = ({
   const dotBounce = useRef(new Animated.Value(0)).current;
 
   // Determine theme colors
-  const backgroundColor = colors.secondary;
+  const backgroundColor = colors.primary;
 
   const textColor =
     mode === 'dark'

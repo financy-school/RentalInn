@@ -126,7 +126,7 @@ const EditProfile = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Picture Section */}
-        <Card style={[styles.avatarCard, { backgroundColor: cardBackground }]}>
+        {/* <Card style={[styles.avatarCard, { backgroundColor: cardBackground }]}>
           <View style={styles.avatarSection}>
             <Avatar.Image
               size={100}
@@ -152,7 +152,7 @@ const EditProfile = ({ navigation }) => {
           >
             Tap to change profile picture
           </StandardText>
-        </Card>
+        </Card> */}
 
         <Gap size="lg" />
 
@@ -210,86 +210,6 @@ const EditProfile = ({ navigation }) => {
         </Card>
 
         <Gap size="lg" />
-
-        {/* Property Information */}
-        <Card style={[styles.formCard, { backgroundColor: cardBackground }]}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons
-              name="home-outline"
-              size={24}
-              color={colors.primary}
-            />
-            <StandardText
-              style={[styles.sectionTitle, { color: textPrimary }]}
-              fontWeight="bold"
-            >
-              Property Information
-            </StandardText>
-          </View>
-
-          <View style={styles.formSection}>
-            <StyledTextInput
-              label="Property Name"
-              value={formData.propertyName}
-              onChangeText={value => handleInputChange('propertyName', value)}
-              error={errors.propertyName}
-              placeholder="Enter property name"
-              leftIcon="home-outline"
-            />
-
-            <Gap size="md" />
-
-            <StyledTextInput
-              label="Address"
-              value={formData.address}
-              onChangeText={value => handleInputChange('address', value)}
-              error={errors.address}
-              placeholder="Enter property address"
-              leftIcon="map-marker-outline"
-              multiline
-              numberOfLines={2}
-            />
-
-            <Gap size="md" />
-
-            <View style={styles.rowInputs}>
-              <View style={styles.halfInput}>
-                <StyledTextInput
-                  label="City"
-                  value={formData.city}
-                  onChangeText={value => handleInputChange('city', value)}
-                  error={errors.city}
-                  placeholder="City"
-                  leftIcon="city-variant-outline"
-                />
-              </View>
-              <Gap size="md" horizontal />
-              <View style={styles.halfInput}>
-                <StyledTextInput
-                  label="State"
-                  value={formData.state}
-                  onChangeText={value => handleInputChange('state', value)}
-                  error={errors.state}
-                  placeholder="State"
-                  leftIcon="map-outline"
-                />
-              </View>
-            </View>
-
-            <Gap size="md" />
-
-            <StyledTextInput
-              label="PIN Code"
-              value={formData.pincode}
-              onChangeText={value => handleInputChange('pincode', value)}
-              error={errors.pincode}
-              placeholder="Enter PIN code"
-              leftIcon="mailbox-outline"
-              keyboardType="numeric"
-              maxLength={6}
-            />
-          </View>
-        </Card>
 
         <Gap size="xl" />
 

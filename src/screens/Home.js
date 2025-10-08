@@ -386,7 +386,7 @@ const Home = ({ navigation }) => {
             size={40}
             icon="menu"
             style={{ backgroundColor: colors.white }}
-            color={colors.secondary}
+            color={colors.primary}
           />
         </TouchableOpacity>
 
@@ -1764,11 +1764,11 @@ const styles = StyleSheet.create({
   },
 
   welcomeText: {
-    color: colors.secondary,
+    color: colors.primary,
   },
 
   nameText: {
-    color: colors.secondary,
+    color: colors.primary,
   },
 
   badge: {

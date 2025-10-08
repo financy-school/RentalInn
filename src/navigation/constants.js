@@ -236,11 +236,11 @@ export const menuItems = [
     icon: 'document-text-outline',
     route: SCREEN_NAMES.KYC,
   },
-  {
-    label: 'Notices',
-    icon: 'alert-circle-outline',
-    route: SCREEN_NAMES.NOTICES,
-  },
+  // {
+  //   label: 'Notices',
+  //   icon: 'alert-circle-outline',
+  //   route: SCREEN_NAMES.NOTICES,
+  // },
   {
     label: 'Tenant Management',
     icon: 'people-outline',

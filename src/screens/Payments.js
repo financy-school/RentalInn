@@ -257,7 +257,7 @@ const Payments = ({ navigation }) => {
                   {
                     backgroundColor:
                       selectedFilter === filter.key
-                        ? colors.secondary
+                        ? colors.primary
                         : '#f5f5f5',
                   },
                 ]}
@@ -343,7 +343,7 @@ const Payments = ({ navigation }) => {
                   <MaterialCommunityIcons
                     name="credit-card-outline"
                     size={16}
-                    color={colors.secondary}
+                    color={colors.primary}
                   />
                   <StandardText
                     style={[styles.detailText, { color: textSecondary }]}
@@ -357,7 +357,7 @@ const Payments = ({ navigation }) => {
                     <MaterialCommunityIcons
                       name="hashtag"
                       size={16}
-                      color={colors.secondary}
+                      color={colors.primary}
                     />
                     <StandardText
                       style={[styles.detailText, { color: textSecondary }]}
@@ -372,7 +372,7 @@ const Payments = ({ navigation }) => {
                     <MaterialCommunityIcons
                       name="account-edit"
                       size={16}
-                      color={colors.secondary}
+                      color={colors.primary}
                     />
                     <StandardText
                       style={[styles.detailText, { color: textSecondary }]}
@@ -402,7 +402,7 @@ const Payments = ({ navigation }) => {
                     <MaterialCommunityIcons
                       name="note-text-outline"
                       size={16}
-                      color={colors.secondary}
+                      color={colors.primary}
                     />
                     <StandardText
                       style={[styles.detailText, { color: textSecondary }]}
@@ -419,7 +419,7 @@ const Payments = ({ navigation }) => {
             <MaterialCommunityIcons
               name="cash-remove"
               size={64}
-              color={isDark ? colors.light_gray : colors.secondary}
+              color={isDark ? colors.light_gray : colors.primary}
             />
             <StandardText
               style={[styles.emptyText, { color: textPrimary }]}

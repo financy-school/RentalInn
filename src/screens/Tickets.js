@@ -280,7 +280,7 @@ const Tickets = ({ navigation }) => {
                   {
                     backgroundColor:
                       selectedFilter === option.key
-                        ? colors.secondary
+                        ? colors.primary
                         : '#f5f5f5',
                   },
                 ]}
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     bottom: 30,
     right: 30,
     borderRadius: 30,
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primary,
   },
   modalOverlay: {
     position: 'absolute',
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     borderRadius: 5,
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 5,
     elevation: 2,
   },

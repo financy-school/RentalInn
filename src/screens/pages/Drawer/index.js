@@ -320,7 +320,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
         bounces={false}
       >
         {/* Header Section */}
-        <View style={[styles.header, { backgroundColor: colors.secondary }]}>
+        <View style={[styles.header, { backgroundColor: colors.primary }]}>
           <View style={styles.logoContainer}>
             <Image
               style={styles.logo}
@@ -445,7 +445,7 @@ const styles = {
   },
   logoContainer: {
     marginBottom: 20,
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primary,
     width: '100%',
   },
   logo: {

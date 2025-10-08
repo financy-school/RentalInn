@@ -46,7 +46,7 @@ const Login = ({ navigation }) => {
 
   // Theme variables
   const isDark = mode === 'dark';
-  const backgroundColor = colors.secondary;
+  const backgroundColor = colors.primary;
   const cardBackground = isDark ? colors.light_black : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;

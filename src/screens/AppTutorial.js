@@ -448,7 +448,7 @@ const AppTutorial = ({ navigation }) => {
               {currentTutorial.image}
             </StandardText> */}
             <LinearGradient
-              colors={[theme.colors.primary, theme.colors.secondary]}
+              colors={[theme.colors.primary, theme.colors.primary]}
               style={styles.gradientTitle}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}

@@ -981,11 +981,11 @@ const ExpenseTracking = ({ navigation }) => {
                   <Chip
                     style={[
                       styles.categoryChip,
-                      { backgroundColor: colors.secondary + '15' },
+                      { backgroundColor: colors.primary + '15' },
                     ]}
                     textStyle={[
                       styles.categoryChipText,
-                      { color: colors.secondary },
+                      { color: colors.primary },
                     ]}
                     icon={() => (
                       <MaterialCommunityIcons
@@ -994,7 +994,7 @@ const ExpenseTracking = ({ navigation }) => {
                             ?.icon || 'tag'
                         }
                         size={14}
-                        color={colors.secondary}
+                        color={colors.primary}
                       />
                     )}
                   >

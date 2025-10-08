@@ -16,7 +16,7 @@ const KeyBoardAvoidingWrapper = ({ children }) => {
 
   const { theme: mode } = useContext(ThemeContext);
 
-  const backgroundColor = colors.secondary;
+  const backgroundColor = colors.primary;
 
   return (
     <KeyboardAvoidingView

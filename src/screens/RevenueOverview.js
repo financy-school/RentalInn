@@ -720,7 +720,7 @@ const RevenueOverview = ({ navigation }) => {
                             ? colors.success + '20'
                             : index === 2
                             ? colors.warning + '20'
-                            : colors.secondary + '20',
+                            : colors.primary + '20',
                       },
                     ]}
                   >
@@ -742,7 +742,7 @@ const RevenueOverview = ({ navigation }) => {
                           ? colors.success
                           : index === 2
                           ? colors.warning
-                          : colors.secondary
+                          : colors.primary
                       }
                     />
                   </View>
@@ -778,7 +778,7 @@ const RevenueOverview = ({ navigation }) => {
                             ? colors.success + '15'
                             : index === 2
                             ? colors.warning + '15'
-                            : colors.secondary + '15',
+                            : colors.primary + '15',
                       },
                     ]}
                   >
@@ -793,7 +793,7 @@ const RevenueOverview = ({ navigation }) => {
                             ? colors.success
                             : index === 2
                             ? colors.warning
-                            : colors.secondary,
+                            : colors.primary,
                       }}
                     >
                       {category.percentage}%

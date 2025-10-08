@@ -8,7 +8,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { Avatar, Chip, Card, Button } from 'react-native-paper';
+import { Chip, Card, Button } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
@@ -17,7 +17,7 @@ import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import colors from '../theme/colors';
-import { FONT_WEIGHT } from '../theme/layout';
+import { SPACING, RADIUS, SHADOW, PADDING } from '../theme/layout';
 import {
   deleteTenant,
   getDocument,
@@ -153,11 +153,11 @@ const RoomDetails = ({ navigation, route }) => {
     ref.measureInWindow((x, y, width, height) => {
       console.log('Menu positioning:', { x, y, width, height, SCREEN_WIDTH });
 
-      // Calculate menu position
-      // The Y coordinate from measureInWindow should be correct relative to the window
-      // Position menu to align with the right side of the card, not necessarily the three dots
-      const menuX = SCREEN_WIDTH - 180; // Fixed position from right edge
-      const menuY = Math.max(100, y + height + 8); // Ensure it's below header, below the three dots
+      // Calculate menu position - position it ABOVE the three-dot button
+      const menuWidth = 160;
+      const menuHeight = 140; // Approximate height of menu with 3 items
+      const menuX = Math.max(10, SCREEN_WIDTH - menuWidth - 10); // 10px from right edge
+      const menuY = y - menuHeight - 8; // Above the button with 8px gap
 
       console.log('Calculated menu position:', { menuX, menuY });
 
@@ -616,163 +616,176 @@ const RoomDetails = ({ navigation, route }) => {
           <Gap size="lg" />
 
           {/* Tenants Section */}
-          <StandardText
-            fontWeight="bold"
-            size="xl"
-            style={[styles.sectionTitle, { color: textPrimary }]}
-          >
-            List of Tenants ({tenants.length})
-          </StandardText>
+          <View style={styles.tenantsSectionHeader}>
+            <MaterialCommunityIcons
+              name="account-group"
+              size={24}
+              color={colors.primary}
+            />
+            <StandardText
+              fontWeight="bold"
+              size="lg"
+              style={[styles.tenantsSectionTitle, { color: textPrimary }]}
+            >
+              Tenants in this Room ({tenants.length})
+            </StandardText>
+          </View>
 
           <Gap size="md" />
 
-          {tenants.map(tenant => (
-            <StandardCard
-              key={tenant.tenant_id}
-              style={[styles.tenantCard, { backgroundColor: cardBackground }]}
-            >
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate('TenantDetails', {
-                    tenant_id: tenant.tenant_id,
-                  })
-                }
+          <View style={styles.tenantsContainer}>
+            {tenants.length === 0 ? (
+              <StandardCard
+                style={[
+                  styles.emptyTenantsCard,
+                  { backgroundColor: cardBackground },
+                ]}
               >
-                <View style={styles.tenantCardContent}>
-                  <Avatar.Image
-                    size={60}
-                    source={{
-                      uri: 'https://avatar.iran.liara.run/public/37',
-                    }}
-                    style={styles.tenantAvatar}
-                  />
-                  <View style={styles.tenantInfo}>
-                    <View style={styles.tenantHeader}>
-                      <StandardText
-                        fontWeight="bold"
-                        size="lg"
-                        style={[styles.tenantName, { color: textPrimary }]}
-                      >
-                        {tenant.name}
-                      </StandardText>
-
-                      {/* Custom Menu Anchor */}
-                      <TouchableOpacity
-                        ref={r => {
-                          if (r) {
-                            anchorRefs.current[tenant.tenant_id] = r;
-                          }
-                        }}
-                        onPress={() => openMenu(tenant.tenant_id)}
-                        style={styles.menuButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <MaterialCommunityIcons
-                          name="dots-vertical"
-                          size={22}
-                          color={colors.primary}
-                        />
-                      </TouchableOpacity>
+                <MaterialCommunityIcons
+                  name="account-off-outline"
+                  size={48}
+                  color={colors.textSecondary}
+                />
+                <StandardText
+                  size="md"
+                  style={[styles.emptyText, { color: textSecondary }]}
+                >
+                  No tenants in this room
+                </StandardText>
+              </StandardCard>
+            ) : (
+              tenants.map((tenant, index) => (
+                <TouchableOpacity
+                  key={tenant.tenant_id}
+                  style={[
+                    styles.tenantItem,
+                    { backgroundColor: cardBackground },
+                  ]}
+                  onPress={() =>
+                    navigation.navigate('TenantDetails', {
+                      tenant_id: tenant.tenant_id,
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.tenantLeft}>
+                    {/* Tenant Avatar/Rank Badge */}
+                    <View
+                      style={[
+                        styles.tenantRank,
+                        { backgroundColor: colors.primary },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="account"
+                        size={20}
+                        color={colors.white}
+                      />
                     </View>
 
-                    {/* Badges */}
-                    <View style={styles.badgesContainer}>
-                      {tenant.has_dues && (
-                        <Chip
-                          style={[
-                            styles.badgeDues,
-                            { backgroundColor: colors.error },
-                          ]}
-                          textStyle={styles.badgeText}
-                        >
-                          Dues
-                        </Chip>
-                      )}
-                      {/* {tenant.is_on_notice && (
-                        <Chip
-                          style={[
-                            styles.badgeNotice,
-                            { backgroundColor: colors.warning },
-                          ]}
-                          textStyle={styles.badgeText}
-                        >
-                          Notice
-                        </Chip>
-                      )} */}
-                    </View>
-
-                    {/* Details */}
-                    <View style={styles.tenantDetails}>
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="alert-circle"
-                          size={16}
-                          color={colors.primary}
-                        />
+                    {/* Tenant Info */}
+                    <View style={styles.tenantInfo}>
+                      <View style={styles.tenantNameRow}>
                         <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
+                          size="md"
+                          fontWeight="bold"
+                          style={{ color: textPrimary }}
+                          numberOfLines={1}
                         >
-                          Under Notice: {tenant.is_on_notice ? 'Yes' : 'No'}
+                          {tenant.name}
                         </StandardText>
+
+                        {/* Badges */}
+                        {tenant.has_dues && (
+                          <View
+                            style={[
+                              styles.inlineBadge,
+                              { backgroundColor: colors.error },
+                            ]}
+                          >
+                            <StandardText
+                              size="xs"
+                              fontWeight="bold"
+                              style={{ color: colors.white }}
+                            >
+                              Dues
+                            </StandardText>
+                          </View>
+                        )}
+                        {tenant.is_on_notice && (
+                          <View
+                            style={[
+                              styles.inlineBadge,
+                              { backgroundColor: colors.warning },
+                            ]}
+                          >
+                            <StandardText
+                              size="xs"
+                              fontWeight="bold"
+                              style={{ color: colors.white }}
+                            >
+                              Notice
+                            </StandardText>
+                          </View>
+                        )}
                       </View>
 
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="cash"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          ₹{tenant.room?.rentAmount || 'N/A'}
-                        </StandardText>
-                      </View>
+                      {/* Tenant Details */}
+                      <View style={styles.tenantMetaRow}>
+                        <View style={styles.metaItem}>
+                          <MaterialCommunityIcons
+                            name="cash"
+                            size={14}
+                            color={colors.primary}
+                          />
+                          <StandardText
+                            size="sm"
+                            style={[styles.metaText, { color: textSecondary }]}
+                          >
+                            ₹{tenant.room?.rentAmount || 'N/A'}
+                          </StandardText>
+                        </View>
 
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="alert-circle"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          {tenant.has_dues ? 'Has Dues' : 'No Dues'}
-                        </StandardText>
-                      </View>
+                        <View style={styles.metaDivider} />
 
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="calendar-check"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          Joined: {tenant.check_in_date || 'N/A'}
-                        </StandardText>
-                      </View>
-
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons
-                          name="calendar-remove"
-                          size={16}
-                          color={colors.primary}
-                        />
-                        <StandardText
-                          style={[styles.detailText, { color: textSecondary }]}
-                        >
-                          Lease End: {tenant.check_out_date || 'N/A'}
-                        </StandardText>
+                        <View style={styles.metaItem}>
+                          <MaterialCommunityIcons
+                            name="calendar-check"
+                            size={14}
+                            color={colors.primary}
+                          />
+                          <StandardText
+                            size="sm"
+                            style={[styles.metaText, { color: textSecondary }]}
+                          >
+                            {tenant.check_in_date || 'N/A'}
+                          </StandardText>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            </StandardCard>
-          ))}
+
+                  {/* Action Menu Button */}
+                  <TouchableOpacity
+                    ref={r => {
+                      if (r) {
+                        anchorRefs.current[tenant.tenant_id] = r;
+                      }
+                    }}
+                    onPress={() => openMenu(tenant.tenant_id)}
+                    style={styles.menuButton}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <MaterialCommunityIcons
+                      name="dots-vertical"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
 
           <Gap size="xxl" />
         </View>
@@ -1028,100 +1041,95 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 12,
   },
-  // Tenant Card Styles
-  tenantCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginVertical: 6,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  tenantCardContent: {
+  // Tenants Section Styles
+  tenantsSectionHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  tenantAvatar: {
-    marginRight: 16,
+  tenantsSectionTitle: {
+    marginLeft: 8,
+    fontSize: 18,
+  },
+  tenantsContainer: {
+    gap: SPACING.sm,
+  },
+  tenantItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: PADDING.large,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.medium,
+    shadowColor: colors.primary,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
+  },
+  tenantLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  tenantRank: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    ...SHADOW.light,
   },
   tenantInfo: {
     flex: 1,
   },
-  tenantHeader: {
+  tenantNameRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  inlineBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  tenantMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+  },
+  metaDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: colors.border,
+    marginHorizontal: 8,
+  },
+  emptyTenantsCard: {
+    padding: 32,
+    borderRadius: RADIUS.medium,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.light,
+  },
+  emptyText: {
+    marginTop: 12,
+    textAlign: 'center',
   },
   menuButton: {
     padding: 4,
     borderRadius: 20,
-  },
-  badgesContainer: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    gap: 8,
-  },
-  badgeDues: {
-    borderRadius: 12,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  badgeNotice: {
-    borderRadius: 12,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  badgeText: {
-    color: colors.white,
-    fontSize: 11,
-    fontWeight: FONT_WEIGHT.bold,
-    lineHeight: 14,
-  },
-  tenantDetails: {
-    gap: 6,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailText: {
-    marginLeft: 8,
-    fontSize: 13,
-  },
-  // Legacy styles (keeping for compatibility)
-  chip: {
-    marginRight: 10,
-    borderRadius: 20,
-    elevation: 1,
-  },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginVertical: 8,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   // Menu Styles
   menuOverlay: {
@@ -1131,17 +1139,19 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 1000,
+    backgroundColor: 'transparent',
   },
   popup: {
     position: 'absolute',
     minWidth: 160,
+    maxWidth: 180,
     borderRadius: 12,
     paddingVertical: 8,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
   },
   menuItem: {
     paddingHorizontal: 16,

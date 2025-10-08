@@ -123,7 +123,7 @@ const BottomNavigation = () => {
   const screenOptions = useMemo(
     () => ({
       headerShown: false,
-      tabBarActiveTintColor: colors.secondary,
+      tabBarActiveTintColor: colors.primary,
       tabBarInactiveTintColor: colors.textSecondary || '#8E8E93',
       tabBarShowLabel: true,
       tabBarHideOnKeyboard: Platform.OS === 'android',
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
 
   tabIconFocused: {
     // Subtle shadow for focused icon
-    shadowColor: colors.secondary,
+    shadowColor: colors.primary,
     shadowOffset: {
       width: 0,
       height: 1,

@@ -978,11 +978,11 @@ const PaymentHistory = ({ navigation }) => {
                   <Chip
                     style={[
                       styles.methodChip,
-                      { backgroundColor: colors.secondary + '15' },
+                      { backgroundColor: colors.primary + '15' },
                     ]}
                     textStyle={[
                       styles.methodChipText,
-                      { color: colors.secondary },
+                      { color: colors.primary },
                     ]}
                     icon={() => (
                       <MaterialCommunityIcons
@@ -994,7 +994,7 @@ const PaymentHistory = ({ navigation }) => {
                             : 'bank'
                         }
                         size={14}
-                        color={colors.secondary}
+                        color={colors.primary}
                       />
                     )}
                   >

@@ -50,7 +50,7 @@ const SignUp = ({ navigation }) => {
   // Theme variables
   const isDark = mode === 'dark';
 
-  const backgroundColor = colors.secondary;
+  const backgroundColor = colors.primary;
   const primary = colors.primary;
   const onPrimary = colors.onPrimary;
   const cardBackground = isDark ? colors.light_black : colors.white;

@@ -271,7 +271,7 @@ const Tenants = ({ navigation }) => {
                   {
                     backgroundColor:
                       selectedFilter === option.key
-                        ? colors.secondary
+                        ? colors.primary
                         : '#f5f5f5',
                   },
                 ]}
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     right: 30,
     borderRadius: 30,
     bottom: 30,
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primary,
   },
 
   /* overlay + popup styles */
