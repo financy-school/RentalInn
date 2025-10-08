@@ -20,7 +20,8 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 import {
   deleteTenant,
   putTenantOnNotice,
@@ -1331,7 +1332,12 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTitle: {
     fontSize: 20,
@@ -1343,13 +1349,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   profileCard: {
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
     shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   profileHeader: {
     flexDirection: 'row',
@@ -1397,13 +1406,16 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   kycCard: {
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   kycHeader: {
     marginBottom: 16,
@@ -1435,10 +1447,16 @@ const styles = StyleSheet.create({
   },
   documentCard: {
     width: (screenWidth - 80) / 2,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
+    backgroundColor: 'rgba(248, 249, 250, 0.98)',
+    borderRadius: 14,
     overflow: 'hidden',
-    elevation: 2,
+    elevation: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.06)',
   },
   documentImage: {
     width: '100%',
@@ -1621,7 +1639,7 @@ const styles = StyleSheet.create({
   },
   financialAmount: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
     marginLeft: 8,
   },
   viewButton: {

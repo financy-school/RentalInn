@@ -14,7 +14,7 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 
 const EditProfile = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);

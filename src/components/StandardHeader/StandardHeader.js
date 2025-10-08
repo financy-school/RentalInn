@@ -3,6 +3,7 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import StandardText from '../StandardText/StandardText';
+import { PADDING, SPACING, BORDER_WIDTH } from '../../theme/layout';
 
 const StandardHeader = ({
   navigation,
@@ -18,15 +19,15 @@ const StandardHeader = ({
     customHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: PADDING.medium,
+      paddingVertical: SPACING.md,
       backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
+      borderBottomWidth: BORDER_WIDTH.thin,
       borderBottomColor: theme.colors.outline,
     },
     backButton: {
-      padding: 8,
-      marginRight: 8,
+      padding: SPACING.sm,
+      marginRight: SPACING.sm,
     },
     headerTitle: {
       flex: 1,
@@ -54,7 +55,7 @@ const StandardHeader = ({
         <View style={styles.headerSpacer} />
       )}
 
-      <StandardText size="lg" fontWeight="600" style={styles.headerTitle}>
+      <StandardText fontWeight="semibold" style={styles.headerTitle}>
         {title}
       </StandardText>
 

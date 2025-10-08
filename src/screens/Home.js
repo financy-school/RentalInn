@@ -29,7 +29,15 @@ import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { PieChart, StackedBarChart } from 'react-native-chart-kit';
 import * as Progress from 'react-native-progress';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import {
+  PRIMARY,
+  BACKGROUND,
+  CARD_BACKGROUND,
+  BORDER_LIGHT,
+  BORDER_STANDARD,
+} from '../theme/colors';
+import { RADIUS, PADDING, SPACING, SHADOW, FONT_WEIGHT } from '../theme/layout';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 
 const screenWidth = Dimensions.get('window').width;
@@ -438,12 +446,12 @@ const Home = ({ navigation }) => {
                 color={colors.white}
               />
               <View style={styles.headerLeftContent}>
-                <StandardText style={{ color: colors.white }} fontWeight="bold">
+                <StandardText color="default_white" fontWeight="bold">
                   {propertyInfo.real_time_tracking_enabled
                     ? 'Real-time tracking enabled'
                     : 'Real-time tracking disabled'}
                 </StandardText>
-                <StandardText style={{ color: colors.white }} size="sm">
+                <StandardText color="default_white" size="sm">
                   {propertyInfo.property_name || 'All Properties'} -{' '}
                   {propertyInfo.location || 'Multiple Locations'}
                 </StandardText>
@@ -462,12 +470,13 @@ const Home = ({ navigation }) => {
                   <StandardText
                     size="lg"
                     fontWeight="bold"
-                    style={[styles.sectionTitleText, { color: colors.error }]}
+                    color="default_red"
+                    style={styles.sectionTitleText}
                   >
                     Error Loading Data
                   </StandardText>
                 </View>
-                <StandardText size="sm" style={{ color: colors.textSecondary }}>
+                <StandardText size="sm" color="textSecondary">
                   {error}
                 </StandardText>
               </StandardCard>
@@ -1402,11 +1411,11 @@ const Home = ({ navigation }) => {
                   <StandardText
                     size="lg"
                     fontWeight="bold"
-                    style={{ color: colors.success }}
+                    color="default_green"
                   >
                     {tenantData.kyc_stats?.verified || 0}
                   </StandardText>
-                  <StandardText size="sm" style={{ color: colors.success }}>
+                  <StandardText size="sm" color="default_green">
                     Verified
                   </StandardText>
                 </View>
@@ -1425,11 +1434,11 @@ const Home = ({ navigation }) => {
                   <StandardText
                     size="lg"
                     fontWeight="bold"
-                    style={{ color: colors.warning }}
+                    color="default_orange"
                   >
                     {tenantData.kyc_stats?.pending || 0}
                   </StandardText>
-                  <StandardText size="sm" style={{ color: colors.warning }}>
+                  <StandardText size="sm" color="default_orange">
                     Pending
                   </StandardText>
                 </View>
@@ -1445,14 +1454,10 @@ const Home = ({ navigation }) => {
                     size={24}
                     color={colors.error}
                   />
-                  <StandardText
-                    size="lg"
-                    fontWeight="bold"
-                    style={{ color: colors.error }}
-                  >
+                  <StandardText size="lg" fontWeight="bold" color="default_red">
                     {tenantData.kyc_stats?.rejected || 0}
                   </StandardText>
-                  <StandardText size="sm" style={{ color: colors.error }}>
+                  <StandardText size="sm" color="default_red">
                     Rejected
                   </StandardText>
                 </View>
@@ -1719,8 +1724,8 @@ const Home = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: 16,
+    backgroundColor: BACKGROUND,
+    paddingHorizontal: PADDING.medium,
     paddingTop: Platform.OS === 'ios' ? 44 : 20,
   },
 
@@ -1775,11 +1780,18 @@ const styles = StyleSheet.create({
   bannerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    marginBottom: 10,
-    opacity: 1,
+    padding: 14,
+    backgroundColor: PRIMARY,
+    borderRadius: RADIUS.medium,
+    marginBottom: SPACING.sm,
+    opacity: 0.95,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
 
   kpiGrid: {
@@ -1791,14 +1803,13 @@ const styles = StyleSheet.create({
   kpiCard: {
     width: '32%',
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    borderRadius: RADIUS.large,
+    padding: PADDING.medium,
+    marginVertical: SPACING.xs,
+    shadowColor: PRIMARY,
+    ...SHADOW.strong,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
 
   premiumOverlay: {
@@ -1913,18 +1924,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingVertical: 14,
+    paddingHorizontal: PADDING.large,
+    marginBottom: SPACING.sm,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.medium,
+    borderLeftWidth: 5,
+    borderLeftColor: PRIMARY,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
 
   maintenanceLeft: {
@@ -1960,16 +1973,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingVertical: 14,
+    paddingHorizontal: PADDING.large,
+    marginBottom: SPACING.sm,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.medium,
+    shadowColor: PRIMARY,
+    ...SHADOW.medium,
+    borderWidth: 1,
+    borderColor: BORDER_LIGHT,
   },
 
   tenantLeft: {
@@ -2034,10 +2046,17 @@ const styles = StyleSheet.create({
   // Rent Collection styles
   collectionSummary: {
     flexDirection: 'row',
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: 'rgba(248, 249, 250, 0.95)',
+    borderRadius: 16,
+    padding: 18,
     marginBottom: 16,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(98, 0, 234, 0.08)',
   },
 
   collectionStat: {
@@ -2192,7 +2211,6 @@ const styles = StyleSheet.create({
   },
 
   tableHeaderText: {
-    fontFamily: 'Metropolis-Bold',
     color: colors.textPrimary,
   },
 
@@ -2282,15 +2300,14 @@ const styles = StyleSheet.create({
   // Full width card styles
   fullWidthCard: {
     width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.large,
+    padding: PADDING.large,
+    marginVertical: SPACING.sm,
+    shadowColor: PRIMARY,
+    ...SHADOW.strong,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
 
   sectionHeader: {
@@ -2302,7 +2319,6 @@ const styles = StyleSheet.create({
   sectionTitleText: {
     flex: 1,
     marginLeft: 8,
-    color: colors.textPrimary,
   },
 
   // KYC List styles
@@ -2452,7 +2468,7 @@ const styles = StyleSheet.create({
   },
 
   boldText: {
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
   },
 });
 

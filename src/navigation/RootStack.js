@@ -37,7 +37,8 @@ import NotificationSettings from '../screens/NotificationSettings';
 import { CredentialsContext } from '../context/CredentialsContext';
 
 // Theme
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 
 // Constants
 import { SCREEN_NAMES } from './constants';
@@ -83,7 +84,7 @@ const RootStack = () => {
     },
     headerTitleStyle: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: FONT_WEIGHT.bold,
       color: colors.primary,
     },
     headerShadowVisible: false,

@@ -25,11 +25,11 @@ import Animated, {
 import StandardText from '../StandardText/StandardText';
 import Gap from '../Gap/Gap';
 import StandardSvg from '../StandardSvg/StandardSvg';
-import colors, {fadedColorOpacity, hexToRgba} from '../../theme/color';
+import colors, { fadedColorOpacity, hexToRgba } from '../../theme/colors';
 
-import {Button, IconButton, useTheme} from 'react-native-paper';
-import {Modal} from 'react-native';
-import {analyticsDashBoard} from '../../services/NetworkUtils';
+import { Button, IconButton, useTheme } from 'react-native-paper';
+import { Modal } from 'react-native';
+import { analyticsDashBoard } from '../../services/NetworkUtils';
 
 const AnimatedBtn = Animated.createAnimatedComponent(TouchableHighlight);
 
@@ -39,13 +39,13 @@ import DateTimePicker, {
 } from 'react-native-ui-datepicker';
 
 import dayjs from 'dayjs';
-import {ThemeContext} from '../../context/ThemeContext';
-import {CredentialsContext} from '../../context/CredentialsContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { CredentialsContext } from '../../context/CredentialsContext';
 
-const StandardAccordion = ({heading, icon, content}) => {
-  const {theme: mode, toggleTheme} = useContext(ThemeContext);
+const StandardAccordion = ({ heading, icon, content }) => {
+  const { theme: mode, toggleTheme } = useContext(ThemeContext);
   const theme = useTheme();
-  const {credentials} = useContext(CredentialsContext);
+  const { credentials } = useContext(CredentialsContext);
   const [expanded, setExpanded] = useState(false);
   const rotate = useSharedValue('0deg');
   const expandHeight = useSharedValue(0);
@@ -179,7 +179,7 @@ const StandardAccordion = ({heading, icon, content}) => {
     expandHeight.value = withTiming(height);
   };
   return (
-    <View style={{position: 'relative'}}>
+    <View style={{ position: 'relative' }}>
       <View
         style={{
           position: 'absolute',
@@ -193,8 +193,9 @@ const StandardAccordion = ({heading, icon, content}) => {
           flexDirection: 'row',
           alignItems: 'center',
           zIndex: 10,
-        }}>
-        <StandardText size="sm" style={{marginRight: 6}}>
+        }}
+      >
+        <StandardText size="sm" style={{ marginRight: 6 }}>
           {selectedRange.startDate && selectedRange.endDate
             ? `${dayjs(selectedRange.startDate).format('MMM DD')} - ${dayjs(
                 selectedRange.endDate,
@@ -205,7 +206,7 @@ const StandardAccordion = ({heading, icon, content}) => {
           icon="calendar"
           size={20}
           onPress={() => setCalendarVisible(true)}
-          style={{margin: 0}}
+          style={{ margin: 0 }}
         />
       </View>
 
@@ -213,7 +214,8 @@ const StandardAccordion = ({heading, icon, content}) => {
         visible={calendarVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setCalendarVisible(false)}>
+        onRequestClose={() => setCalendarVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.calendarContainer}>
             <DateTimePicker
@@ -232,7 +234,8 @@ const StandardAccordion = ({heading, icon, content}) => {
             <Gap size="sm" />
             {/* Button for cancel and done */}
             <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+              style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+            >
               <Button
                 mode="outlined"
                 buttonColor={colors.white}
@@ -250,7 +253,8 @@ const StandardAccordion = ({heading, icon, content}) => {
                     startDate: null,
                     endDate: null,
                   });
-                }}>
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -266,7 +270,8 @@ const StandardAccordion = ({heading, icon, content}) => {
                 onPress={() => {
                   setCalendarVisible(false);
                   // Handle the selected range here
-                }}>
+                }}
+              >
                 Done
               </Button>
             </View>
@@ -281,7 +286,7 @@ const StandardAccordion = ({heading, icon, content}) => {
           ₹ {analyticsData?.incomeStats?.actualIncome || '0'}
         </StandardText>
 
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <StandardText size="sm" color="faded_gray">
             {analyticsData?.incomeStats?.collectionRate || '0'}%
           </StandardText>
@@ -297,26 +302,29 @@ const StandardAccordion = ({heading, icon, content}) => {
           />
         </View>
 
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
               flex: 1,
-            }}>
+            }}
+          >
             <StandardText>From last month</StandardText>
             <AnimatedBtn
               underlayColor={hexToRgba('#ff385c', fadedColorOpacity)}
               onPress={toggleAccordion}
-              style={[styles.dropDownIcon, rotateStyle]}>
+              style={[styles.dropDownIcon, rotateStyle]}
+            >
               <StandardSvg icon={'arrow-down-drop-circle'} size={'sm'} />
             </AnimatedBtn>
           </View>
         </View>
         <Animated.ScrollView
           style={[expandStyle]}
-          onContentSizeChange={onContentSizeChange}>
+          onContentSizeChange={onContentSizeChange}
+        >
           <Gap size="sm" />
           <StandardText size="sm">{content}</StandardText>
         </Animated.ScrollView>

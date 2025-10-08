@@ -4,7 +4,8 @@ import { CommonActions } from '@react-navigation/native';
 import { useAuth } from '../context/CredentialsContext';
 import StandardText from '../components/StandardText/StandardText';
 import { SCREEN_NAMES } from '../navigation/constants';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 
 /**
  * Enhanced HOC for protecting components with authentication
@@ -268,7 +269,7 @@ const styles = {
   },
   errorTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
     color: colors.error || '#e53e3e',
     marginBottom: 12,
     textAlign: 'center',

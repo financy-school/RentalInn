@@ -16,7 +16,8 @@ import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 import {
   deleteTenant,
   getDocument,
@@ -911,12 +912,15 @@ const styles = StyleSheet.create({
   // Room Header Styles
   roomHeaderCard: {
     margin: 16,
-    borderRadius: 16,
-    elevation: 4,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
     shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   roomHeaderContent: {
     flexDirection: 'row',
@@ -949,13 +953,16 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   statisticsCard: {
-    borderRadius: 16,
-    padding: 16,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    borderRadius: 18,
+    padding: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1076,7 +1083,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: colors.white,
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
     lineHeight: 14,
   },
   tenantDetails: {

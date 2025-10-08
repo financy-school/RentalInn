@@ -26,6 +26,7 @@ import SearchableDropdown from '../components/SearchableDropdown/SearchableDropd
 import Gap from '../components/Gap/Gap';
 import * as ImagePicker from 'react-native-image-picker';
 import { ThemeContext } from '../context/ThemeContext';
+import colors from '../theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -207,7 +208,7 @@ const AddTicket = ({ navigation }) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: colors.background,
     },
     scrollContainer: {
       flexGrow: 1,
@@ -242,8 +243,15 @@ const AddTicket = ({ navigation }) => {
     roomImage: {
       width: (width - 80) / 3,
       height: (width - 80) / 3,
-      borderRadius: 12,
+      borderRadius: 14,
       backgroundColor: theme.colors.surfaceVariant,
+      borderWidth: 1,
+      borderColor: 'rgba(238, 123, 17, 0.1)',
+      shadowColor: '#EE7B11',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 3,
     },
     removeImageButton: {
       position: 'absolute',
@@ -298,7 +306,7 @@ const AddTicket = ({ navigation }) => {
           gradient={true}
           gradientColors={[
             mode === 'dark' ? '#2a2a2a' : '#ffffff',
-            mode === 'dark' ? '#1f1f1f' : '#f8f9fa',
+            mode === 'dark' ? '#1f1f1f' : colors.background,
           ]}
         >
           {/* Property Selection */}

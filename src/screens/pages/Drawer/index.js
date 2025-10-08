@@ -29,7 +29,8 @@ import { PropertyContext } from '../../../context/PropertyContext';
 import { SCREEN_NAMES, menuItems } from '../../../navigation/constants';
 import { navigateToRoute } from '../../../navigation/navigationUtils';
 import { fetchTickets } from '../../../services/NetworkUtils';
-import colors from '../../../theme/color';
+import colors from '../../../theme/colors';
+import { FONT_WEIGHT } from '../../../theme/layout';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -319,9 +320,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
         bounces={false}
       >
         {/* Header Section */}
-        <View
-          style={[styles.header, { backgroundColor: colors.backgroundLight }]}
-        >
+        <View style={[styles.header, { backgroundColor: colors.secondary }]}>
           <View style={styles.logoContainer}>
             <Image
               style={styles.logo}
@@ -446,7 +445,7 @@ const styles = {
   },
   logoContainer: {
     marginBottom: 20,
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: colors.secondary,
     width: '100%',
   },
   logo: {

@@ -10,7 +10,16 @@ import { Card } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import StandardText from '../StandardText/StandardText';
-import colors from '../../theme/color';
+import colors from '../../theme/colors';
+import {
+  PRIMARY,
+  SECONDARY,
+  BACKGROUND,
+  SUCCESS,
+  WARNING,
+  BORDER_STANDARD,
+} from '../../theme/colors';
+import { RADIUS, PADDING, SPACING, SHADOW } from '../../theme/layout';
 import { ThemeContext } from '../../context/ThemeContext';
 import { useProperty } from '../../context/PropertyContext';
 import { SCREEN_NAMES } from '../../navigation/constants';

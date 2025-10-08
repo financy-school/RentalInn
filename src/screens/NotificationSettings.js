@@ -14,7 +14,7 @@ import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
 import { ThemeContext } from '../context/ThemeContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 import NotificationService from '../services/NotificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

@@ -16,7 +16,8 @@ import Tenants from '../screens/Tenant';
 import Tickets from '../screens/Tickets';
 
 // Theme
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 
 // Constants
 import { SCREEN_NAMES } from './constants';
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error || '#FF3B30',
     color: colors.white,
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
     minWidth: 18,
     height: 18,
     borderRadius: 9,

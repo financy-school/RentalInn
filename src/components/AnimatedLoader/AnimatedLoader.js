@@ -4,7 +4,7 @@ import * as Animatable from 'react-native-animatable';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../../context/ThemeContext';
 import StandardText from '../StandardText/StandardText';
-import colors from '../../theme/color';
+import colors from '../../theme/colors';
 
 const AnimatedLoader = ({
   message = 'Loading...',

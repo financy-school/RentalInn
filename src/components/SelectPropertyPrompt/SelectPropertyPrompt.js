@@ -4,7 +4,7 @@ import { Card } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import StandardText from '../StandardText/StandardText';
 import { ThemeContext } from '../../context/ThemeContext';
-import colors from '../../theme/color';
+import colors from '../../theme/colors';
 
 const SelectPropertyPrompt = ({ title, description, onSelectProperty }) => {
   const { theme: mode } = useContext(ThemeContext);

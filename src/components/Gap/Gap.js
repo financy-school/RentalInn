@@ -1,7 +1,8 @@
-import {View, StyleSheet} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import React from 'react';
+import { SPACING } from '../../theme/layout';
 
-const Gap = ({size}) => {
+const Gap = ({ size = 'md' }) => {
   return <View style={gap[size]} />;
 };
 
@@ -9,27 +10,31 @@ export default Gap;
 
 const gap = StyleSheet.create({
   xs: {
-    height: 8,
-    width: 8,
+    height: SPACING.xs,
+    width: SPACING.xs,
   },
   sm: {
-    height: 14,
-    width: 14,
+    height: SPACING.sm,
+    width: SPACING.sm,
   },
   md: {
-    height: 16,
-    width: 16,
+    height: SPACING.md,
+    width: SPACING.md,
   },
   lg: {
-    height: 24,
-    width: 24,
+    height: SPACING.lg,
+    width: SPACING.lg,
   },
   xl: {
-    height: 30,
-    width: 30,
+    height: SPACING.xl,
+    width: SPACING.xl,
   },
   xxl: {
-    height: 32,
-    width: 32,
+    height: SPACING.xxl,
+    width: SPACING.xxl,
+  },
+  xxxl: {
+    height: SPACING.xxxl,
+    width: SPACING.xxxl,
   },
 });

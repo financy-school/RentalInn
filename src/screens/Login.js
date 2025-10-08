@@ -27,7 +27,8 @@ const { PerformanceHelper } = helpers;
 import { ERROR_MESSAGES } from '../navigation/constants';
 
 // Theme
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 import AuthHelpers from '../services/AuthHelper';
 
 const Login = ({ navigation }) => {
@@ -45,9 +46,7 @@ const Login = ({ navigation }) => {
 
   // Theme variables
   const isDark = mode === 'dark';
-  const backgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
+  const backgroundColor = colors.secondary;
   const cardBackground = isDark ? colors.light_black : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;

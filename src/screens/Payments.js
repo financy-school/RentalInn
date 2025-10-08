@@ -10,7 +10,8 @@ import StandardCard from '../components/StandardCard/StandardCard';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import { getPayments } from '../services/NetworkUtils';
 

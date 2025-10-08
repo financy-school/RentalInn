@@ -1,5 +1,5 @@
-import React, {useContext, useState} from 'react';
-import {ScrollView, StyleSheet, View, Image} from 'react-native';
+import React, { useContext, useState } from 'react';
+import { ScrollView, StyleSheet, View, Image } from 'react-native';
 import {
   TextInput,
   Button,
@@ -10,14 +10,14 @@ import {
 import StandardText from '../StandardText/StandardText';
 import StandardCard from '../StandardCard/StandardCard';
 
-import {ThemeContext} from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
 import Gap from '../Gap/Gap';
 
 import * as ImagePicker from 'react-native-image-picker';
-import colors from '../../theme/color';
+import colors from '../../theme/colors';
 
-const AddRoom = ({handleClosePress}) => {
-  const {theme: mode} = useContext(ThemeContext);
+const AddRoom = ({ handleClosePress }) => {
+  const { theme: mode } = useContext(ThemeContext);
   const theme = useTheme();
   const [room, setRoom] = useState('');
   const [beds, setBeds] = useState('');
@@ -79,8 +79,8 @@ const AddRoom = ({handleClosePress}) => {
   });
 
   return (
-    <ScrollView style={{width: '100%', paddingHorizontal: 15}}>
-      <View style={{position: 'relative'}}>
+    <ScrollView style={{ width: '100%', paddingHorizontal: 15 }}>
+      <View style={{ position: 'relative' }}>
         <IconButton
           icon="close"
           size={24}
@@ -100,14 +100,15 @@ const AddRoom = ({handleClosePress}) => {
           textAlign="center"
           size="md"
           fontWeight="bold"
-          style={{marginBottom: 10}}>
+          style={{ marginBottom: 10 }}
+        >
           Add Room
         </StandardText>
 
         <StandardCard>
           {/* Room & Beds */}
-          <View style={{flexDirection: 'row', gap: 10}}>
-            <View style={{flex: 1}}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
               <StandardText>Room Name</StandardText>
               <TextInput
                 label="Room"
@@ -115,11 +116,11 @@ const AddRoom = ({handleClosePress}) => {
                 onChangeText={setRoom}
                 mode="outlined"
                 left={<TextInput.Icon icon="door" />}
-                style={{marginBottom: 10}}
+                style={{ marginBottom: 10 }}
               />
             </View>
 
-            <View style={{flex: 1}}>
+            <View style={{ flex: 1 }}>
               <StandardText>No of Beds</StandardText>
               <TextInput
                 label="Beds"
@@ -129,14 +130,14 @@ const AddRoom = ({handleClosePress}) => {
                 mode="outlined"
                 keyboardType="numeric"
                 left={<TextInput.Icon icon="bed" />}
-                style={{marginBottom: 10}}
+                style={{ marginBottom: 10 }}
               />
             </View>
           </View>
 
           {/* Rent & Deposit */}
-          <View style={{flexDirection: 'row', gap: 10}}>
-            <View style={{flex: 1}}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
               <StandardText>Room Rent</StandardText>
               <TextInput
                 label="Rent"
@@ -145,11 +146,11 @@ const AddRoom = ({handleClosePress}) => {
                 mode="outlined"
                 keyboardType="numeric"
                 left={<TextInput.Icon icon="cash" />}
-                style={{marginBottom: 10}}
+                style={{ marginBottom: 10 }}
               />
             </View>
 
-            <View style={{flex: 1}}>
+            <View style={{ flex: 1 }}>
               <StandardText>Deposit</StandardText>
               <TextInput
                 label="Deposit"
@@ -158,20 +159,21 @@ const AddRoom = ({handleClosePress}) => {
                 mode="outlined"
                 keyboardType="numeric"
                 left={<TextInput.Icon icon="wallet" />}
-                style={{marginBottom: 10}}
+                style={{ marginBottom: 10 }}
               />
             </View>
           </View>
 
           {/* Amenities */}
-          <StandardText style={{marginTop: 10}}>Amenities</StandardText>
+          <StandardText style={{ marginTop: 10 }}>Amenities</StandardText>
           <View
             style={{
               flexDirection: 'row',
               flexWrap: 'wrap',
               gap: 6,
               marginTop: 5,
-            }}>
+            }}
+          >
             {amenities.map((item, index) => (
               <Chip
                 key={index}
@@ -181,7 +183,8 @@ const AddRoom = ({handleClosePress}) => {
                 }}
                 onClose={() => {
                   setAmenities(amenities.filter((_, i) => i !== index));
-                }}>
+                }}
+              >
                 {item}
               </Chip>
             ))}
@@ -191,7 +194,8 @@ const AddRoom = ({handleClosePress}) => {
               style={{
                 backgroundColor: mode === 'dark' ? '#2e2e2e' : '#f5f5f5',
                 marginBottom: 5,
-              }}>
+              }}
+            >
               Add
             </Chip>
           </View>
@@ -202,13 +206,14 @@ const AddRoom = ({handleClosePress}) => {
                 flexDirection: 'row',
                 alignItems: 'center',
                 marginTop: 8,
-              }}>
+              }}
+            >
               <TextInput
                 label="New Amenity"
                 value={newAmenity}
                 onChangeText={setNewAmenity}
                 mode="outlined"
-                style={{flex: 1, marginRight: 8}}
+                style={{ flex: 1, marginRight: 8 }}
               />
               <IconButton
                 icon="check"
@@ -237,13 +242,14 @@ const AddRoom = ({handleClosePress}) => {
           <Gap size="sm" />
           <StandardText>Room Image</StandardText>
           {roomImage ? (
-            <Image source={{uri: roomImage}} style={styles.imagePreview} />
+            <Image source={{ uri: roomImage }} style={styles.imagePreview} />
           ) : null}
           <Button
             icon="image"
             mode="outlined"
             onPress={pickImage}
-            style={{marginBottom: 10}}>
+            style={{ marginBottom: 10 }}
+          >
             {roomImage ? 'Change Image' : 'Upload Image'}
           </Button>
 
@@ -254,7 +260,8 @@ const AddRoom = ({handleClosePress}) => {
             onPress={() => {
               handleClosePress();
             }}
-            style={{marginTop: 10}}>
+            style={{ marginTop: 10 }}
+          >
             Add
           </Button>
         </StandardCard>

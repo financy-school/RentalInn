@@ -21,7 +21,8 @@ import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { ThemeContext } from '../context/ThemeContext';
 
 // Theme
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 
 const Notices = ({ navigation }) => {
   // Theme
@@ -681,6 +682,7 @@ const Notices = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -693,13 +695,16 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    padding: 18,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -732,6 +737,11 @@ const styles = StyleSheet.create({
   filterChip: {
     marginRight: 8,
     height: 36,
+    elevation: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   filterChipText: {
     fontSize: 12,
@@ -749,14 +759,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   noticeCard: {
-    marginVertical: 6,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    marginVertical: 8,
+    padding: 18,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   unreadCard: {
     borderWidth: 2,
@@ -807,7 +820,7 @@ const styles = StyleSheet.create({
   },
   categoryChipText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
   },
   statusChip: {
     height: 26,
@@ -815,7 +828,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
   },
   typeChip: {
     height: 26,
@@ -823,7 +836,7 @@ const styles = StyleSheet.create({
   },
   typeChipText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
   },
   emptyContainer: {
     alignItems: 'center',

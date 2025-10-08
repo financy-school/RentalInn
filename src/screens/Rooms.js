@@ -31,7 +31,14 @@ import {
   propertyRooms,
   deleteRoom,
 } from '../services/NetworkUtils';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import {
+  PRIMARY,
+  BACKGROUND,
+  CARD_BACKGROUND,
+  BORDER_STANDARD,
+} from '../theme/colors';
+import { RADIUS, SHADOW } from '../theme/layout';
 import StandardText from '../components/StandardText/StandardText';
 
 const Rooms = ({ navigation }) => {
@@ -558,11 +565,26 @@ const styles = StyleSheet.create({
   filterContainer: { flexDirection: 'row', marginBottom: 16 },
   searchBar: {
     marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    elevation: 2,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.round,
+    elevation: 4,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
-  card: { marginTop: 16, borderRadius: 16, overflow: 'hidden', elevation: 3 },
+  card: {
+    marginTop: 16,
+    borderRadius: RADIUS.large,
+    overflow: 'hidden',
+    shadowColor: PRIMARY,
+    ...SHADOW.strong,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
+    backgroundColor: CARD_BACKGROUND,
+  },
   imagePlaceholder: {
     width: '100%',
     height: 150,
@@ -591,18 +613,28 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: colors.secondary,
   },
-  chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
+  chip: {
+    marginRight: 10,
+    borderRadius: 22,
+    elevation: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
   menuContainer: {
     position: 'absolute',
     width: 150,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingVertical: 6,
-    shadowColor: '#000',
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.medium,
+    paddingVertical: 8,
+    shadowColor: PRIMARY,
     shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
   menuItem: {
     paddingHorizontal: 12,

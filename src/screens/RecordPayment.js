@@ -20,7 +20,7 @@ import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { recordPayment, getTenant } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const screenWidth = Dimensions.get('window').width;

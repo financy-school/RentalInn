@@ -12,7 +12,7 @@ import Share from 'react-native-share';
 import StandardText from '../StandardText/StandardText';
 import StandardCard from '../StandardCard/StandardCard';
 import Gap from '../Gap/Gap';
-import colors from '../../theme/color';
+import colors from '../../theme/colors';
 
 const ExpenseDetailModal = ({ visible, expense, onDismiss, theme }) => {
   const isDark = theme === 'dark';

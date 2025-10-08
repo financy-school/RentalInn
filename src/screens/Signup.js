@@ -25,7 +25,7 @@ import helpers from '../navigation/helpers';
 const { PerformanceHelper } = helpers;
 
 // Theme
-import colors from '../theme/color';
+import colors from '../theme/colors';
 import AuthHelpers from '../services/AuthHelper';
 
 const SignUp = ({ navigation }) => {
@@ -50,9 +50,7 @@ const SignUp = ({ navigation }) => {
   // Theme variables
   const isDark = mode === 'dark';
 
-  const backgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
+  const backgroundColor = colors.secondary;
   const primary = colors.primary;
   const onPrimary = colors.onPrimary;
   const cardBackground = isDark ? colors.light_black : colors.white;

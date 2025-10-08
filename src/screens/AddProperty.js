@@ -16,7 +16,7 @@ import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
 import SearchableDropdown from '../components/SearchableDropdown/SearchableDropdown';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 
 // Comprehensive Indian States and Cities Data
 const INDIAN_STATES_DATA = [

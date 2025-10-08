@@ -1,13 +1,21 @@
-import {getColor} from './color';
+import {
+  SUCCESS,
+  WARNING,
+  TEXT_SECONDARY,
+  TEXT_LIGHT,
+  TEXT_PRIMARY,
+  ERROR,
+} from './colors';
+import { FONT_SIZE, FONT_WEIGHT } from './layout';
 
-// Font sizes
+// Font sizes - use centralized constants
 export const fontSizeMap = {
-  xs: 10,
-  sm: 14,
-  md: 16,
-  lg: 20,
-  xl: 24,
-  '2xl': 32,
+  xs: FONT_SIZE.xs,
+  sm: FONT_SIZE.sm,
+  md: FONT_SIZE.md,
+  lg: FONT_SIZE.lg,
+  xl: FONT_SIZE.xl,
+  '2xl': FONT_SIZE.xxl,
 };
 
 export const getFontSize = fontSize => fontSizeMap[fontSize] || fontSizeMap.md;
@@ -30,38 +38,40 @@ export const handleFontWeight = fontWeight => {
   }
 };
 
-// Numeric font weights (for RN)
+// Numeric font weights (for RN) - use centralized constants
 export const createFontWeight = fontWeight => {
   switch (fontWeight) {
     case 'semibold':
-      return '500';
+      return FONT_WEIGHT.semibold;
     case 'bold':
-      return '600';
+      return FONT_WEIGHT.bold;
     case 'medium':
-      return '400';
+      return FONT_WEIGHT.medium;
+    case 'regular':
+      return FONT_WEIGHT.regular;
     default:
-      return '300';
+      return FONT_WEIGHT.regular;
   }
 };
 
-// Theme-aware font colors
+// Theme-aware font colors - use centralized color constants
 export const getFontColor = (fontColor, themeColors) => {
   switch (fontColor) {
     case 'default_red':
-      return getColor('error');
+      return ERROR;
     case 'default_green':
-      return getColor('success');
+      return SUCCESS;
     case 'default_orange':
-      return getColor('warning');
+      return WARNING;
     case 'faded_gray':
-      return getColor('textSecondary');
+      return TEXT_SECONDARY;
     case 'default_white':
-      return getColor('white');
+      return TEXT_LIGHT;
     case 'textSecondary':
-      return themeColors.textSecondary;
+      return themeColors?.textSecondary || TEXT_SECONDARY;
     case 'textPrimary':
     case 'default_gray':
     default:
-      return themeColors.textPrimary;
+      return themeColors?.textPrimary || TEXT_PRIMARY;
   }
 };

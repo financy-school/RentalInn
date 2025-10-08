@@ -27,7 +27,7 @@ import {
   clearCache,
   notifyPasswordChanged,
 } from '../services/NetworkUtils';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 
 const Settings = ({ navigation }) => {
   const { theme: mode, toggleTheme } = useContext(ThemeContext);
@@ -1187,12 +1187,15 @@ const styles = StyleSheet.create({
   profileCard: {
     marginTop: 16,
     padding: 20,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   profileHeader: {
     flexDirection: 'row',
@@ -1221,12 +1224,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary + '20',
   },
   settingsCard: {
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   sectionHeader: {
     flexDirection: 'row',

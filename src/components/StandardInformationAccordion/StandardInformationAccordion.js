@@ -1,10 +1,10 @@
-import {View, StyleSheet, TouchableHighlight} from 'react-native';
-import React, {useState} from 'react';
+import { View, StyleSheet, TouchableHighlight } from 'react-native';
+import React, { useState } from 'react';
 import StandardCard from '../StandardCard/StandardCard';
 import StandardText from '../StandardText/StandardText';
 import Gap from '../Gap/Gap';
 import StandardSvg from '../StandardSvg/StandardSvg';
-import {fadedColorOpacity, hexToRgba, getColor} from '../../theme/color';
+import { fadedColorOpacity, hexToRgba, getColor } from '../../theme/colors';
 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, {
@@ -12,13 +12,13 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import {useTheme} from 'react-native-paper';
+import { useTheme } from 'react-native-paper';
 
 const AnimatedBtn = Animated.createAnimatedComponent(TouchableHighlight);
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-const StandardInformationAccordion = ({heading, icon, content}) => {
-  const {colors} = useTheme();
+const StandardInformationAccordion = ({ heading, icon, content }) => {
+  const { colors } = useTheme();
 
   const [expanded, setExpanded] = useState(false);
   const [measured, setMeasured] = useState(false);
@@ -30,7 +30,7 @@ const StandardInformationAccordion = ({heading, icon, content}) => {
   const toggleAccordion = () => {
     setExpanded(prev => {
       const next = !prev;
-      rotate.value = withTiming(next ? 180 : 0, {duration: 300});
+      rotate.value = withTiming(next ? 180 : 0, { duration: 300 });
       expandHeight.value = withTiming(next ? contentHeight.value : 0, {
         duration: 300,
       });
@@ -39,7 +39,7 @@ const StandardInformationAccordion = ({heading, icon, content}) => {
   };
 
   const rotateStyle = useAnimatedStyle(() => ({
-    transform: [{rotate: `${rotate.value}deg`}],
+    transform: [{ rotate: `${rotate.value}deg` }],
   }));
 
   // ✅ use maxHeight so text won't get clipped
@@ -82,7 +82,8 @@ const StandardInformationAccordion = ({heading, icon, content}) => {
               fadedColorOpacity,
             )}
             onPress={toggleAccordion}
-            style={styles.dropDownIcon}>
+            style={styles.dropDownIcon}
+          >
             <Animated.View style={rotateStyle}>
               <StandardSvg
                 icon="arrow-down-drop-circle"
@@ -95,7 +96,7 @@ const StandardInformationAccordion = ({heading, icon, content}) => {
 
         {/* Animated Content */}
         <AnimatedView style={[expandStyle, styles.animatedContent]}>
-          <View style={{paddingBottom: 8}}>
+          <View style={{ paddingBottom: 8 }}>
             <Gap size="sm" />
             {content}
           </View>

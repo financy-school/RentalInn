@@ -8,6 +8,7 @@ import GradientCard from '../components/GradientCard/GradientCard';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import SimpleAccordion from '../components/SimpleAccordion/SimpleAccordion';
 import Gap from '../components/Gap/Gap';
+import colors from '../theme/colors';
 
 const FAQ = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -286,7 +287,7 @@ const FAQ = ({ navigation }) => {
       paddingBottom: 16,
     },
     questionCard: {
-      backgroundColor: mode === 'dark' ? '#2a2a2a' : '#f8f9fa',
+      backgroundColor: mode === 'dark' ? '#2a2a2a' : colors.background,
       borderRadius: 12,
       marginBottom: 12,
       overflow: 'hidden',

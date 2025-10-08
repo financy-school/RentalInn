@@ -16,7 +16,8 @@ import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
 import Gap from '../components/Gap/Gap';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 
 const RentDetails = ({ navigation }) => {
   const { theme: mode, toggleTheme } = useContext(ThemeContext);

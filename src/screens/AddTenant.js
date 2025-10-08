@@ -11,6 +11,7 @@ import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
 import SearchableDropdown from '../components/SearchableDropdown/SearchableDropdown';
+import colors from '../theme/colors';
 import {
   addTenant,
   updateTenant,
@@ -253,7 +254,7 @@ const AddTenant = ({ navigation, route }) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: colors.background,
     },
     scrollContainer: {
       flexGrow: 1,
@@ -295,12 +296,18 @@ const AddTenant = ({ navigation, route }) => {
       marginVertical: 8,
     },
     chip: {
-      backgroundColor: mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
-      borderWidth: 1,
-      borderColor: mode === 'dark' ? '#404040' : '#e0e0e0',
-      borderRadius: 6,
+      backgroundColor:
+        mode === 'dark' ? '#2a2a2a' : 'rgba(245, 245, 245, 0.98)',
+      borderWidth: 1.5,
+      borderColor: mode === 'dark' ? '#404040' : 'rgba(238, 123, 17, 0.15)',
+      borderRadius: 10,
       paddingHorizontal: 16,
       paddingVertical: 8,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
     },
     chipSelected: {
       backgroundColor: theme.colors.primary,
@@ -322,10 +329,17 @@ const AddTenant = ({ navigation, route }) => {
       fontSize: 12,
     },
     statusContainer: {
-      padding: 16,
-      borderRadius: 12,
+      padding: 18,
+      borderRadius: 14,
       marginBottom: 16,
       alignItems: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.1,
+      shadowRadius: 6,
+      elevation: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(238, 123, 17, 0.08)',
     },
     statusText: {
       textAlign: 'center',

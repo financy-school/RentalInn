@@ -21,7 +21,7 @@ import {
   getTenant,
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 
 const AddInvoice = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);

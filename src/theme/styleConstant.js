@@ -1,5 +1,5 @@
-import {Platform, StyleSheet} from 'react-native';
-import {getColor} from './color';
+import { Platform, StyleSheet } from 'react-native';
+import { getColor } from './color';
 
 export const screenPadding = 16;
 export const totalHorizontalPadding = screenPadding * 2;
@@ -27,7 +27,7 @@ export const cardShadow = (isDark = false) =>
       ...Platform.select({
         ios: {
           shadowColor: isDark ? getColor('white') : getColor('black'),
-          shadowOffset: {width: 0, height: 2},
+          shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isDark ? 0.15 : 0.2,
           shadowRadius: isDark ? 6 : 4,
           zIndex: 0,
@@ -35,7 +35,7 @@ export const cardShadow = (isDark = false) =>
         android: {
           shadowColor: isDark ? getColor('white') : getColor('black'),
           elevation: isDark ? 2 : 6,
-          shadowOffset: {width: 0, height: isDark ? 4 : 10},
+          shadowOffset: { width: 0, height: isDark ? 4 : 10 },
           zIndex: 0,
         },
       }),

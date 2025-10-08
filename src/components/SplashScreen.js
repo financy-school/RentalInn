@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,10 +30,7 @@ const SplashScreen = ({
   const dotBounce = useRef(new Animated.Value(0)).current;
 
   // Determine theme colors
-  const backgroundColor =
-    mode === 'dark'
-      ? colors.backgroundDark || '#000000'
-      : colors.backgroundLight || colors.white || '#ffffff';
+  const backgroundColor = colors.secondary;
 
   const textColor =
     mode === 'dark'

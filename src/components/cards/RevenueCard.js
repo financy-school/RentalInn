@@ -1,15 +1,16 @@
-import React, {useState} from 'react';
-import {View, LayoutAnimation} from 'react-native';
-import {Card, Text, IconButton, useTheme} from 'react-native-paper';
-import colors from '../../theme/color';
+import React, { useState } from 'react';
+import { View, LayoutAnimation } from 'react-native';
+import { Card, Text, IconButton, useTheme } from 'react-native-paper';
+import colors from '../../theme/colors';
+import { FONT_WEIGHT } from '../../theme/layout';
 // import {LineChart} from 'recharts-native';
 
 const data = [
-  {month: 'Jan', revenue: 4000},
-  {month: 'Feb', revenue: 5000},
-  {month: 'Mar', revenue: 4500},
-  {month: 'Apr', revenue: 5200},
-  {month: 'May', revenue: 4900},
+  { month: 'Jan', revenue: 4000 },
+  { month: 'Feb', revenue: 5000 },
+  { month: 'Mar', revenue: 4500 },
+  { month: 'Apr', revenue: 5200 },
+  { month: 'May', revenue: 4900 },
 ];
 
 const RevenueAccordionCard = () => {
@@ -29,12 +30,14 @@ const RevenueAccordionCard = () => {
         borderRadius: 15,
         margin: 10,
       }}
-      onPress={toggleExpand}>
+      onPress={toggleExpand}
+    >
       <View
         style={{
           justifyContent: 'space-between',
           padding: 15,
-        }}>
+        }}
+      >
         <View>
           <Text
             style={{
@@ -43,7 +46,8 @@ const RevenueAccordionCard = () => {
               marginTop: 15,
               fontWeight: 'bold',
               fontFamily: 'Poppins-Regular',
-            }}>
+            }}
+          >
             REVENUE
           </Text>
           <Text
@@ -51,16 +55,17 @@ const RevenueAccordionCard = () => {
               color: '#fdfdfd',
               fontSize: 30,
               fontWeight: 'bold',
-            }}>
+            }}
+          >
             ₹ 52365
           </Text>
-          <Text style={{color: '#fff', marginTop: 8, fontWeight: 'bold'}}>
+          <Text style={{ color: '#fff', marginTop: 8, fontWeight: 'bold' }}>
             +0.6%
           </Text>
         </View>
 
         <View>
-          <Text style={{color: '#fff'}}>From last month</Text>
+          <Text style={{ color: '#fff' }}>From last month</Text>
         </View>
 
         {/* Expand/Collapse Button */}
@@ -83,8 +88,8 @@ const RevenueAccordionCard = () => {
 
       {/* Expanded Section */}
       {expanded && (
-        <View style={{padding: 15}}>
-          <Text style={{color: colors.textSecondary, marginBottom: 10}}>
+        <View style={{ padding: 15 }}>
+          <Text style={{ color: colors.textSecondary, marginBottom: 10 }}>
             Revenue Trends
           </Text>
           {/* <LineChart

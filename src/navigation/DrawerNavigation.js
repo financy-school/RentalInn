@@ -7,7 +7,7 @@ import BottomNavigation from './BottomNavigation';
 import DrawerContent from '../screens/pages/Drawer';
 
 // Theme
-import colors from '../theme/color';
+import colors from '../theme/colors';
 
 const Drawer = createDrawerNavigator();
 const { width: screenWidth } = Dimensions.get('window');

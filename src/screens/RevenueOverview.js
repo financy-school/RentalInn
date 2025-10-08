@@ -20,7 +20,7 @@ import StandardCard from '../components/StandardCard/StandardCard';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 
@@ -958,6 +958,7 @@ const RevenueOverview = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -978,13 +979,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    backgroundColor: 'rgba(245, 245, 245, 0.98)',
+    shadowColor: '#EE7B11',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   mainRevenueCard: {
     padding: 20,
-    borderRadius: 12,
-    elevation: 3,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: '#EE7B11',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
   },
   mainRevenueHeader: {
     flexDirection: 'row',
@@ -1017,10 +1032,17 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
+    padding: 18,
+    borderRadius: 18,
+    elevation: 5,
     alignItems: 'center',
+    shadowColor: '#EE7B11',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
   },
   summaryLabel: {
     marginTop: 8,

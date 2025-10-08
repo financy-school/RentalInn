@@ -17,7 +17,8 @@ import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import { FONT_WEIGHT } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import DatePicker from 'react-native-ui-datepicker';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
@@ -1159,6 +1160,7 @@ const PaymentHistory = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -1176,13 +1178,16 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    padding: 18,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1203,12 +1208,15 @@ const styles = StyleSheet.create({
   },
   downloadCard: {
     padding: 20,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    borderRadius: 18,
+    elevation: 5,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
   },
   downloadHeader: {
     flexDirection: 'row',
@@ -1237,9 +1245,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 1.5,
     gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   dateButtonText: {
     fontSize: 13,
@@ -1346,7 +1360,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
   },
   paymentFooter: {
     flexDirection: 'row',

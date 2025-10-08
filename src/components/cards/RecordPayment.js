@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, { useContext, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -6,17 +6,17 @@ import {
   View,
   Modal,
 } from 'react-native';
-import {TextInput, useTheme, Button, IconButton} from 'react-native-paper';
+import { TextInput, useTheme, Button, IconButton } from 'react-native-paper';
 import StandardText from '../StandardText/StandardText';
 import StandardCard from '../StandardCard/StandardCard';
-import DateTimePicker, {useDefaultStyles} from 'react-native-ui-datepicker';
-import {ThemeContext} from '../../context/ThemeContext';
+import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
+import { ThemeContext } from '../../context/ThemeContext';
 import Gap from '../Gap/Gap';
 import dayjs from 'dayjs';
-import colors from '../../theme/color';
+import colors from '../../theme/colors';
 
-const RecordPayment = ({handleClosePress}) => {
-  const {theme: mode} = useContext(ThemeContext);
+const RecordPayment = ({ handleClosePress }) => {
+  const { theme: mode } = useContext(ThemeContext);
   const theme = useTheme();
 
   const [tenantName, setTenantName] = useState('');
@@ -28,10 +28,10 @@ const RecordPayment = ({handleClosePress}) => {
   const [paymentMode, setPaymentMode] = useState('Cash');
 
   const paymentModes = [
-    {label: 'Cash', icon: 'cash'},
-    {label: 'UPI', icon: 'qrcode-scan'},
-    {label: 'Bank Transfer', icon: 'bank'},
-    {label: 'Others', icon: 'dots-horizontal'},
+    { label: 'Cash', icon: 'cash' },
+    { label: 'UPI', icon: 'qrcode-scan' },
+    { label: 'Bank Transfer', icon: 'bank' },
+    { label: 'Others', icon: 'dots-horizontal' },
   ];
 
   const styles = StyleSheet.create({
@@ -88,8 +88,8 @@ const RecordPayment = ({handleClosePress}) => {
   };
 
   return (
-    <ScrollView style={{width: '100%', paddingHorizontal: 15}}>
-      <View style={{position: 'relative'}}>
+    <ScrollView style={{ width: '100%', paddingHorizontal: 15 }}>
+      <View style={{ position: 'relative' }}>
         <IconButton
           icon="close"
           size={24}
@@ -109,7 +109,8 @@ const RecordPayment = ({handleClosePress}) => {
           textAlign="center"
           size="md"
           fontWeight="bold"
-          style={{marginBottom: 10}}>
+          style={{ marginBottom: 10 }}
+        >
           Record Payment
         </StandardText>
 
@@ -121,7 +122,7 @@ const RecordPayment = ({handleClosePress}) => {
             onChangeText={setTenantName}
             mode="outlined"
             left={<TextInput.Icon icon="account" />}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
 
           <StandardText>Phone</StandardText>
@@ -132,11 +133,11 @@ const RecordPayment = ({handleClosePress}) => {
             keyboardType="phone-pad"
             mode="outlined"
             left={<TextInput.Icon icon="phone" />}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
 
-          <View style={{flexDirection: 'row', gap: 10}}>
-            <View style={{flex: 1}}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
               <StandardText>Room</StandardText>
               <TextInput
                 label="Room"
@@ -144,11 +145,11 @@ const RecordPayment = ({handleClosePress}) => {
                 onChangeText={setRoom}
                 mode="outlined"
                 left={<TextInput.Icon icon="door" />}
-                style={{marginBottom: 10}}
+                style={{ marginBottom: 10 }}
               />
             </View>
 
-            <View style={{flex: 1}}>
+            <View style={{ flex: 1 }}>
               <TouchableOpacity onPress={() => setCalendarVisible(true)}>
                 <StandardText>Payment Date</StandardText>
                 <TextInput
@@ -159,7 +160,7 @@ const RecordPayment = ({handleClosePress}) => {
                   mode="outlined"
                   editable={false}
                   left={<TextInput.Icon icon="calendar" />}
-                  style={{marginBottom: 10}}
+                  style={{ marginBottom: 10 }}
                 />
               </TouchableOpacity>
             </View>
@@ -169,8 +170,8 @@ const RecordPayment = ({handleClosePress}) => {
 
           <StandardText>Payment Mode</StandardText>
 
-          <View style={{marginTop: 10}}>
-            <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
+          <View style={{ marginTop: 10 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {paymentModes.map(mode => (
                 <Button
                   key={mode.label}
@@ -181,7 +182,8 @@ const RecordPayment = ({handleClosePress}) => {
                     marginRight: 8,
                     marginBottom: 8,
                     borderRadius: 20,
-                  }}>
+                  }}
+                >
                   {mode.label}
                 </Button>
               ))}
@@ -192,7 +194,8 @@ const RecordPayment = ({handleClosePress}) => {
             visible={calendarVisible}
             transparent={true}
             animationType="slide"
-            onRequestClose={() => setCalendarVisible(false)}>
+            onRequestClose={() => setCalendarVisible(false)}
+          >
             <View style={styles.modalOverlay}>
               <View style={styles.calendarContainer}>
                 <DateTimePicker
@@ -209,26 +212,29 @@ const RecordPayment = ({handleClosePress}) => {
                   style={{
                     flexDirection: 'row',
                     justifyContent: 'space-between',
-                  }}>
+                  }}
+                >
                   <Button
                     mode="outlined"
                     textColor={colors.black}
-                    style={{width: '45%', borderRadius: 5}}
+                    style={{ width: '45%', borderRadius: 5 }}
                     onPress={() => {
                       setCalendarVisible(false);
                       setJoiningDate(null);
-                    }}>
+                    }}
+                  >
                     Cancel
                   </Button>
                   <Button
                     mode="contained"
-                    style={{width: '45%', borderRadius: 5}}
+                    style={{ width: '45%', borderRadius: 5 }}
                     onPress={() => {
                       if (joiningDate.date) {
                         setJoiningDate(joiningDate.date);
                       }
                       setCalendarVisible(false);
-                    }}>
+                    }}
+                  >
                     Done
                   </Button>
                 </View>
@@ -242,7 +248,8 @@ const RecordPayment = ({handleClosePress}) => {
             onPress={() => {
               handleClosePress();
             }}
-            style={{marginTop: 10}}>
+            style={{ marginTop: 10 }}
+          >
             Record Payment
           </Button>
         </StandardCard>

@@ -3,7 +3,7 @@ import {
   MD3DarkTheme,
   configureFonts,
 } from 'react-native-paper';
-import colors from './color';
+import colors from './colors';
 
 // Light Theme
 const lightTheme = {

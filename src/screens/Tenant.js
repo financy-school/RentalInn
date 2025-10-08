@@ -31,7 +31,14 @@ import {
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
+import {
+  PRIMARY,
+  BACKGROUND,
+  CARD_BACKGROUND,
+  BORDER_STANDARD,
+} from '../theme/colors';
+import { RADIUS, PADDING, SHADOW } from '../theme/layout';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -536,23 +543,36 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   searchBar: {
     marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    elevation: 2,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.round,
+    elevation: 4,
     fontFamily: 'Metropolis-Medium',
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
   filterContainer: { flexDirection: 'row', marginBottom: 16 },
-  chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
+  chip: {
+    marginRight: 10,
+    borderRadius: 22,
+    elevation: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.large,
+    padding: PADDING.large,
+    marginVertical: 10,
+    shadowColor: PRIMARY,
+    ...SHADOW.strong,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
   row: { flexDirection: 'row', alignItems: 'center' },
   rowBetween: {
@@ -592,14 +612,16 @@ const styles = StyleSheet.create({
   popup: {
     position: 'absolute',
     minWidth: 160,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RADIUS.medium,
+    paddingVertical: 8,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 6,
+    shadowRadius: 10,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: BORDER_STANDARD,
   },
   menuItem: {
     paddingHorizontal: 12,
@@ -609,7 +631,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: BACKGROUND,
     paddingHorizontal: 16,
   },
   propertySelectorContainer: {

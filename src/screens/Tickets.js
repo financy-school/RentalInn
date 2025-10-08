@@ -24,7 +24,7 @@ import {
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
-import colors from '../theme/color';
+import colors from '../theme/colors';
 
 const Tickets = ({ navigation }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -511,10 +511,16 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    elevation: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderRadius: 28,
+    elevation: 4,
     fontFamily: 'Metropolis-Medium',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(98, 0, 234, 0.08)',
   },
   textWrapper: {
     justifyContent: 'center',
@@ -576,15 +582,17 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   card: {
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 3,
+    marginBottom: 18,
+    padding: 18,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(98, 0, 234, 0.08)',
   },
   header: {
     flexDirection: 'row',
@@ -646,7 +654,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     elevation: 2,
   },
-  chip: { marginRight: 10, borderRadius: 20, elevation: 1 },
+  chip: {
+    marginRight: 10,
+    borderRadius: 22,
+    elevation: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, { useContext, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -17,14 +17,14 @@ import {
 } from 'react-native-paper';
 import StandardText from '../StandardText/StandardText';
 import StandardCard from '../StandardCard/StandardCard';
-import DateTimePicker, {useDefaultStyles} from 'react-native-ui-datepicker';
-import {ThemeContext} from '../../context/ThemeContext';
+import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
+import { ThemeContext } from '../../context/ThemeContext';
 import Gap from '../Gap/Gap';
 import dayjs from 'dayjs';
-import colors from '../../theme/color';
+import colors from '../../theme/colors';
 
-const AddTenant = ({handleClosePress}) => {
-  const {theme: mode} = useContext(ThemeContext);
+const AddTenant = ({ handleClosePress }) => {
+  const { theme: mode } = useContext(ThemeContext);
   const theme = useTheme();
 
   const [tenantName, setTenantName] = useState('');
@@ -92,8 +92,8 @@ const AddTenant = ({handleClosePress}) => {
   };
 
   return (
-    <ScrollView style={{width: '100%', paddingHorizontal: 15}}>
-      <View style={{position: 'relative'}}>
+    <ScrollView style={{ width: '100%', paddingHorizontal: 15 }}>
+      <View style={{ position: 'relative' }}>
         <IconButton
           icon="close"
           size={24}
@@ -117,7 +117,8 @@ const AddTenant = ({handleClosePress}) => {
           textAlign="center"
           size="md"
           fontWeight="bold"
-          style={{marginBottom: 10}}>
+          style={{ marginBottom: 10 }}
+        >
           Add Tenant
         </StandardText>
 
@@ -129,7 +130,7 @@ const AddTenant = ({handleClosePress}) => {
             onChangeText={setTenantName}
             mode="outlined"
             left={<TextInput.Icon icon="account" />}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
 
           <StandardText>Phone</StandardText>
@@ -140,11 +141,11 @@ const AddTenant = ({handleClosePress}) => {
             keyboardType="phone-pad"
             mode="outlined"
             left={<TextInput.Icon icon="phone" />}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
 
-          <View style={{flexDirection: 'row', gap: 10}}>
-            <View style={{flex: 1}}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
               <StandardText>Room</StandardText>
               <TextInput
                 label="Room"
@@ -152,11 +153,11 @@ const AddTenant = ({handleClosePress}) => {
                 onChangeText={setRoom}
                 mode="outlined"
                 left={<TextInput.Icon icon="door" />}
-                style={{marginBottom: 10}}
+                style={{ marginBottom: 10 }}
               />
             </View>
 
-            <View style={{flex: 1}}>
+            <View style={{ flex: 1 }}>
               <TouchableOpacity onPress={() => setCalendarVisible(true)}>
                 <StandardText>Joining Date</StandardText>
                 <TextInput
@@ -167,7 +168,7 @@ const AddTenant = ({handleClosePress}) => {
                   mode="outlined"
                   editable={false}
                   left={<TextInput.Icon icon="calendar" />}
-                  style={{marginBottom: 10}}
+                  style={{ marginBottom: 10 }}
                 />
               </TouchableOpacity>
             </View>
@@ -181,7 +182,7 @@ const AddTenant = ({handleClosePress}) => {
             keyboardType="numeric"
             mode="outlined"
             left={<TextInput.Icon icon="currency-inr" />}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
 
           <View
@@ -189,8 +190,11 @@ const AddTenant = ({handleClosePress}) => {
               flexDirection: 'row',
               alignItems: 'center',
               marginBottom: 10,
-            }}>
-            <StandardText style={{marginRight: 10}}>Rent Status:</StandardText>
+            }}
+          >
+            <StandardText style={{ marginRight: 10 }}>
+              Rent Status:
+            </StandardText>
             <Checkbox
               status={rentPaid === true ? 'checked' : 'unchecked'}
               onPress={() => setRentPaid(true)}
@@ -213,7 +217,7 @@ const AddTenant = ({handleClosePress}) => {
             keyboardType="numeric"
             mode="outlined"
             left={<TextInput.Icon icon="bank" />}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
 
           <View
@@ -221,8 +225,9 @@ const AddTenant = ({handleClosePress}) => {
               flexDirection: 'row',
               alignItems: 'center',
               marginBottom: 10,
-            }}>
-            <StandardText style={{marginRight: 10}}>
+            }}
+          >
+            <StandardText style={{ marginRight: 10 }}>
               Deposit Status:
             </StandardText>
             <Checkbox
@@ -244,8 +249,9 @@ const AddTenant = ({handleClosePress}) => {
               flexDirection: 'row',
               alignItems: 'center',
               marginBottom: 20,
-            }}>
-            <StandardText style={{flex: 1}}>
+            }}
+          >
+            <StandardText style={{ flex: 1 }}>
               Automatic Rent Reminder
             </StandardText>
             <Switch
@@ -259,7 +265,8 @@ const AddTenant = ({handleClosePress}) => {
             visible={calendarVisible}
             transparent={true}
             animationType="slide"
-            onRequestClose={() => setCalendarVisible(false)}>
+            onRequestClose={() => setCalendarVisible(false)}
+          >
             <View style={styles.modalOverlay}>
               <View style={styles.calendarContainer}>
                 <DateTimePicker
@@ -276,26 +283,29 @@ const AddTenant = ({handleClosePress}) => {
                   style={{
                     flexDirection: 'row',
                     justifyContent: 'space-between',
-                  }}>
+                  }}
+                >
                   <Button
                     mode="outlined"
                     textColor={colors.black}
-                    style={{width: '45%', borderRadius: 5}}
+                    style={{ width: '45%', borderRadius: 5 }}
                     onPress={() => {
                       setCalendarVisible(false);
                       setJoiningDate(null);
-                    }}>
+                    }}
+                  >
                     Cancel
                   </Button>
                   <Button
                     mode="contained"
-                    style={{width: '45%', borderRadius: 5}}
+                    style={{ width: '45%', borderRadius: 5 }}
                     onPress={() => {
                       if (joiningDate.date) {
                         setJoiningDate(joiningDate.date);
                       }
                       setCalendarVisible(false);
-                    }}>
+                    }}
+                  >
                     Done
                   </Button>
                 </View>
@@ -309,7 +319,8 @@ const AddTenant = ({handleClosePress}) => {
             onPress={() => {
               handleClosePress();
             }}
-            style={{marginTop: 10}}>
+            style={{ marginTop: 10 }}
+          >
             Save Tenant
           </Button>
         </StandardCard>

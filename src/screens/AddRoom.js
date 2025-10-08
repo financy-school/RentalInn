@@ -33,6 +33,7 @@ const { width } = Dimensions.get('window');
 
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
+import colors from '../theme/colors';
 
 const AddRoom = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -371,10 +372,11 @@ const AddRoom = ({ navigation, route }) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: colors.background,
     },
     scrollContainer: {
       flex: 1,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: colors.background,
     },
     headerContainer: {
       position: 'relative',
@@ -409,12 +411,18 @@ const AddRoom = ({ navigation, route }) => {
       marginVertical: 12,
     },
     chip: {
-      backgroundColor: mode === 'dark' ? '#2a2a2a' : '#f5f5f5',
-      borderWidth: 1,
-      borderColor: mode === 'dark' ? '#404040' : '#e0e0e0',
-      borderRadius: 6,
+      backgroundColor:
+        mode === 'dark' ? '#2a2a2a' : 'rgba(245, 245, 245, 0.98)',
+      borderWidth: 1.5,
+      borderColor: mode === 'dark' ? '#404040' : 'rgba(238, 123, 17, 0.15)',
+      borderRadius: 10,
       paddingHorizontal: 16,
       paddingVertical: 8,
+      shadowColor: '#EE7B11',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
     },
     chipSelected: {
       backgroundColor: theme.colors.primary,

@@ -5,8 +5,9 @@ import {
   Keyboard,
   Platform,
 } from 'react-native';
-import colors from '../theme/color';
+
 import { ThemeContext } from '../context/ThemeContext';
+import colors from '../theme/colors';
 
 const KeyBoardAvoidingWrapper = ({ children }) => {
   const dismissKeyboard = () => {
@@ -15,11 +16,7 @@ const KeyBoardAvoidingWrapper = ({ children }) => {
 
   const { theme: mode } = useContext(ThemeContext);
 
-  // Theme variables
-  const isDark = mode === 'dark';
-  const backgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
+  const backgroundColor = colors.secondary;
 
   return (
     <KeyboardAvoidingView

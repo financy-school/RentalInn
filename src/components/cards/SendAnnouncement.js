@@ -1,5 +1,5 @@
-import React, {useContext, useState} from 'react';
-import {ScrollView, StyleSheet, View} from 'react-native';
+import React, { useContext, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   Text,
   TextInput,
@@ -11,11 +11,11 @@ import {
 import StandardText from '../StandardText/StandardText';
 import StandardCard from '../StandardCard/StandardCard';
 
-import {ThemeContext} from '../../context/ThemeContext';
-import colors from '../../theme/color';
+import { ThemeContext } from '../../context/ThemeContext';
+import colors from '../../theme/colors';
 
-const SendAnnouncement = ({handleClosePress}) => {
-  const {theme: mode} = useContext(ThemeContext);
+const SendAnnouncement = ({ handleClosePress }) => {
+  const { theme: mode } = useContext(ThemeContext);
   const theme = useTheme();
 
   const [title, setTitle] = useState('');
@@ -43,8 +43,8 @@ const SendAnnouncement = ({handleClosePress}) => {
   });
 
   return (
-    <ScrollView style={{width: '100%', paddingHorizontal: 15}}>
-      <View style={{position: 'relative'}}>
+    <ScrollView style={{ width: '100%', paddingHorizontal: 15 }}>
+      <View style={{ position: 'relative' }}>
         <IconButton
           icon="close"
           size={24}
@@ -58,7 +58,8 @@ const SendAnnouncement = ({handleClosePress}) => {
           textAlign="center"
           size="md"
           fontWeight="bold"
-          style={{marginBottom: 10}}>
+          style={{ marginBottom: 10 }}
+        >
           Send Announcement
         </StandardText>
 
@@ -70,7 +71,7 @@ const SendAnnouncement = ({handleClosePress}) => {
             onChangeText={setTitle}
             mode="outlined"
             left={<TextInput.Icon icon="format-title" />}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
           {/* Announcements/ Message */}
 
@@ -83,7 +84,7 @@ const SendAnnouncement = ({handleClosePress}) => {
             left={<TextInput.Icon icon="message" />}
             multiline
             numberOfLines={6}
-            style={{marginBottom: 10}}
+            style={{ marginBottom: 10 }}
           />
 
           <View
@@ -91,8 +92,9 @@ const SendAnnouncement = ({handleClosePress}) => {
               flexDirection: 'row',
               alignItems: 'center',
               marginBottom: 10,
-            }}>
-            <StandardText style={{marginRight: 10}}>Recepients:</StandardText>
+            }}
+          >
+            <StandardText style={{ marginRight: 10 }}>Recepients:</StandardText>
             <Checkbox
               status={rentPaid === true ? 'checked' : 'unchecked'}
               onPress={() => setRentPaid(true)}
@@ -113,7 +115,8 @@ const SendAnnouncement = ({handleClosePress}) => {
             onPress={() => {
               handleClosePress();
             }}
-            style={{marginTop: 10}}>
+            style={{ marginTop: 10 }}
+          >
             Send Announcement
           </Button>
         </StandardCard>

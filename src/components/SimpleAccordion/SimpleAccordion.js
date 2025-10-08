@@ -10,6 +10,7 @@ import {
 import { useTheme } from 'react-native-paper';
 import { ThemeContext } from '../../context/ThemeContext';
 import StandardText from '../StandardText/StandardText';
+import { FONT_WEIGHT } from '../../theme/layout';
 
 // Enable LayoutAnimation on Android (only for legacy architecture)
 if (Platform.OS === 'android') {
@@ -105,7 +106,7 @@ const SimpleAccordion = ({
     icon: {
       fontSize: 18,
       color: iconColor || theme.colors.primary,
-      fontWeight: 'bold',
+      fontWeight: FONT_WEIGHT.bold,
     },
     content: {
       paddingHorizontal: 16,
