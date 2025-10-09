@@ -30,7 +30,7 @@ import { SCREEN_NAMES, menuItems } from '../../../navigation/constants';
 import { navigateToRoute } from '../../../navigation/navigationUtils';
 import { fetchTickets } from '../../../services/NetworkUtils';
 import colors from '../../../theme/colors';
-import { FONT_WEIGHT } from '../../../theme/layout';
+import { FONT_WEIGHT, RADIUS, SHADOW, SPACING } from '../../../theme/layout';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -191,7 +191,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
       const hasChildren = item.children?.length > 0;
 
       return (
-        <View key={`${item.label}-${index}`} style={{ marginVertical: 4 }}>
+        <View key={`${item.label}-${index}`}>
           <TouchableOpacity
             onPress={() =>
               hasChildren
@@ -202,7 +202,6 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
               styles.menuItem,
               {
                 backgroundColor: themeColors.cardBackground,
-                borderColor: themeColors.borderColor,
               },
             ]}
             activeOpacity={0.7}
@@ -218,7 +217,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
               <Icon
                 name={item.icon}
                 size={22}
-                color={themeColors.textPrimary}
+                color={colors.primary}
                 style={styles.menuIcon}
               />
               <StandardText
@@ -246,7 +245,7 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
             {hasChildren && (
               <Icon
                 name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                size={18}
+                size={20}
                 color={themeColors.textSecondary}
               />
             )}
@@ -267,9 +266,9 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
                   accessibilityLabel={`${subItem.label} submenu item`}
                 >
                   <Icon
-                    name="ellipse-outline"
-                    size={8}
-                    color={themeColors.textPrimary}
+                    name="ellipse"
+                    size={6}
+                    color={colors.primary}
                     style={styles.submenuIcon}
                   />
                   <StandardText
@@ -343,27 +342,13 @@ const DrawerContent = ({ drawerWidth, screenWidth: propScreenWidth }) => {
             </View> */}
 
             <View style={styles.userDetails}>
-              <StandardText
-                fontWeight="bold"
-                style={[styles.userName, { color: themeColors.textSecondary }]}
-              >
+              <StandardText fontWeight="bold" style={styles.userName}>
                 {userInfo.firstName}
               </StandardText>
-              <StandardText
-                style={[
-                  styles.userContact,
-                  { color: themeColors.textSecondary },
-                ]}
-                numberOfLines={1}
-              >
+              <StandardText style={styles.userContact} numberOfLines={1}>
                 {userInfo.email}
               </StandardText>
-              <StandardText
-                style={[
-                  styles.userContact,
-                  { color: themeColors.textSecondary },
-                ]}
-              >
+              <StandardText style={styles.userContact}>
                 +91 {userInfo.phone}
               </StandardText>
             </View>
@@ -440,11 +425,12 @@ const styles = {
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 20 : 10,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: Platform.OS === 'android' ? SPACING.xl : SPACING.md,
+    paddingBottom: SPACING.lg,
   },
   logoContainer: {
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
     backgroundColor: colors.primary,
     width: '100%',
   },
@@ -460,10 +446,10 @@ const styles = {
   avatarContainer: {
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: RADIUS.round,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 15,
+    marginRight: SPACING.lg,
   },
   avatarText: {
     color: '#FFFFFF',
@@ -471,39 +457,44 @@ const styles = {
   },
   userDetails: {
     flex: 1,
-    paddingBottom: 4,
+    paddingBottom: SPACING.xs,
   },
   userName: {
     fontSize: 18,
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
+    color: colors.white,
   },
   userContact: {
     fontSize: 14,
-    marginBottom: 2,
-    color: '#FFFFFF',
+    marginBottom: SPACING.xs,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   statusCard: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.medium,
     borderWidth: 1,
+    marginHorizontal: SPACING.lg,
+    marginVertical: SPACING.md,
+    ...SHADOW.light,
   },
   statusText: {
     fontSize: 14,
     textAlign: 'center',
   },
   menuContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xl,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.medium,
+    marginVertical: SPACING.xs,
   },
   menuItemContent: {
     flexDirection: 'row',
@@ -511,58 +502,59 @@ const styles = {
     flex: 1,
   },
   menuIcon: {
-    marginRight: 14,
+    marginRight: SPACING.md,
     width: 22,
   },
   menuLabel: {
-    fontSize: 16,
+    fontSize: 15,
     flex: 1,
   },
   badge: {
     minWidth: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: RADIUS.small,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
-    paddingHorizontal: 6,
+    marginLeft: SPACING.sm,
+    paddingHorizontal: SPACING.xs + 2,
   },
   badgeText: {
     color: 'white',
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.bold,
   },
   submenuContainer: {
     paddingLeft: 52,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xs,
   },
   submenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
+    borderRadius: RADIUS.small,
   },
   submenuIcon: {
-    marginRight: 12,
+    marginRight: SPACING.md,
     width: 8,
   },
   submenuLabel: {
-    fontSize: 15,
+    fontSize: 14,
     flex: 1,
   },
   logoutContainer: {
     borderTopWidth: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: SPACING.sm,
   },
   logoutText: {
-    marginLeft: 14,
+    marginLeft: SPACING.md,
     fontSize: 16,
   },
 };

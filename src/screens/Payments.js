@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { Chip, Card, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { TextInput as PaperInput } from 'react-native-paper';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
@@ -11,7 +12,7 @@ import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
 import colors from '../theme/colors';
-import { FONT_WEIGHT } from '../theme/layout';
+import { RADIUS, SHADOW } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import { getPayments } from '../services/NetworkUtils';
 
@@ -323,15 +324,20 @@ const Payments = ({ navigation }) => {
                     +₹{parseFloat(payment.amount).toLocaleString()}
                   </StandardText>
                   {payment.isLatePayment && (
-                    <Chip
+                    <View
                       style={[
                         styles.lateChip,
                         { backgroundColor: colors.error + '20' },
                       ]}
-                      textStyle={[styles.lateChipText, { color: colors.error }]}
                     >
-                      Late
-                    </Chip>
+                      <StandardText
+                        fontWeight="bold"
+                        size="sm"
+                        style={{ color: colors.error }}
+                      >
+                        Late
+                      </StandardText>
+                    </View>
                   )}
                 </View>
               </View>
@@ -354,7 +360,7 @@ const Payments = ({ navigation }) => {
 
                 {payment.transactionId && (
                   <View style={styles.detailRow}>
-                    <MaterialCommunityIcons
+                    <FontAwesome
                       name="hashtag"
                       size={16}
                       color={colors.primary}
@@ -509,12 +515,11 @@ const styles = StyleSheet.create({
   paymentCard: {
     marginVertical: 6,
     padding: 16,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.medium,
+    shadowColor: colors.primary,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   paymentHeader: {
     flexDirection: 'row',
@@ -533,18 +538,18 @@ const styles = StyleSheet.create({
   },
   paymentAmount: {
     alignItems: 'flex-end',
+    minWidth: 120,
   },
   amount: {
     marginBottom: 4,
   },
   lateChip: {
-    height: 24,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  lateChipText: {
-    fontSize: 10,
-    fontWeight: 'bold',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginTop: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   divider: {
     marginVertical: 12,

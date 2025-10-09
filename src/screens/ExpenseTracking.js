@@ -26,7 +26,7 @@ import StandardCard from '../components/StandardCard/StandardCard';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/colors';
-import { FONT_WEIGHT } from '../theme/layout';
+import { RADIUS, SHADOW } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import DatePicker from 'react-native-ui-datepicker';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
@@ -402,7 +402,7 @@ const ExpenseTracking = ({ navigation }) => {
       />
 
       <ScrollView
-        style={styles.scrollView}
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -945,7 +945,7 @@ const ExpenseTracking = ({ navigation }) => {
                     >
                       -₹{expense.amount.toLocaleString()}
                     </StandardText>
-                    <Chip
+                    <View
                       style={[
                         styles.statusChip,
                         {
@@ -957,50 +957,52 @@ const ExpenseTracking = ({ navigation }) => {
                               : colors.warning + '20',
                         },
                       ]}
-                      textStyle={[
-                        styles.statusChipText,
-                        {
+                    >
+                      <StandardText
+                        fontWeight="bold"
+                        size="sm"
+                        style={{
                           color:
                             expense.status === 'paid'
                               ? colors.success
                               : expense.status === 'overdue'
                               ? colors.error
                               : colors.warning,
-                        },
-                      ]}
-                    >
-                      {expense.status.charAt(0).toUpperCase() +
-                        expense.status.slice(1)}
-                    </Chip>
+                        }}
+                      >
+                        {expense.status.charAt(0).toUpperCase() +
+                          expense.status.slice(1)}
+                      </StandardText>
+                    </View>
                   </View>
                 </View>
 
                 <Gap size="sm" />
 
                 <View style={styles.expenseFooter}>
-                  <Chip
+                  <View
                     style={[
                       styles.categoryChip,
                       { backgroundColor: colors.primary + '15' },
                     ]}
-                    textStyle={[
-                      styles.categoryChipText,
-                      { color: colors.primary },
-                    ]}
-                    icon={() => (
-                      <MaterialCommunityIcons
-                        name={
-                          filterOptions.find(f => f.key === expense.category)
-                            ?.icon || 'tag'
-                        }
-                        size={14}
-                        color={colors.primary}
-                      />
-                    )}
                   >
-                    {expense.category.charAt(0).toUpperCase() +
-                      expense.category.slice(1)}
-                  </Chip>
+                    <MaterialCommunityIcons
+                      name={
+                        filterOptions.find(f => f.key === expense.category)
+                          ?.icon || 'tag'
+                      }
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <StandardText
+                      fontWeight="semibold"
+                      size="sm"
+                      style={{ color: colors.primary }}
+                    >
+                      {expense.category.charAt(0).toUpperCase() +
+                        expense.category.slice(1)}
+                    </StandardText>
+                  </View>
 
                   <MaterialCommunityIcons
                     name="chevron-right"
@@ -1176,9 +1178,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
+  content: {
     flex: 1,
-    paddingHorizontal: 16,
+    padding: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -1329,12 +1331,11 @@ const styles = StyleSheet.create({
   expenseCard: {
     marginVertical: 6,
     padding: 16,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.medium,
+    shadowColor: colors.error,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 67, 54, 0.08)',
   },
   expenseHeader: {
     flexDirection: 'row',
@@ -1355,15 +1356,15 @@ const styles = StyleSheet.create({
   },
   expenseAmount: {
     alignItems: 'flex-end',
+    minWidth: 120,
   },
   statusChip: {
-    height: 24,
-    paddingHorizontal: 8,
-    marginTop: 4,
-  },
-  statusChipText: {
-    fontSize: 10,
-    fontWeight: FONT_WEIGHT.bold,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginTop: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   expenseFooter: {
     flexDirection: 'row',
@@ -1371,12 +1372,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryChip: {
-    height: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-  },
-  categoryChipText: {
-    fontSize: 11,
-    fontWeight: '600',
+    borderRadius: 20,
   },
   emptyContainer: {
     alignItems: 'center',

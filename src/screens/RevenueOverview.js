@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { Card, Button, Portal, Modal, Chip } from 'react-native-paper';
+import { Button, Portal, Modal } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Share from 'react-native-share';
 import RNFS from 'react-native-fs';
@@ -19,8 +19,8 @@ import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
-import { useProperty } from '../context/PropertyContext';
 import colors from '../theme/colors';
+import { RADIUS, SHADOW } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 
@@ -255,7 +255,7 @@ const RevenueOverview = ({ navigation }) => {
       />
 
       <ScrollView
-        style={styles.scrollView}
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -960,9 +960,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
+  content: {
     flex: 1,
-    paddingHorizontal: 16,
+    padding: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -1050,8 +1050,11 @@ const styles = StyleSheet.create({
   },
   downloadCard: {
     padding: 20,
-    borderRadius: 12,
-    elevation: 3,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.medium,
+    shadowColor: colors.primary,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   downloadHeader: {
     flexDirection: 'row',
@@ -1102,11 +1105,14 @@ const styles = StyleSheet.create({
   },
   chartCard: {
     padding: 20,
-    borderRadius: 12,
-    elevation: 3,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.medium,
+    shadowColor: colors.primary,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   barGroup: {
     flex: 1,
@@ -1144,8 +1150,11 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     padding: 16,
-    borderRadius: 12,
-    elevation: 3,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.medium,
+    shadowColor: colors.primary,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   categoryItem: {
     flexDirection: 'row',
@@ -1186,10 +1195,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
-    elevation: 2,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.light,
+    shadowColor: colors.primary,
     marginBottom: 8,
     gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   tenantRank: {
     width: 40,
@@ -1206,7 +1218,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   datePickerContainer: {
-    borderRadius: 16,
+    borderRadius: RADIUS.large,
     padding: 20,
     maxHeight: '80%',
   },

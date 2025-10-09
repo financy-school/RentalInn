@@ -22,7 +22,7 @@ import { ThemeContext } from '../context/ThemeContext';
 
 // Theme
 import colors from '../theme/colors';
-import { FONT_WEIGHT } from '../theme/layout';
+import { RADIUS, SHADOW } from '../theme/layout';
 
 const Notices = ({ navigation }) => {
   // Theme
@@ -454,7 +454,15 @@ const Notices = ({ navigation }) => {
                         : textPrimary,
                   },
                 ]}
-                icon={filter.icon}
+                icon={() => (
+                  <MaterialCommunityIcons
+                    name={filter.icon}
+                    size={18}
+                    color={
+                      selectedFilter === filter.key ? colors.white : textPrimary
+                    }
+                  />
+                )}
                 selectedColor={colors.white}
               >
                 {filter.label} ({filterCounts[filter.key]})
@@ -490,159 +498,159 @@ const Notices = ({ navigation }) => {
         {/* Notices List */}
         {filteredNotices.length > 0 ? (
           filteredNotices.map(notice => (
-            <TouchableOpacity
+            <StandardCard
+              style={[
+                styles.noticeCard,
+                { backgroundColor: cardBackground },
+                !notice.isRead && styles.unreadCard,
+              ]}
               key={notice.id}
-              onPress={() => handleNoticePress(notice.id)}
-              activeOpacity={0.7}
             >
-              <StandardCard
-                style={[
-                  styles.noticeCard,
-                  { backgroundColor: cardBackground },
-                  !notice.isRead && styles.unreadCard,
-                ]}
-              >
-                <View style={styles.noticeHeader}>
-                  <View style={styles.noticeInfo}>
-                    <View style={styles.noticeTitleRow}>
-                      <MaterialCommunityIcons
-                        name={getTypeIcon(notice.type)}
-                        size={20}
-                        color={getPriorityColor(notice.priority)}
-                      />
-                      <StandardText
-                        fontWeight="bold"
-                        size="lg"
-                        style={{ color: textPrimary, marginLeft: 8, flex: 1 }}
-                      >
-                        {notice.title}
-                      </StandardText>
-                      {!notice.isRead && (
-                        <View style={styles.unreadBadge}>
-                          <StandardText
-                            size="xs"
-                            fontWeight="bold"
-                            style={{ color: colors.white }}
-                          >
-                            NEW
-                          </StandardText>
-                        </View>
-                      )}
-                    </View>
+              <View style={styles.noticeHeader}>
+                <View style={styles.noticeInfo}>
+                  <View style={styles.noticeTitleRow}>
+                    <MaterialCommunityIcons
+                      name={getTypeIcon(notice.type)}
+                      size={20}
+                      color={getPriorityColor(notice.priority)}
+                    />
                     <StandardText
-                      size="sm"
-                      style={{ color: textSecondary, marginTop: 6 }}
+                      fontWeight="bold"
+                      size="lg"
+                      style={{ color: textPrimary, marginLeft: 8, flex: 1 }}
                     >
-                      {notice.description}
+                      {notice.title}
                     </StandardText>
-
-                    {/* Meta Information */}
-                    <View style={styles.noticeMetaRow}>
-                      <View style={styles.noticeMeta}>
-                        <MaterialCommunityIcons
-                          name="account"
-                          size={12}
-                          color={textSecondary}
-                        />
+                    {!notice.isRead && (
+                      <View style={styles.unreadBadge}>
                         <StandardText
                           size="xs"
-                          style={{ color: textSecondary, marginLeft: 4 }}
+                          fontWeight="bold"
+                          style={{ color: colors.white }}
                         >
-                          {notice.tenantName}
+                          NEW
                         </StandardText>
                       </View>
-                      <View style={styles.noticeMeta}>
-                        <MaterialCommunityIcons
-                          name="home"
-                          size={12}
-                          color={textSecondary}
-                        />
-                        <StandardText
-                          size="xs"
-                          style={{ color: textSecondary, marginLeft: 4 }}
-                        >
-                          Room {notice.roomNumber}
-                        </StandardText>
-                      </View>
-                      <View style={styles.noticeMeta}>
-                        <MaterialCommunityIcons
-                          name="calendar"
-                          size={12}
-                          color={textSecondary}
-                        />
-                        <StandardText
-                          size="xs"
-                          style={{ color: textSecondary, marginLeft: 4 }}
-                        >
-                          {new Date(notice.date).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                          })}
-                        </StandardText>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Amount or Status */}
-                  <View style={styles.noticeAmount}>
-                    {notice.amount && (
-                      <StandardText
-                        fontWeight="bold"
-                        size="xl"
-                        style={{ color: colors.primary }}
-                      >
-                        {notice.amount}
-                      </StandardText>
                     )}
                   </View>
+                  <StandardText
+                    size="sm"
+                    style={{ color: textSecondary, marginTop: 6 }}
+                  >
+                    {notice.description}
+                  </StandardText>
+
+                  {/* Meta Information */}
+                  <View style={styles.noticeMetaRow}>
+                    <View style={styles.noticeMeta}>
+                      <MaterialCommunityIcons
+                        name="account"
+                        size={12}
+                        color={textSecondary}
+                      />
+                      <StandardText
+                        size="xs"
+                        style={{ color: textSecondary, marginLeft: 4 }}
+                      >
+                        {notice.tenantName}
+                      </StandardText>
+                    </View>
+                    <View style={styles.noticeMeta}>
+                      <MaterialCommunityIcons
+                        name="home"
+                        size={12}
+                        color={textSecondary}
+                      />
+                      <StandardText
+                        size="xs"
+                        style={{ color: textSecondary, marginLeft: 4 }}
+                      >
+                        Room {notice.roomNumber}
+                      </StandardText>
+                    </View>
+                    <View style={styles.noticeMeta}>
+                      <MaterialCommunityIcons
+                        name="calendar"
+                        size={12}
+                        color={textSecondary}
+                      />
+                      <StandardText
+                        size="xs"
+                        style={{ color: textSecondary, marginLeft: 4 }}
+                      >
+                        {new Date(notice.date).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </StandardText>
+                    </View>
+                  </View>
                 </View>
 
-                {/* Footer with badges */}
-                <View style={styles.noticeFooter}>
-                  <Chip
-                    mode="flat"
-                    style={[
-                      styles.categoryChip,
-                      {
-                        backgroundColor:
-                          getPriorityColor(notice.priority) + '20',
-                      },
-                    ]}
-                    textStyle={[
-                      styles.categoryChipText,
-                      { color: getPriorityColor(notice.priority) },
-                    ]}
+                {/* Amount or Status */}
+                <View style={styles.noticeAmount}>
+                  {notice.amount && (
+                    <StandardText
+                      fontWeight="bold"
+                      size="xl"
+                      style={{ color: colors.primary }}
+                    >
+                      {notice.amount}
+                    </StandardText>
+                  )}
+                </View>
+              </View>
+
+              {/* Footer with badges */}
+              <View style={styles.noticeFooter}>
+                <View
+                  style={[
+                    styles.categoryChip,
+                    {
+                      backgroundColor: getPriorityColor(notice.priority) + '20',
+                    },
+                  ]}
+                >
+                  <StandardText
+                    fontWeight="bold"
+                    size="xs"
+                    style={{ color: getPriorityColor(notice.priority) }}
                   >
                     {notice.priority.toUpperCase()}
-                  </Chip>
+                  </StandardText>
+                </View>
 
-                  <Chip
-                    mode="flat"
-                    style={[
-                      styles.statusChip,
-                      { backgroundColor: getStatusColor(notice.status) + '20' },
-                    ]}
-                    textStyle={[
-                      styles.statusChipText,
-                      { color: getStatusColor(notice.status) },
-                    ]}
+                <View
+                  style={[
+                    styles.statusChip,
+                    { backgroundColor: getStatusColor(notice.status) + '20' },
+                  ]}
+                >
+                  <StandardText
+                    fontWeight="bold"
+                    size="xs"
+                    style={{ color: getStatusColor(notice.status) }}
                   >
                     {notice.status.toUpperCase().replace('-', ' ')}
-                  </Chip>
+                  </StandardText>
+                </View>
 
-                  <Chip
-                    mode="flat"
-                    style={[
-                      styles.typeChip,
-                      { backgroundColor: colors.primary + '20' },
-                    ]}
-                    textStyle={[styles.typeChipText, { color: colors.primary }]}
+                <View
+                  style={[
+                    styles.typeChip,
+                    { backgroundColor: colors.primary + '20' },
+                  ]}
+                >
+                  <StandardText
+                    fontWeight="bold"
+                    size="xs"
+                    style={{ color: colors.primary }}
                   >
                     {notice.type.toUpperCase()}
-                  </Chip>
+                  </StandardText>
                 </View>
-              </StandardCard>
-            </TouchableOpacity>
+              </View>
+            </StandardCard>
           ))
         ) : (
           <View style={styles.emptyContainer}>
@@ -761,12 +769,9 @@ const styles = StyleSheet.create({
   noticeCard: {
     marginVertical: 8,
     padding: 18,
-    borderRadius: 18,
-    elevation: 5,
+    borderRadius: RADIUS.large,
+    ...SHADOW.medium,
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.98)',
     borderWidth: 1,
     borderColor: 'rgba(238, 123, 17, 0.08)',
@@ -815,28 +820,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    height: 26,
-    paddingHorizontal: 8,
-  },
-  categoryChipText: {
-    fontSize: 10,
-    fontWeight: FONT_WEIGHT.bold,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statusChip: {
-    height: 26,
-    paddingHorizontal: 8,
-  },
-  statusChipText: {
-    fontSize: 10,
-    fontWeight: FONT_WEIGHT.bold,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   typeChip: {
-    height: 26,
-    paddingHorizontal: 8,
-  },
-  typeChipText: {
-    fontSize: 10,
-    fontWeight: FONT_WEIGHT.bold,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyContainer: {
     alignItems: 'center',

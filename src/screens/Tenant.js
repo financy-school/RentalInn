@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   propertySelectorContainer: {
-    marginBottom: 16,
+    marginVertical: 16,
   },
   emptyContainer: {
     flex: 1,

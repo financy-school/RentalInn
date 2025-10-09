@@ -418,7 +418,6 @@ const AddRoom = ({ navigation, route }) => {
       borderRadius: 10,
       paddingHorizontal: 16,
       paddingVertical: 8,
-      shadowColor: '#EE7B11',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.08,
       shadowRadius: 4,
@@ -427,9 +426,10 @@ const AddRoom = ({ navigation, route }) => {
     chipSelected: {
       backgroundColor: theme.colors.primary,
       borderColor: theme.colors.primary,
+      borderWidth: 2,
     },
     chipText: {
-      color: mode === 'dark' ? '#ffffff' : '#333333',
+      color: theme.colors.onSurface,
       fontFamily: 'Metropolis-Medium',
       fontSize: 14,
       fontWeight: '500',

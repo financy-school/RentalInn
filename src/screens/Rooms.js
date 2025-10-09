@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   propertySelectorContainer: {
-    marginBottom: 16,
+    marginVertical: 16,
   },
   emptyContainer: {
     flex: 1,

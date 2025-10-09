@@ -15,6 +15,7 @@ import StandardHeader from '../components/StandardHeader/StandardHeader';
 import GradientCard from '../components/GradientCard/GradientCard';
 import StyledButton from '../components/StyledButton/StyledButton';
 import LinearGradient from 'react-native-linear-gradient';
+import colors from '../theme/colors';
 
 const { height } = Dimensions.get('window');
 
@@ -375,6 +376,7 @@ const AppTutorial = ({ navigation }) => {
     },
     navButton: {
       minWidth: 100,
+      color: colors.white,
     },
     stepIndicatorContainer: {
       flexDirection: 'row',
@@ -527,7 +529,15 @@ const AppTutorial = ({ navigation }) => {
             onPress={prevStep}
             disabled={currentStep === 0}
             style={styles.navButton}
-            title={<StandardText>Previous</StandardText>}
+            title={
+              <StandardText
+                style={{
+                  color: currentStep === 0 ? colors.black : colors.white,
+                }}
+              >
+                Previous
+              </StandardText>
+            }
           />
 
           <View style={styles.stepNumberContainer}>
@@ -540,7 +550,11 @@ const AppTutorial = ({ navigation }) => {
             mode="contained"
             onPress={nextStep}
             style={styles.navButton}
-            title={<StandardText>{currentTutorial.action}</StandardText>}
+            title={
+              <StandardText style={{ color: colors.white }}>
+                {currentTutorial.action}
+              </StandardText>
+            }
           />
         </View>
       </View>

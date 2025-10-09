@@ -18,7 +18,7 @@ import StandardCard from '../components/StandardCard/StandardCard';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/colors';
-import { FONT_WEIGHT } from '../theme/layout';
+import { FONT_WEIGHT, RADIUS, SHADOW } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import DatePicker from 'react-native-ui-datepicker';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
@@ -149,6 +149,19 @@ const PaymentHistory = ({ navigation }) => {
     sortBy,
     sortOrder,
   ]);
+
+  const getStatusColor = status => {
+    switch (status) {
+      case 'received':
+        return colors.success;
+      case 'pending':
+        return colors.warning;
+      case 'overdue':
+        return colors.error;
+      default:
+        return colors.textSecondary;
+    }
+  };
 
   const fetchPayments = useCallback(async () => {
     if (!credentials?.accessToken) return;
@@ -918,88 +931,78 @@ const PaymentHistory = ({ navigation }) => {
                     >
                       ₹{payment.amount.toLocaleString()}
                     </StandardText>
-                    <Chip
+                    <View
                       style={[
-                        styles.statusChip,
+                        styles.statusBadge,
                         {
                           backgroundColor:
-                            payment.status === 'received'
-                              ? colors.success + '20'
-                              : payment.status === 'overdue'
-                              ? colors.error + '20'
-                              : colors.warning + '20',
-                        },
-                      ]}
-                      textStyle={[
-                        styles.statusChipText,
-                        {
-                          color:
-                            payment.status === 'received'
-                              ? colors.success
-                              : payment.status === 'overdue'
-                              ? colors.error
-                              : colors.warning,
+                            getStatusColor(payment.status) + '20',
                         },
                       ]}
                     >
-                      {payment.status.charAt(0).toUpperCase() +
-                        payment.status.slice(1)}
-                    </Chip>
+                      <StandardText
+                        fontWeight="bold"
+                        size="sm"
+                        style={{ color: getStatusColor(payment.status) }}
+                      >
+                        {payment.status.toUpperCase()}
+                      </StandardText>
+                    </View>
                   </View>
                 </View>
 
                 <Gap size="sm" />
 
                 <View style={styles.paymentFooter}>
-                  <Chip
+                  <View
                     style={[
                       styles.categoryChip,
                       { backgroundColor: colors.primary + '15' },
                     ]}
-                    textStyle={[
-                      styles.categoryChipText,
-                      { color: colors.primary },
-                    ]}
-                    icon={() => (
-                      <MaterialCommunityIcons
-                        name={
-                          filterOptions.find(f => f.key === payment.category)
-                            ?.icon || 'cash'
-                        }
-                        size={14}
-                        color={colors.primary}
-                      />
-                    )}
                   >
-                    {payment.category.charAt(0).toUpperCase() +
-                      payment.category.slice(1)}
-                  </Chip>
+                    <MaterialCommunityIcons
+                      name={
+                        filterOptions.find(f => f.key === payment.category)
+                          ?.icon || 'cash'
+                      }
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <StandardText
+                      fontWeight="semibold"
+                      size="sm"
+                      style={{ color: colors.primary }}
+                    >
+                      {payment.category.charAt(0).toUpperCase() +
+                        payment.category.slice(1)}
+                    </StandardText>
+                  </View>
 
-                  <Chip
+                  <View
                     style={[
                       styles.methodChip,
                       { backgroundColor: colors.primary + '15' },
                     ]}
-                    textStyle={[
-                      styles.methodChipText,
-                      { color: colors.primary },
-                    ]}
-                    icon={() => (
-                      <MaterialCommunityIcons
-                        name={
-                          payment.paymentMethod === 'UPI'
-                            ? 'bank-transfer'
-                            : payment.paymentMethod === 'Cash'
-                            ? 'cash'
-                            : 'bank'
-                        }
-                        size={14}
-                        color={colors.primary}
-                      />
-                    )}
                   >
-                    {payment.paymentMethod}
-                  </Chip>
+                    <MaterialCommunityIcons
+                      name={
+                        payment.paymentMethod === 'UPI'
+                          ? 'bank-transfer'
+                          : payment.paymentMethod === 'Cash'
+                          ? 'cash'
+                          : 'bank'
+                      }
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <StandardText
+                      fontWeight="semibold"
+                      size="sm"
+                      style={{ color: colors.primary }}
+                    >
+                      {payment.paymentMethod}
+                    </StandardText>
+                  </View>
 
                   <MaterialCommunityIcons
                     name="chevron-right"
@@ -1326,12 +1329,11 @@ const styles = StyleSheet.create({
   paymentCard: {
     marginVertical: 6,
     padding: 16,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    borderRadius: RADIUS.medium,
+    ...SHADOW.medium,
+    shadowColor: colors.primary,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   paymentHeader: {
     flexDirection: 'row',
@@ -1352,15 +1354,20 @@ const styles = StyleSheet.create({
   },
   paymentAmount: {
     alignItems: 'flex-end',
+    minWidth: 120,
   },
   statusChip: {
-    height: 24,
-    paddingHorizontal: 8,
-    marginTop: 4,
+    height: 28,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statusChipText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: FONT_WEIGHT.bold,
+    lineHeight: 14,
   },
   paymentFooter: {
     flexDirection: 'row',
@@ -1368,20 +1375,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryChip: {
-    height: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-  },
-  categoryChipText: {
-    fontSize: 11,
-    fontWeight: '600',
+    borderRadius: 20,
   },
   methodChip: {
-    height: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-  },
-  methodChipText: {
-    fontSize: 11,
-    fontWeight: '600',
+    borderRadius: 20,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -1403,6 +1410,12 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
+  },
+  statusBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginTop: 8,
   },
 });
 

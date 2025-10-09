@@ -13,6 +13,7 @@ const AnimatedChip = ({
   variant = 'default', // default, outlined, filled
   size = 'medium',
   style,
+  textStyle,
   ...props
 }) => {
   const theme = useTheme();
@@ -36,7 +37,7 @@ const AnimatedChip = ({
     };
 
     const backgroundColor = selected
-      ? theme.colors.primaryContainer
+      ? theme.colors.primary
       : variant === 'filled'
       ? theme.colors.surface
       : theme.colors.surfaceVariant;
@@ -45,13 +46,13 @@ const AnimatedChip = ({
       ...baseStyle,
       ...sizeStyles[size],
       backgroundColor,
-      borderWidth: variant === 'outlined' ? 1 : 0,
-      borderColor: theme.colors.outline,
+      borderWidth: variant === 'outlined' || selected ? 2 : 0,
+      borderColor: selected ? theme.colors.primary : theme.colors.outline,
     };
   };
 
   const getTextColor = () => {
-    return selected ? theme.colors.onPrimaryContainer : theme.colors.onSurface;
+    return selected ? '#ffffff' : theme.colors.onSurface;
   };
 
   return (
@@ -65,14 +66,14 @@ const AnimatedChip = ({
         <Icon
           name={icon}
           size={size === 'small' ? 14 : size === 'large' ? 18 : 16}
-          color={getTextColor()}
+          color={textStyle?.color || getTextColor()}
           style={{ marginRight: 6 }}
         />
       )}
       <StandardText
         size={size === 'small' ? 'xs' : 'sm'}
         fontWeight="500"
-        style={{ color: getTextColor() }}
+        style={[{ color: getTextColor() }, textStyle]}
       >
         {label}
       </StandardText>
