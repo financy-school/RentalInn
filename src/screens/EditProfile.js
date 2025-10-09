@@ -22,23 +22,17 @@ const EditProfile = ({ navigation }) => {
 
   // Theme variables
   const isDark = mode === 'dark';
-  const backgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
+
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
 
   // Form state
   const [formData, setFormData] = useState({
-    name: credentials?.name || '',
+    firstName: credentials?.firstName || '',
+    lastName: credentials?.lastName || '',
     email: credentials?.email || '',
     phone: credentials?.phone || '',
-    propertyName: credentials?.propertyName || '',
-    address: credentials?.address || '',
-    city: credentials?.city || '',
-    state: credentials?.state || '',
-    pincode: credentials?.pincode || '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -57,8 +51,12 @@ const EditProfile = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
     }
 
     if (!formData.email.trim()) {
@@ -69,12 +67,8 @@ const EditProfile = ({ navigation }) => {
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
-    if (!formData.propertyName.trim()) {
-      newErrors.propertyName = 'Property name is required';
+    } else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
+      newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
 
     setErrors(newErrors);
@@ -108,15 +102,6 @@ const EditProfile = ({ navigation }) => {
     }
   };
 
-  // Handle avatar change
-  const handleAvatarChange = () => {
-    Alert.alert('Change Profile Picture', 'Choose an option', [
-      { text: 'Camera', onPress: () => console.log('Camera selected') },
-      { text: 'Gallery', onPress: () => console.log('Gallery selected') },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
-
   return (
     <View style={styles.container}>
       <StandardHeader navigation={navigation} title="Edit Profile" />
@@ -131,7 +116,7 @@ const EditProfile = ({ navigation }) => {
             <Avatar.Image
               size={100}
               source={{
-                uri: `https://ui-avatars.com/api/?name=${formData.name}&background=EE7B11&color=fff`,
+                uri: `https://ui-avatars.com/api/?name=${formData.firstName}+${formData.lastName}&background=EE7B11&color=fff`,
               }}
               style={styles.avatar}
             />
@@ -174,11 +159,22 @@ const EditProfile = ({ navigation }) => {
 
           <View style={styles.formSection}>
             <StyledTextInput
-              label="Full Name"
-              value={formData.name}
-              onChangeText={value => handleInputChange('name', value)}
-              error={errors.name}
-              placeholder="Enter your full name"
+              label="First Name"
+              value={formData.firstName}
+              onChangeText={value => handleInputChange('firstName', value)}
+              error={errors.firstName}
+              placeholder="Enter your first name"
+              leftIcon="account-outline"
+            />
+
+            <Gap size="md" />
+
+            <StyledTextInput
+              label="Last Name"
+              value={formData.lastName}
+              onChangeText={value => handleInputChange('lastName', value)}
+              error={errors.lastName}
+              placeholder="Enter your last name"
               leftIcon="account-outline"
             />
 
@@ -205,6 +201,7 @@ const EditProfile = ({ navigation }) => {
               placeholder="Enter your phone number"
               leftIcon="phone-outline"
               keyboardType="phone-pad"
+              maxLength={10}
             />
           </View>
         </Card>

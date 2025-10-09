@@ -9,11 +9,10 @@ import {
   StatusBar,
   Platform,
   Alert,
-  ActivityIndicator,
   Modal,
   FlatList,
 } from 'react-native';
-import { Button, Chip, Card, Divider, Checkbox } from 'react-native-paper';
+import { Button, Card, Divider, Checkbox } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
@@ -21,7 +20,7 @@ import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
 import colors from '../theme/colors';
-import { FONT_WEIGHT } from '../theme/layout';
+import { FONT_WEIGHT, RADIUS, SPACING } from '../theme/layout';
 import {
   deleteTenant,
   putTenantOnNotice,
@@ -504,7 +503,7 @@ const TenantDetails = ({ navigation, route }) => {
               </View>
 
               {/* Status Chip */}
-              <Chip
+              <View
                 style={[
                   styles.statusChip,
                   {
@@ -515,29 +514,32 @@ const TenantDetails = ({ navigation, route }) => {
                       : colors.error + '20',
                   },
                 ]}
-                textStyle={[
-                  styles.statusText,
-                  {
-                    color: tenant.is_on_notice
-                      ? colors.warning
-                      : tenant.is_active !== false
-                      ? colors.success
-                      : colors.error,
-                  },
-                ]}
               >
-                {tenant.is_on_notice
-                  ? 'On Notice'
-                  : tenant.is_active !== false
-                  ? 'Active'
-                  : 'Inactive'}
-              </Chip>
+                <StandardText
+                  fontWeight="semibold"
+                  style={[
+                    styles.statusText,
+                    {
+                      color: tenant.is_on_notice
+                        ? colors.warning
+                        : tenant.is_active !== false
+                        ? colors.success
+                        : colors.error,
+                    },
+                  ]}
+                >
+                  {tenant.is_on_notice
+                    ? 'On Notice'
+                    : tenant.is_active !== false
+                    ? 'Active'
+                    : 'Inactive'}
+                </StandardText>
+              </View>
             </View>
           </View>
 
           {/* Divider */}
           <Divider style={styles.profileDivider} />
-
           {/* Tenant Details Grid */}
           <View style={styles.detailsGrid}>
             <DetailRow
@@ -755,18 +757,22 @@ const TenantDetails = ({ navigation, route }) => {
               >
                 Renting Terms:
               </StandardText>
-              <Chip
+              <View
                 style={[
                   styles.verificationChip,
                   { backgroundColor: colors.success + '20' },
                 ]}
-                textStyle={[
-                  styles.verificationChipText,
-                  { color: colors.success },
-                ]}
               >
-                Approved
-              </Chip>
+                <StandardText
+                  fontWeight="semibold"
+                  style={[
+                    styles.verificationChipText,
+                    { color: colors.success },
+                  ]}
+                >
+                  Approved
+                </StandardText>
+              </View>
             </View>
 
             <View style={styles.verificationRow}>
@@ -775,7 +781,7 @@ const TenantDetails = ({ navigation, route }) => {
               >
                 ID Verification:
               </StandardText>
-              <Chip
+              <View
                 style={[
                   styles.verificationChip,
                   {
@@ -787,26 +793,30 @@ const TenantDetails = ({ navigation, route }) => {
                         : colors.warning + '20',
                   },
                 ]}
-                textStyle={[
-                  styles.verificationChipText,
-                  {
-                    color:
-                      tenant.kycDocuments &&
-                      tenant.kycDocuments.length > 0 &&
-                      tenant.kycDocuments[0].status === 'verified'
-                        ? colors.success
-                        : colors.warning,
-                  },
-                ]}
               >
-                {tenant.kycDocuments &&
-                tenant.kycDocuments.length > 0 &&
-                tenant.kycDocuments[0].status === 'verified'
-                  ? 'Verified'
-                  : tenant.kycDocuments && tenant.kycDocuments.length > 0
-                  ? tenant.kycDocuments[0].status || 'Pending'
-                  : 'Not Submitted'}
-              </Chip>
+                <StandardText
+                  fontWeight="semibold"
+                  style={[
+                    styles.verificationChipText,
+                    {
+                      color:
+                        tenant.kycDocuments &&
+                        tenant.kycDocuments.length > 0 &&
+                        tenant.kycDocuments[0].status === 'verified'
+                          ? colors.success
+                          : colors.warning,
+                    },
+                  ]}
+                >
+                  {tenant.kycDocuments &&
+                  tenant.kycDocuments.length > 0 &&
+                  tenant.kycDocuments[0].status === 'verified'
+                    ? 'Verified'
+                    : tenant.kycDocuments && tenant.kycDocuments.length > 0
+                    ? tenant.kycDocuments[0].status || 'Pending'
+                    : 'Not Submitted'}
+                </StandardText>
+              </View>
             </View>
 
             <View style={styles.verificationRow}>
@@ -815,7 +825,7 @@ const TenantDetails = ({ navigation, route }) => {
               >
                 Rental Agreement:
               </StandardText>
-              <Chip
+              <View
                 style={[
                   styles.verificationChip,
                   {
@@ -827,26 +837,30 @@ const TenantDetails = ({ navigation, route }) => {
                         : colors.warning + '20',
                   },
                 ]}
-                textStyle={[
-                  styles.verificationChipText,
-                  {
-                    color:
-                      tenant.rentals &&
-                      tenant.rentals.length > 0 &&
-                      tenant.rentals[0].isActive
-                        ? colors.success
-                        : colors.warning,
-                  },
-                ]}
               >
-                {tenant.rentals &&
-                tenant.rentals.length > 0 &&
-                tenant.rentals[0].isActive
-                  ? 'Active'
-                  : tenant.rentals && tenant.rentals.length > 0
-                  ? 'Inactive'
-                  : 'Not Created'}
-              </Chip>
+                <StandardText
+                  fontWeight="semibold"
+                  style={[
+                    styles.verificationChipText,
+                    {
+                      color:
+                        tenant.rentals &&
+                        tenant.rentals.length > 0 &&
+                        tenant.rentals[0].isActive
+                          ? colors.success
+                          : colors.warning,
+                    },
+                  ]}
+                >
+                  {tenant.rentals &&
+                  tenant.rentals.length > 0 &&
+                  tenant.rentals[0].isActive
+                    ? 'Active'
+                    : tenant.rentals && tenant.rentals.length > 0
+                    ? 'Inactive'
+                    : 'Not Created'}
+                </StandardText>
+              </View>
             </View>
 
             <View style={styles.verificationRow}>
@@ -1079,7 +1093,7 @@ const TenantDetails = ({ navigation, route }) => {
                       {item.type === 'debit' ? '-' : '+'}₹
                       {item.amount.toLocaleString()}
                     </StandardText>
-                    <Chip
+                    <View
                       style={[
                         styles.ledgerStatusChip,
                         {
@@ -1089,18 +1103,23 @@ const TenantDetails = ({ navigation, route }) => {
                               : colors.warning + '20',
                         },
                       ]}
-                      textStyle={[
-                        styles.chipText,
-                        {
-                          color:
-                            item.status === 'paid' || item.status === 'received'
-                              ? colors.success
-                              : colors.warning,
-                        },
-                      ]}
                     >
-                      {item.status.toUpperCase()}
-                    </Chip>
+                      <StandardText
+                        fontWeight="semibold"
+                        style={[
+                          styles.chipText,
+                          {
+                            color:
+                              item.status === 'paid' ||
+                              item.status === 'received'
+                                ? colors.success
+                                : colors.warning,
+                          },
+                        ]}
+                      >
+                        {item.status.toUpperCase()}
+                      </StandardText>
+                    </View>
                   </View>
                 </View>
               )}
@@ -1345,27 +1364,25 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-    marginTop: 16,
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
   },
   profileCard: {
-    borderRadius: 18,
-    padding: 20,
-    elevation: 5,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    borderRadius: RADIUS.large,
+    padding: SPACING.xl,
     backgroundColor: 'rgba(255, 255, 255, 0.98)',
-    borderWidth: 1,
-    borderColor: 'rgba(238, 123, 17, 0.08)',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatarContainer: {
-    marginRight: 16,
+    marginRight: SPACING.lg,
   },
   profileInfo: {
     flex: 1,
@@ -1374,36 +1391,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
   },
   tenantName: {
     fontSize: 24,
     flex: 1,
   },
   menuButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: SPACING.sm,
+    borderRadius: RADIUS.large,
   },
   statusChip: {
     alignSelf: 'flex-start',
-    borderRadius: 16,
+    borderRadius: RADIUS.medium,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
   },
   statusText: {
-    fontWeight: '600',
     fontSize: 12,
   },
   profileDivider: {
-    marginVertical: 16,
+    marginVertical: SPACING.lg,
   },
   contactSection: {
-    gap: 8,
+    gap: SPACING.sm,
   },
   sectionsContainer: {
-    paddingBottom: 20,
+    paddingBottom: SPACING.xl,
   },
   accordionContent: {
-    gap: 8,
-    paddingTop: 8,
+    gap: SPACING.sm,
+    paddingTop: SPACING.sm,
   },
   kycCard: {
     borderRadius: 18,
@@ -1470,13 +1488,13 @@ const styles = StyleSheet.create({
   },
   actionButtonsContainer: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: SPACING.md,
+    marginTop: SPACING.sm,
   },
   actionButton: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 4,
+    borderRadius: RADIUS.medium,
+    paddingVertical: SPACING.xs,
   },
   editButton: {
     borderWidth: 2,
@@ -1491,7 +1509,7 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: SPACING.xs + 2,
     minHeight: 32,
   },
   detailLabelContainer: {
@@ -1500,7 +1518,7 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   detailIcon: {
-    marginRight: 6,
+    marginRight: SPACING.xs + 2,
   },
   detailLabel: {
     fontSize: 14,
@@ -1531,25 +1549,25 @@ const styles = StyleSheet.create({
   popup: {
     position: 'absolute',
     minWidth: 160,
-    borderRadius: 12,
-    paddingVertical: 8,
+    borderRadius: RADIUS.medium,
+    paddingVertical: SPACING.sm,
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 8,
   },
   menuItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
   },
   menuIcon: {
-    marginRight: 12,
+    marginRight: SPACING.md,
   },
   menuDivider: {
-    marginVertical: 4,
+    marginVertical: SPACING.xs,
   },
 
   // Loading and Error states
@@ -1612,12 +1630,12 @@ const styles = StyleSheet.create({
 
   // Details Grid
   detailsGrid: {
-    gap: 12,
+    gap: SPACING.md,
   },
 
   // Section styles
   sectionHeader: {
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   sectionTitle: {
     fontSize: 18,
@@ -1625,13 +1643,13 @@ const styles = StyleSheet.create({
 
   // Financial Summary styles
   financialGrid: {
-    gap: 16,
+    gap: SPACING.lg,
   },
   financialItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: SPACING.sm,
   },
   financialLabel: {
     fontSize: 14,
@@ -1640,11 +1658,11 @@ const styles = StyleSheet.create({
   financialAmount: {
     fontSize: 16,
     fontWeight: FONT_WEIGHT.bold,
-    marginLeft: 8,
+    marginLeft: SPACING.sm,
   },
   viewButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
   },
   viewButtonText: {
     color: colors.primary,
@@ -1653,47 +1671,44 @@ const styles = StyleSheet.create({
 
   // Verification styles
   verificationGrid: {
-    gap: 12,
+    gap: SPACING.md,
   },
   verificationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: SPACING.sm,
   },
   verificationLabel: {
     fontSize: 14,
     flex: 1,
   },
   verificationChip: {
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: RADIUS.medium,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
   },
   verificationChipText: {
     fontSize: 12,
-    fontWeight: '600',
   },
   checkInButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 6,
+    borderRadius: RADIUS.small,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+    gap: SPACING.xs + 2,
   },
   checkInButtonText: {
     fontSize: 14,
-    fontWeight: '600',
   },
   verifyButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
   },
   verifyButtonText: {
     fontSize: 14,
-    fontWeight: '600',
   },
   // Modal Styles
   modalOverlay: {
@@ -1705,10 +1720,10 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '90%',
     maxHeight: '80%',
-    borderRadius: 16,
+    borderRadius: RADIUS.large,
     padding: 0,
     elevation: 5,
-    shadowColor: colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -1717,7 +1732,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: SPACING.xl,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -1726,27 +1741,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalCloseButton: {
-    padding: 4,
+    padding: SPACING.xs,
   },
   modalContent: {
-    padding: 20,
+    padding: SPACING.xl,
   },
   // Ledger Modal Styles
   ledgerItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    marginVertical: 6,
-    borderRadius: 12,
-    marginHorizontal: 20,
+    padding: SPACING.lg,
+    marginVertical: SPACING.xs + 2,
+    borderRadius: RADIUS.medium,
+    marginHorizontal: SPACING.xl,
   },
   ledgerLeft: {
     flex: 1,
   },
   ledgerDescription: {
     fontSize: 14,
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   ledgerDate: {
     fontSize: 12,
@@ -1757,17 +1772,18 @@ const styles = StyleSheet.create({
   },
   ledgerAmount: {
     fontSize: 16,
-    marginBottom: 10,
+    marginBottom: SPACING.sm,
   },
   ledgerStatusChip: {
-    height: 28,
-    paddingVertical: 2,
+    borderRadius: RADIUS.small,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 24,
   },
   chipText: {
     fontSize: 11,
-    fontWeight: '600',
     lineHeight: 14,
   },
   // Background Verification Modal Styles
@@ -1787,8 +1803,8 @@ const styles = StyleSheet.create({
   uploadButton: {
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: RADIUS.medium,
+    padding: SPACING.xxl,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
@@ -1796,25 +1812,24 @@ const styles = StyleSheet.create({
   },
   uploadButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    marginTop: 8,
+    marginTop: SPACING.sm,
   },
   uploadSubtext: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   documentPreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 12,
+    padding: SPACING.md,
+    borderRadius: RADIUS.small,
+    marginTop: SPACING.md,
     width: '100%',
   },
   documentName: {
     flex: 1,
     fontSize: 14,
-    marginLeft: 12,
+    marginLeft: SPACING.md,
   },
   consentSection: {
     width: '100%',
@@ -1822,22 +1837,22 @@ const styles = StyleSheet.create({
   consentRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 8,
+    paddingVertical: SPACING.sm,
   },
   consentText: {
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
-    marginLeft: 12,
+    marginLeft: SPACING.md,
   },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: SPACING.md,
   },
   modalButton: {
     flex: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS.small,
   },
 });
 

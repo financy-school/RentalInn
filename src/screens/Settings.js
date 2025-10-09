@@ -217,11 +217,10 @@ const Settings = ({ navigation }) => {
 
   // User info from credentials
   const userInfo = {
-    name: credentials?.name || 'Property Owner',
-    email: credentials?.email || 'owner@rentalinn.com',
-    phone: credentials?.phone || '+91 9876543210',
-    propertyName: credentials?.propertyName || 'RentalInn Property',
-    joinDate: credentials?.joinDate || 'Jan 2024',
+    firstName: credentials?.firstName,
+    lastName: credentials?.lastName,
+    email: credentials?.email,
+    phone: credentials?.phone,
   };
 
   // Language options
@@ -691,7 +690,7 @@ What's New:
             <Avatar.Image
               size={60}
               source={{
-                uri: `https://ui-avatars.com/api/?name=${userInfo.name}&background=EE7B11&color=fff`,
+                uri: `https://ui-avatars.com/api/?name=${userInfo.firstName}+${userInfo.lastName}&background=EE7B11&color=fff`,
               }}
               style={styles.avatar}
             />
@@ -700,17 +699,12 @@ What's New:
                 style={[styles.userName, { color: textPrimary }]}
                 fontWeight="bold"
               >
-                {userInfo.name}
+                {userInfo.firstName} {userInfo.lastName}
               </StandardText>
               <StandardText
                 style={[styles.userEmail, { color: textSecondary }]}
               >
                 {userInfo.email}
-              </StandardText>
-              <StandardText
-                style={[styles.userProperty, { color: colors.primary }]}
-              >
-                {userInfo.propertyName}
               </StandardText>
             </View>
             <TouchableOpacity
