@@ -117,7 +117,10 @@ const RecordPayment = ({ navigation, route }) => {
   };
 
   const handleDateSelect = selectedDate => {
-    setFormData({ ...formData, paymentDate: selectedDate });
+    const dateObj =
+      selectedDate instanceof Date ? selectedDate : new Date(selectedDate);
+    setFormData({ ...formData, paymentDate: dateObj });
+    setErrors({ ...errors, paymentDate: null });
   };
 
   const handlePaymentModeSelect = selectedMode => {

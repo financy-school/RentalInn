@@ -1,11 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Portal, Modal } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import DatePicker from 'react-native-ui-datepicker';
@@ -39,7 +33,8 @@ const BeautifulDatePicker = ({
 
   useEffect(() => {
     if (visible) {
-      setCurrentMonth(initialDate ? new Date(initialDate) : new Date());
+      const initDate = initialDate ? new Date(initialDate) : new Date();
+      setCurrentMonth(initDate);
     }
   }, [visible, initialDate]);
 
@@ -58,6 +53,7 @@ const BeautifulDatePicker = ({
       0,
     );
 
+    // Forward to parent and close
     onDateSelect(normalized);
     onDismiss();
   };
@@ -71,6 +67,15 @@ const BeautifulDatePicker = ({
   const goToNextYear = () => {
     const newDate = new Date(currentMonth);
     newDate.setFullYear(newDate.getFullYear() + 1);
+
+    // Don't allow navigation beyond maxDate
+    if (maxDate) {
+      const maxDateObj = new Date(maxDate);
+      if (newDate.getFullYear() > maxDateObj.getFullYear()) {
+        return; // Block navigation to future year
+      }
+    }
+
     setCurrentMonth(newDate);
   };
 
@@ -83,11 +88,75 @@ const BeautifulDatePicker = ({
   const goToNextMonth = () => {
     const newDate = new Date(currentMonth);
     newDate.setMonth(newDate.getMonth() + 1);
+
+    // Don't allow navigation beyond maxDate
+    if (maxDate) {
+      const maxDateObj = new Date(maxDate);
+      if (
+        newDate.getFullYear() > maxDateObj.getFullYear() ||
+        (newDate.getFullYear() === maxDateObj.getFullYear() &&
+          newDate.getMonth() > maxDateObj.getMonth())
+      ) {
+        return; // Block navigation to future month
+      }
+    }
+
     setCurrentMonth(newDate);
   };
 
   const goToToday = () => {
-    setCurrentMonth(new Date());
+    const today = new Date();
+    const normalized = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      12,
+      0,
+      0,
+      0,
+    );
+
+    // If maxDate is set and today is after maxDate, use maxDate instead
+    let dateToUse = normalized;
+    if (maxDate) {
+      const maxDateNormalized = new Date(
+        maxDate.getFullYear(),
+        maxDate.getMonth(),
+        maxDate.getDate(),
+        12,
+        0,
+        0,
+        0,
+      );
+      if (normalized > maxDateNormalized) {
+        dateToUse = maxDateNormalized;
+      }
+    }
+
+    setCurrentMonth(dateToUse);
+    onDateSelect(dateToUse);
+    onDismiss();
+  };
+
+  // Check if next navigation is disabled
+  const isNextMonthDisabled = () => {
+    if (!maxDate) return false;
+    const nextMonth = new Date(currentMonth);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const maxDateObj = new Date(maxDate);
+    return (
+      nextMonth.getFullYear() > maxDateObj.getFullYear() ||
+      (nextMonth.getFullYear() === maxDateObj.getFullYear() &&
+        nextMonth.getMonth() > maxDateObj.getMonth())
+    );
+  };
+
+  const isNextYearDisabled = () => {
+    if (!maxDate) return false;
+    const nextYear = new Date(currentMonth);
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    const maxDateObj = new Date(maxDate);
+    return nextYear.getFullYear() > maxDateObj.getFullYear();
   };
 
   return (
@@ -96,197 +165,222 @@ const BeautifulDatePicker = ({
         visible={visible}
         onDismiss={onDismiss}
         contentContainerStyle={styles.modalContainer}
+        dismissable={true}
       >
-        <View
-          style={[
-            styles.datePickerContainer,
-            { backgroundColor: cardBackground },
-          ]}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View
+        {visible && (
+          <View
+            style={[
+              styles.datePickerContainer,
+              { backgroundColor: cardBackground },
+            ]}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <View
+                  style={[
+                    styles.headerIconContainer,
+                    { backgroundColor: colors.primary + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="calendar-month"
+                    size={24}
+                    color={colors.primary}
+                  />
+                </View>
+                <StandardText
+                  fontWeight="bold"
+                  size="lg"
+                  style={{ color: textPrimary }}
+                >
+                  {title}
+                </StandardText>
+              </View>
+              <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
+                <MaterialCommunityIcons
+                  name="close-circle"
+                  size={28}
+                  color={textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Gap size="md" />
+
+            {/* Year Navigation */}
+            <View style={styles.yearNavigation}>
+              <TouchableOpacity
+                onPress={goToPreviousYear}
                 style={[
-                  styles.headerIconContainer,
-                  { backgroundColor: colors.primary + '15' },
+                  styles.yearNavButton,
+                  {
+                    backgroundColor: colors.white,
+                    borderColor: colors.primary + '30',
+                  },
                 ]}
               >
                 <MaterialCommunityIcons
-                  name="calendar-month"
+                  name="chevron-double-left"
                   size={24}
                   color={colors.primary}
                 />
+                <StandardText
+                  size="xs"
+                  fontWeight="semibold"
+                  style={{ color: colors.primary }}
+                >
+                  Year
+                </StandardText>
+              </TouchableOpacity>
+
+              <View style={styles.yearDisplay}>
+                <StandardText
+                  fontWeight="bold"
+                  size="xl"
+                  style={{ color: colors.primary }}
+                >
+                  {currentMonth.getFullYear()}
+                </StandardText>
               </View>
-              <StandardText
-                fontWeight="bold"
-                size="lg"
-                style={{ color: textPrimary }}
+
+              <TouchableOpacity
+                onPress={goToNextYear}
+                disabled={isNextYearDisabled()}
+                style={[
+                  styles.yearNavButton,
+                  {
+                    backgroundColor: colors.white,
+                    borderColor: colors.primary + '30',
+                    opacity: isNextYearDisabled() ? 0.4 : 1,
+                  },
+                ]}
               >
-                {title}
-              </StandardText>
+                <StandardText
+                  size="xs"
+                  fontWeight="semibold"
+                  style={{ color: colors.primary }}
+                >
+                  Year
+                </StandardText>
+                <MaterialCommunityIcons
+                  name="chevron-double-right"
+                  size={24}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={28}
-                color={textSecondary}
+
+            <Gap size="sm" />
+
+            {/* Month Navigation */}
+            <View style={styles.monthNavigation}>
+              <TouchableOpacity
+                onPress={goToPreviousMonth}
+                style={[
+                  styles.monthNavButton,
+                  { backgroundColor: colors.white },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="chevron-left"
+                  size={32}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.monthDisplay}>
+                <StandardText
+                  fontWeight="bold"
+                  size="lg"
+                  style={{ color: textPrimary }}
+                >
+                  {currentMonth.toLocaleDateString('en-IN', {
+                    month: 'long',
+                  })}
+                </StandardText>
+              </View>
+
+              <TouchableOpacity
+                onPress={goToNextMonth}
+                disabled={isNextMonthDisabled()}
+                style={[
+                  styles.monthNavButton,
+                  {
+                    backgroundColor: colors.white,
+                    opacity: isNextMonthDisabled() ? 0.4 : 1,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={32}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Gap size="md" />
+
+            {/* Calendar */}
+            <View style={styles.calendarWrapper}>
+              <DatePicker
+                mode="single"
+                date={currentMonth}
+                onChange={handleDateChange}
+                selectedItemColor={colors.primary}
+                headerButtonColor={colors.primary}
+                calendarTextStyle={{ color: textPrimary, fontSize: 15 }}
+                headerTextStyle={{ color: textPrimary }}
+                weekDaysTextStyle={{ color: textSecondary, fontWeight: '600' }}
+                selectedTextStyle={{ color: colors.white, fontWeight: 'bold' }}
+                todayTextStyle={{ color: colors.primary }}
+                todayContainerStyle={{
+                  borderWidth: 2,
+                  borderColor: colors.primary + '40',
+                }}
+                styles={{
+                  disabled: {
+                    opacity: 0.3,
+                  },
+                  disabled_label: {
+                    color: isDark ? colors.light_gray : colors.textSecondary,
+                    opacity: 0.3,
+                    textDecorationLine: 'line-through',
+                  },
+                }}
+                timePicker={false}
+                headerButtonsPosition="none"
+                minDate={minDate}
+                maxDate={maxDate}
               />
-            </TouchableOpacity>
-          </View>
+            </View>
 
-          <Gap size="md" />
+            <Gap size="md" />
 
-          {/* Year Navigation */}
-          <View style={styles.yearNavigation}>
+            {/* Quick Action: Go to Today */}
             <TouchableOpacity
-              onPress={goToPreviousYear}
+              onPress={goToToday}
               style={[
-                styles.yearNavButton,
-                {
-                  backgroundColor: colors.white,
-                  borderColor: colors.primary + '30',
-                },
+                styles.todayButton,
+                { backgroundColor: colors.primary + '10' },
               ]}
             >
               <MaterialCommunityIcons
-                name="chevron-double-left"
-                size={24}
+                name="calendar-today"
+                size={20}
                 color={colors.primary}
               />
               <StandardText
-                size="xs"
                 fontWeight="semibold"
+                size="md"
                 style={{ color: colors.primary }}
               >
-                Year
+                Go to Today
               </StandardText>
-            </TouchableOpacity>
-
-            <View style={styles.yearDisplay}>
-              <StandardText
-                fontWeight="bold"
-                size="xl"
-                style={{ color: colors.primary }}
-              >
-                {currentMonth.getFullYear()}
-              </StandardText>
-            </View>
-
-            <TouchableOpacity
-              onPress={goToNextYear}
-              style={[
-                styles.yearNavButton,
-                {
-                  backgroundColor: colors.white,
-                  borderColor: colors.primary + '30',
-                },
-              ]}
-            >
-              <StandardText
-                size="xs"
-                fontWeight="semibold"
-                style={{ color: colors.primary }}
-              >
-                Year
-              </StandardText>
-              <MaterialCommunityIcons
-                name="chevron-double-right"
-                size={24}
-                color={colors.primary}
-              />
             </TouchableOpacity>
           </View>
-
-          <Gap size="sm" />
-
-          {/* Month Navigation */}
-          <View style={styles.monthNavigation}>
-            <TouchableOpacity
-              onPress={goToPreviousMonth}
-              style={[styles.monthNavButton, { backgroundColor: colors.white }]}
-            >
-              <MaterialCommunityIcons
-                name="chevron-left"
-                size={32}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-
-            <View style={styles.monthDisplay}>
-              <StandardText
-                fontWeight="bold"
-                size="lg"
-                style={{ color: textPrimary }}
-              >
-                {currentMonth.toLocaleDateString('en-IN', {
-                  month: 'long',
-                })}
-              </StandardText>
-            </View>
-
-            <TouchableOpacity
-              onPress={goToNextMonth}
-              style={[styles.monthNavButton, { backgroundColor: colors.white }]}
-            >
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={32}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <Gap size="md" />
-
-          {/* Calendar */}
-          <View style={styles.calendarWrapper}>
-            <DatePicker
-              mode="single"
-              date={currentMonth}
-              onChange={handleDateChange}
-              selectedItemColor={colors.primary}
-              headerButtonColor={colors.primary}
-              calendarTextStyle={{ color: textPrimary, fontSize: 15 }}
-              headerTextStyle={{ color: textPrimary }}
-              weekDaysTextStyle={{ color: textSecondary, fontWeight: '600' }}
-              selectedTextStyle={{ color: colors.white, fontWeight: 'bold' }}
-              todayTextStyle={{ color: colors.primary }}
-              todayContainerStyle={{
-                borderWidth: 2,
-                borderColor: colors.primary + '40',
-              }}
-              timePicker={false}
-              headerButtonsPosition="none"
-              minDate={minDate}
-              maxDate={maxDate}
-            />
-          </View>
-
-          <Gap size="md" />
-
-          {/* Quick Action: Go to Today */}
-          <TouchableOpacity
-            onPress={goToToday}
-            style={[
-              styles.todayButton,
-              { backgroundColor: colors.primary + '10' },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="calendar-today"
-              size={20}
-              color={colors.primary}
-            />
-            <StandardText
-              fontWeight="semibold"
-              size="md"
-              style={{ color: colors.primary }}
-            >
-              Go to Today
-            </StandardText>
-          </TouchableOpacity>
-        </View>
+        )}
       </Modal>
     </Portal>
   );
