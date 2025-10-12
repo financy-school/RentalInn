@@ -7,7 +7,7 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
-import { TextInput, Chip, Button, Portal, Modal } from 'react-native-paper';
+import { TextInput, Chip, Button } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Share from 'react-native-share';
 import RNFS from 'react-native-fs';
@@ -16,11 +16,11 @@ import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StandardCard from '../components/StandardCard/StandardCard';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
+import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/colors';
 import { FONT_WEIGHT, RADIUS, SHADOW } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
-import DatePicker from 'react-native-ui-datepicker';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 import PaymentDetailModal from '../components/PaymentDetailModal/PaymentDetailModal';
 
@@ -651,6 +651,7 @@ const PaymentHistory = ({ navigation }) => {
                 styles.downloadButton,
                 { backgroundColor: colors.primary },
               ]}
+              labelStyle={{ color: colors.white }}
               disabled={filteredPayments.length === 0}
               icon="download"
             >
@@ -1049,100 +1050,26 @@ const PaymentHistory = ({ navigation }) => {
         <Gap size="xxl" />
       </ScrollView>
 
-      {/* Date Picker Modals */}
-      <Portal>
-        <Modal
-          visible={showStartDatePicker}
-          onDismiss={() => setShowStartDatePicker(false)}
-          contentContainerStyle={styles.modalContainer}
-        >
-          <View
-            style={[
-              styles.datePickerContainer,
-              { backgroundColor: cardBackground },
-            ]}
-          >
-            <View style={styles.datePickerHeader}>
-              <StandardText
-                fontWeight="bold"
-                size="lg"
-                style={{ color: textPrimary }}
-              >
-                Select Start Date
-              </StandardText>
-              <TouchableOpacity
-                onPress={() => setShowStartDatePicker(false)}
-                style={styles.closeButton}
-              >
-                <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
-            <DatePicker
-              mode="single"
-              date={startDate ? new Date(startDate) : new Date()}
-              onChange={params => {
-                setStartDate(params.date?.toISOString().split('T')[0]);
-                setShowStartDatePicker(false);
-              }}
-              selectedItemColor={colors.primary}
-              calendarTextStyle={{ color: textPrimary }}
-              headerTextStyle={{ color: textPrimary }}
-              weekDaysTextStyle={{ color: textSecondary }}
-              headerButtonColor={colors.primary}
-            />
-          </View>
-        </Modal>
+      {/* Beautiful Date Pickers */}
+      <BeautifulDatePicker
+        visible={showStartDatePicker}
+        onDismiss={() => setShowStartDatePicker(false)}
+        onDateSelect={date => {
+          setStartDate(date.toISOString().split('T')[0]);
+        }}
+        title="Select Start Date"
+        initialDate={startDate}
+      />
 
-        <Modal
-          visible={showEndDatePicker}
-          onDismiss={() => setShowEndDatePicker(false)}
-          contentContainerStyle={styles.modalContainer}
-        >
-          <View
-            style={[
-              styles.datePickerContainer,
-              { backgroundColor: cardBackground },
-            ]}
-          >
-            <View style={styles.datePickerHeader}>
-              <StandardText
-                fontWeight="bold"
-                size="lg"
-                style={{ color: textPrimary }}
-              >
-                Select End Date
-              </StandardText>
-              <TouchableOpacity
-                onPress={() => setShowEndDatePicker(false)}
-                style={styles.closeButton}
-              >
-                <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
-            <DatePicker
-              mode="single"
-              date={endDate ? new Date(endDate) : new Date()}
-              onChange={params => {
-                setEndDate(params.date?.toISOString().split('T')[0]);
-                setShowEndDatePicker(false);
-              }}
-              selectedItemColor={colors.primary}
-              calendarTextStyle={{ color: textPrimary }}
-              headerTextStyle={{ color: textPrimary }}
-              weekDaysTextStyle={{ color: textSecondary }}
-              headerButtonColor={colors.primary}
-            />
-          </View>
-        </Modal>
-      </Portal>
+      <BeautifulDatePicker
+        visible={showEndDatePicker}
+        onDismiss={() => setShowEndDatePicker(false)}
+        onDateSelect={date => {
+          setEndDate(date.toISOString().split('T')[0]);
+        }}
+        title="Select End Date"
+        initialDate={endDate}
+      />
 
       {/* Payment Detail Modal */}
       {selectedPayment && (
@@ -1393,23 +1320,6 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 48,
-  },
-  modalContainer: {
-    padding: 20,
-  },
-  datePickerContainer: {
-    borderRadius: 16,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  datePickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  closeButton: {
-    padding: 8,
   },
   statusBadge: {
     paddingVertical: 6,

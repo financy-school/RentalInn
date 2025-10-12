@@ -11,6 +11,7 @@ import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
 import SearchableDropdown from '../components/SearchableDropdown/SearchableDropdown';
+import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import colors from '../theme/colors';
 import {
   addTenant,
@@ -19,7 +20,6 @@ import {
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { useProperty } from '../context/PropertyContext';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const AddTenant = ({ navigation, route }) => {
   const { theme: mode } = useContext(ThemeContext);
@@ -38,36 +38,20 @@ const AddTenant = ({ navigation, route }) => {
   const [formErrors, setFormErrors] = useState({});
   const [rooms, setRooms] = useState([]);
 
-  const [datePicker, setDatePicker] = useState({
-    field: '',
-    show: false,
-    value: new Date(),
-  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [currentDateField, setCurrentDateField] = useState('');
 
   const openDatePicker = field => {
-    setDatePicker({
-      field,
-      show: true,
-      value: tenant[field] ? new Date(tenant[field]) : new Date(),
+    setCurrentDateField(field);
+    setShowDatePicker(true);
+  };
+
+  const onDateSelect = date => {
+    const formattedDate = date.toISOString().split('T')[0];
+    setTenant({
+      ...tenant,
+      [currentDateField]: formattedDate,
     });
-  };
-
-  const formatDate = date => {
-    const d = new Date(date);
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${d.getFullYear()}-${month}-${day}`;
-  };
-
-  // Handle date picker change
-  const onDateChange = (event, selectedDate) => {
-    if (event.type === 'set' && selectedDate) {
-      setTenant({
-        ...tenant,
-        [datePicker.field]: formatDate(selectedDate),
-      });
-    }
-    setDatePicker({ ...datePicker, show: false });
   };
 
   const [tenant, setTenant] = useState({
@@ -626,15 +610,20 @@ const AddTenant = ({ navigation, route }) => {
           </View>
         </GradientCard>
 
-        {/* Date Picker */}
-        {datePicker.show && (
-          <DateTimePicker
-            value={datePicker.value}
-            mode="date"
-            display="default"
-            onChange={onDateChange}
-          />
-        )}
+        {/* Beautiful Date Picker */}
+        <BeautifulDatePicker
+          visible={showDatePicker}
+          onDismiss={() => setShowDatePicker(false)}
+          onDateSelect={onDateSelect}
+          title={
+            currentDateField === 'checkInDate'
+              ? 'Select Check-in Date'
+              : currentDateField === 'checkOutDate'
+              ? 'Select Check-out Date'
+              : 'Select Rent Start Date'
+          }
+          initialDate={tenant[currentDateField]}
+        />
 
         <Gap size="lg" />
       </ScrollView>

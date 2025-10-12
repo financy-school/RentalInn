@@ -6,15 +6,14 @@ import {
   StyleSheet,
   TextInput,
   Alert,
-  Platform,
 } from 'react-native';
 import { Button, Checkbox } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import Gap from '../components/Gap/Gap';
+import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import {
   createInvoice,
   getTenantInvoiceData,
@@ -310,9 +309,8 @@ const AddInvoice = ({ navigation, route }) => {
     setShowDatePicker(true);
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate && selectedBillId) {
+  const handleDateSelect = selectedDate => {
+    if (selectedBillId) {
       updateBillDate(selectedBillId, selectedDate);
     }
     setSelectedBillId(null);
@@ -732,22 +730,25 @@ const AddInvoice = ({ navigation, route }) => {
         </ScrollView>
       )}
 
-      {/* Date Picker */}
-      {showDatePicker && (
-        <DateTimePicker
-          value={
-            selectedBillId
-              ? invoiceData.bills.find(
-                  bill => bill.invoice_id === selectedBillId,
-                )?.dueDate || new Date()
-              : new Date()
-          }
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleDateChange}
-          minimumDate={new Date()}
-        />
-      )}
+      {/* Beautiful Date Picker */}
+      <BeautifulDatePicker
+        visible={showDatePicker}
+        onDismiss={() => {
+          setShowDatePicker(false);
+          setSelectedBillId(null);
+        }}
+        onDateSelect={handleDateSelect}
+        title="Select Due Date"
+        initialDate={
+          selectedBillId
+            ? invoiceData.bills
+                .find(bill => bill.invoice_id === selectedBillId)
+                ?.dueDate?.toISOString()
+                .split('T')[0] || null
+            : null
+        }
+        minDate={new Date()}
+      />
     </View>
   );
 };

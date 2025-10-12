@@ -5,19 +5,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  Platform,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { Card, Button, Checkbox } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
+import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import { recordPayment, getTenant } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import colors from '../theme/colors';
@@ -118,11 +116,8 @@ const RecordPayment = ({ navigation, route }) => {
     return modeMap[paymentModeId] || paymentModeId;
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setFormData({ ...formData, paymentDate: selectedDate });
-    }
+  const handleDateSelect = selectedDate => {
+    setFormData({ ...formData, paymentDate: selectedDate });
   };
 
   const handlePaymentModeSelect = selectedMode => {
@@ -453,16 +448,19 @@ const RecordPayment = ({ navigation, route }) => {
         <Gap size="xxl" />
       </ScrollView>
 
-      {/* Date Picker */}
-      {showDatePicker && (
-        <DateTimePicker
-          value={formData.paymentDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-        />
-      )}
+      {/* Beautiful Date Picker */}
+      <BeautifulDatePicker
+        visible={showDatePicker}
+        onDismiss={() => setShowDatePicker(false)}
+        onDateSelect={handleDateSelect}
+        title="Select Payment Date"
+        initialDate={
+          formData.paymentDate
+            ? formData.paymentDate.toISOString().split('T')[0]
+            : null
+        }
+        maxDate={new Date()}
+      />
     </View>
   );
 };

@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { TextInput, useTheme } from 'react-native-paper';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 
 import GradientCard from '../components/GradientCard/GradientCard';
@@ -16,6 +15,7 @@ import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
 import StyledButton from '../components/StyledButton/StyledButton';
 import AnimatedChip from '../components/AnimatedChip/AnimatedChip';
 import Gap from '../components/Gap/Gap';
+import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import * as ImagePicker from 'react-native-image-picker';
 import {
   createDocument,
@@ -86,20 +86,10 @@ const AddRoom = ({ navigation, route }) => {
   // Predefined options
   const areaTypes = ['BHK', 'RK'];
 
-  // Helper to format date as YYYY-MM-DD
-  const formatDate = date => {
-    const d = new Date(date);
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${d.getFullYear()}-${month}-${day}`;
-  };
-
-  // Handle date picker change
-  const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (event.type === 'set' && selectedDate) {
-      handleInputChange('lastElectricityReadingDate', formatDate(selectedDate));
-    }
+  // Handle date selection
+  const handleDateSelect = selectedDate => {
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+    handleInputChange('lastElectricityReadingDate', formattedDate);
   };
 
   // Open calendar for last electricity reading date
@@ -810,18 +800,14 @@ const AddRoom = ({ navigation, route }) => {
           </View>
           {console.log('showDatePicker:', showDatePicker)}
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={
-                formData.lastElectricityReadingDate
-                  ? new Date(formData.lastElectricityReadingDate)
-                  : new Date()
-              }
-              mode="date"
-              display="default"
-              onChange={onDateChange}
-            />
-          )}
+          {/* Beautiful Date Picker */}
+          <BeautifulDatePicker
+            visible={showDatePicker}
+            onDismiss={() => setShowDatePicker(false)}
+            onDateSelect={handleDateSelect}
+            title="Select Last Reading Date"
+            initialDate={formData.lastElectricityReadingDate}
+          />
 
           {/* Room Images */}
           <StandardText size="lg" fontWeight="600" style={styles.sectionTitle}>
