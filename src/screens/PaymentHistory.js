@@ -4,7 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { TextInput, Chip, Button } from 'react-native-paper';
@@ -23,6 +22,10 @@ import { FONT_WEIGHT, RADIUS, SHADOW } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 import PaymentDetailModal from '../components/PaymentDetailModal/PaymentDetailModal';
+import * as NetworkUtils from '../services/NetworkUtils';
+import helpers from '../navigation/helpers';
+
+const { ErrorHelper } = helpers;
 
 const PaymentHistory = ({ navigation }) => {
   const { credentials } = useContext(CredentialsContext);
@@ -42,6 +45,12 @@ const PaymentHistory = ({ navigation }) => {
   const [showPaymentDetail, setShowPaymentDetail] = useState(false);
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [summary, setSummary] = useState({
+    totalReceived: 0,
+    pendingAmount: 0,
+    overdueAmount: 0,
+    thisMonthReceived: 0,
+  });
 
   const isDark = mode === 'dark';
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
@@ -57,101 +66,20 @@ const PaymentHistory = ({ navigation }) => {
     { key: 'other', label: 'Other', icon: 'dots-horizontal' },
   ];
 
-  const totalReceived = payments
-    .filter(payment => payment.status === 'received')
-    .reduce((sum, payment) => sum + payment.amount, 0);
+  // Use summary from state instead of calculating from payments
+  const totalReceived = summary.totalReceived;
+  const pendingAmount = summary.pendingAmount;
+  const overdueAmount = summary.overdueAmount;
+  const thisMonthReceived = summary.thisMonthReceived;
 
-  const pendingAmount = payments
-    .filter(payment => payment.status === 'pending')
-    .reduce((sum, payment) => sum + payment.amount, 0);
-
-  const overdueAmount = payments
-    .filter(payment => payment.status === 'overdue')
-    .reduce((sum, payment) => sum + payment.amount, 0);
-
-  const thisMonthReceived = payments
-    .filter(payment => {
-      const paymentDate = new Date(payment.date);
-      const now = new Date();
-      return (
-        payment.status === 'received' &&
-        paymentDate.getMonth() === now.getMonth() &&
-        paymentDate.getFullYear() === now.getFullYear()
-      );
-    })
-    .reduce((sum, payment) => sum + payment.amount, 0);
-
+  // Update filtered payments when payments change
   useEffect(() => {
-    let filtered = payments;
-
-    if (selectedFilter !== 'all') {
-      filtered = filtered.filter(
-        payment => payment.category === selectedFilter,
-      );
-    }
-
-    if (startDate) {
-      filtered = filtered.filter(
-        payment => new Date(payment.date) >= new Date(startDate),
-      );
-    }
-    if (endDate) {
-      filtered = filtered.filter(
-        payment => new Date(payment.date) <= new Date(endDate),
-      );
-    }
-
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        payment =>
-          payment.tenantName
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          payment.description
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          payment.propertyName
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          payment.receiptNumber
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()),
-      );
-    }
-
-    filtered.sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortBy) {
-        case 'date':
-          comparison = new Date(a.date) - new Date(b.date);
-          break;
-        case 'amount':
-          comparison = a.amount - b.amount;
-          break;
-        case 'tenant':
-          comparison = a.tenantName.localeCompare(b.tenantName);
-          break;
-        default:
-          comparison = new Date(a.date) - new Date(b.date);
-      }
-
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    setFilteredPayments(filtered);
-  }, [
-    payments,
-    selectedFilter,
-    searchQuery,
-    startDate,
-    endDate,
-    sortBy,
-    sortOrder,
-  ]);
+    setFilteredPayments(payments);
+  }, [payments]);
 
   const getStatusColor = status => {
     switch (status) {
+      case 'paid':
       case 'received':
         return colors.success;
       case 'pending':
@@ -169,109 +97,97 @@ const PaymentHistory = ({ navigation }) => {
     try {
       setLoading(true);
 
-      const mockPayments = [
-        {
-          id: 1,
-          tenantName: 'John Doe',
-          tenantPhone: '+91 98765 43210',
-          propertyName: 'Sunset Apartments - Room 101',
-          amount: 15000,
-          category: 'rent',
-          date: '2025-01-15',
-          dueDate: '2025-01-10',
-          description: 'Monthly rent payment for January 2025',
-          status: 'received',
-          paymentMethod: 'UPI',
-          transactionId: 'UPI2025011512345',
-          receiptNumber: 'RCP-2025-001',
-        },
-        {
-          id: 2,
-          tenantName: 'Jane Smith',
-          tenantPhone: '+91 98765 43211',
-          propertyName: 'Sunset Apartments - Room 102',
-          amount: 20000,
-          category: 'deposit',
-          date: '2025-01-10',
-          dueDate: '2025-01-10',
-          description: 'Security deposit - New tenant onboarding',
-          status: 'received',
-          paymentMethod: 'Bank Transfer',
-          transactionId: 'NEFT202501101234567',
-          receiptNumber: 'RCP-2025-002',
-        },
-        {
-          id: 3,
-          tenantName: 'Mike Johnson',
-          tenantPhone: '+91 98765 43212',
-          propertyName: 'Sunset Apartments - Room 103',
-          amount: 12000,
-          category: 'rent',
-          date: '2025-01-25',
-          dueDate: '2025-01-10',
-          description: 'Monthly rent payment - Delayed',
-          status: 'pending',
-          paymentMethod: 'Cash',
-          receiptNumber: 'RCP-2025-003',
-        },
-        {
-          id: 4,
-          tenantName: 'Sarah Wilson',
-          tenantPhone: '+91 98765 43213',
-          propertyName: 'Sunset Apartments - Room 104',
-          amount: 5000,
-          category: 'maintenance',
-          date: '2025-01-05',
-          dueDate: '2025-01-05',
-          description: 'AC repair and servicing charges',
-          status: 'received',
-          paymentMethod: 'UPI',
-          transactionId: 'UPI2025010512345',
-          receiptNumber: 'RCP-2025-004',
-        },
-        {
-          id: 5,
-          tenantName: 'David Brown',
-          tenantPhone: '+91 98765 43214',
-          propertyName: 'Sunset Apartments - Room 105',
-          amount: 18000,
-          category: 'rent',
-          date: '2025-01-01',
-          dueDate: '2024-12-10',
-          description: 'Monthly rent payment - January 2025',
-          status: 'received',
-          paymentMethod: 'Bank Transfer',
-          transactionId: 'IMPS202501011234567',
-          receiptNumber: 'RCP-2025-005',
-        },
-        {
-          id: 6,
-          tenantName: 'Emily Davis',
-          tenantPhone: '+91 98765 43215',
-          propertyName: 'Sunset Apartments - Room 106',
-          amount: 15000,
-          category: 'rent',
-          date: null,
-          dueDate: '2024-12-20',
-          description: 'December rent - Overdue',
-          status: 'overdue',
-          paymentMethod: 'Pending',
-          receiptNumber: 'RCP-2025-006',
-        },
-      ];
+      // Build query parameters
+      const queryParams = {
+        sortBy,
+        sortOrder,
+      };
 
-      setTimeout(() => {
-        setPayments(mockPayments);
-        setLoading(false);
-        setRefreshing(false);
-      }, 1000);
+      // Add property filter if not 'all'
+      if (
+        credentials?.selectedProperty &&
+        credentials?.selectedProperty !== 'all'
+      ) {
+        queryParams.propertyId = credentials?.selectedProperty;
+      }
+
+      // Add search query if present
+      if (searchQuery.trim()) {
+        queryParams.searchQuery = searchQuery.trim();
+      }
+
+      // Add category filter if not 'all'
+      if (selectedFilter !== 'all') {
+        queryParams.category = selectedFilter;
+      }
+
+      // Add date range if provided
+      if (startDate) {
+        queryParams.startDate = startDate;
+      }
+      if (endDate) {
+        queryParams.endDate = endDate;
+      }
+
+      // Fetch payment history from API
+      const response = await NetworkUtils.getPaymentHistory(
+        credentials.accessToken,
+        queryParams,
+      );
+
+      console.log('Payment History Response:', response);
+
+      if (response.success && response.data) {
+        // Update payments and summary from API response
+        setPayments(response.data.payments || []);
+        setSummary({
+          totalReceived: response.data.summary?.totalReceived || 0,
+          pendingAmount: response.data.summary?.pendingAmount || 0,
+          overdueAmount: response.data.summary?.overdueAmount || 0,
+          thisMonthReceived: response.data.summary?.thisMonthReceived || 0,
+        });
+      } else {
+        // Handle error case
+        ErrorHelper.showToast(
+          response.error || 'Failed to fetch payment history',
+          'error',
+        );
+
+        // Set empty data on error
+        setPayments([]);
+        setSummary({
+          totalReceived: 0,
+          pendingAmount: 0,
+          overdueAmount: 0,
+          thisMonthReceived: 0,
+        });
+      }
     } catch (error) {
       console.error('Error fetching payments:', error);
-      Alert.alert('Error', 'Failed to fetch payments. Please try again.');
+      ErrorHelper.logError(error, 'FETCH_PAYMENT_HISTORY');
+      ErrorHelper.showToast('Failed to load payment history', 'error');
+
+      // Set empty data on error
+      setPayments([]);
+      setSummary({
+        totalReceived: 0,
+        pendingAmount: 0,
+        overdueAmount: 0,
+        thisMonthReceived: 0,
+      });
+    } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [credentials]);
+  }, [
+    credentials,
+    searchQuery,
+    selectedFilter,
+    startDate,
+    endDate,
+    sortBy,
+    sortOrder,
+  ]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -281,7 +197,7 @@ const PaymentHistory = ({ navigation }) => {
   const downloadReport = useCallback(async () => {
     try {
       if (filteredPayments.length === 0) {
-        Alert.alert('No Data', 'There are no payments to export.');
+        ErrorHelper.showToast('There are no payments to export.', 'warning');
         return;
       }
 
@@ -340,9 +256,9 @@ const PaymentHistory = ({ navigation }) => {
     } catch (error) {
       if (error.message !== 'User did not share') {
         console.error('Error downloading report:', error);
-        Alert.alert(
-          'Error',
+        ErrorHelper.showToast(
           'Failed to download the report. Please try again.',
+          'error',
         );
       }
     }
@@ -923,7 +839,8 @@ const PaymentHistory = ({ navigation }) => {
                       size="xl"
                       style={{
                         color:
-                          payment.status === 'received'
+                          payment.status === 'received' ||
+                          payment.status === 'paid'
                             ? colors.success
                             : payment.status === 'overdue'
                             ? colors.error

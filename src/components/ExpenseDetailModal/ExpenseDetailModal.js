@@ -1,35 +1,103 @@
-import React from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { Portal, Modal, Button, Divider } from 'react-native-paper';
+import React, { useState, useContext, useCallback, useEffect } from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Portal, Modal, Button, Divider, TextInput } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Share from 'react-native-share';
+import { CredentialsContext } from '../../context/CredentialsContext';
 import StandardText from '../StandardText/StandardText';
 import StandardCard from '../StandardCard/StandardCard';
 import Gap from '../Gap/Gap';
+import BeautifulDatePicker from '../BeautifulDatePicker';
+import SearchableDropdown from '../SearchableDropdown/SearchableDropdown';
+import AnimatedLoader from '../AnimatedLoader/AnimatedLoader';
 import colors from '../../theme/colors';
+import * as NetworkUtils from '../../services/NetworkUtils';
+import helpers from '../../navigation/helpers';
 
-const ExpenseDetailModal = ({ visible, expense, onDismiss, theme }) => {
+const { ErrorHelper } = helpers;
+
+const ExpenseDetailModal = ({
+  visible,
+  expense,
+  onDismiss,
+  onUpdate,
+  onDelete,
+  navigation,
+  theme,
+}) => {
+  const { credentials } = useContext(CredentialsContext);
+  const [loading, setLoading] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showPaymentDatePicker, setShowPaymentDatePicker] = useState(false);
+
+  // Payment form state
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(
+    new Date().toISOString().split('T')[0],
+  );
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+
   const isDark = theme === 'dark';
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
   const modalBackground = isDark ? colors.backgroundDark : colors.white;
 
+  const paymentMethods = [
+    { label: 'Cash', value: 'CASH' },
+    { label: 'Bank Transfer', value: 'BANK_TRANSFER' },
+    { label: 'UPI', value: 'UPI' },
+    { label: 'Cheque', value: 'CHEQUE' },
+    { label: 'Card', value: 'CARD' },
+  ];
+
+  // Fetch payment history when modal opens
+  useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      if (!visible || !expense?.expense_id || !credentials?.accessToken) return;
+
+      try {
+        setLoading(true);
+        const response = await NetworkUtils.getExpensePayments(
+          credentials.accessToken,
+          expense.expense_id,
+        );
+
+        if (response.success && response.data) {
+          setPaymentHistory(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching payment history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentHistory();
+  }, [visible, expense, credentials]);
+
   if (!expense) return null;
 
+  // Calculate remaining amount
+  const totalPaid = paymentHistory.reduce(
+    (sum, payment) => sum + parseFloat(payment.amount || 0),
+    0,
+  );
+  const remainingAmount = parseFloat(expense?.amount || 0) - totalPaid;
+
   const getStatusColor = status => {
-    switch (status) {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
       case 'paid':
         return colors.success;
       case 'pending':
         return colors.warning;
       case 'overdue':
+      case 'draft':
         return colors.error;
       default:
         return colors.textSecondary;
@@ -37,7 +105,7 @@ const ExpenseDetailModal = ({ visible, expense, onDismiss, theme }) => {
   };
 
   const getCategoryIcon = category => {
-    switch (category) {
+    switch (category?.toLowerCase()) {
       case 'maintenance':
         return 'wrench';
       case 'utilities':
@@ -55,22 +123,24 @@ const ExpenseDetailModal = ({ visible, expense, onDismiss, theme }) => {
     try {
       const invoiceText = `
 EXPENSE INVOICE
-${expense.invoiceNumber}
+${expense.invoice_number || 'N/A'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Vendor: ${expense.vendor}
-Property: ${expense.propertyName}
+Vendor: ${expense.vendor_name || 'N/A'}
+Property: ${expense.property?.name || 'N/A'}
 
 Expense: ${expense.title}
-Category: ${expense.category}
-Amount: ₹${expense.amount.toLocaleString()}
+Category: ${expense.category?.name || 'N/A'}
+Amount: ₹${parseFloat(expense.amount).toLocaleString()}
 
-Due Date: ${expense.dueDate}
-Payment Date: ${expense.date || 'Not Paid'}
-Payment Method: ${expense.paymentMethod}
-Status: ${expense.status.toUpperCase()}
+Due Date: ${
+        expense.due_date
+          ? new Date(expense.due_date).toLocaleDateString()
+          : 'N/A'
+      }
+Status: ${expense.status?.toUpperCase()}
 
-Description: ${expense.description}
+Description: ${expense.description || 'N/A'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Property Management System
@@ -83,50 +153,115 @@ Property Management System
     } catch (error) {
       if (error.message !== 'User did not share') {
         console.error('Error sharing invoice:', error);
-        Alert.alert('Error', 'Failed to share invoice');
+        ErrorHelper.showToast('Failed to share invoice', 'error');
       }
     }
   };
 
-  const handleMarkAsPaid = () => {
-    Alert.alert(
-      'Mark as Paid',
-      'Are you sure you want to mark this expense as paid?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => {
-            // TODO: Implement API call
-            Alert.alert('Success', 'Expense marked as paid');
-            onDismiss();
-          },
-        },
-      ],
-    );
+  const handleRecordPayment = async () => {
+    if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+      ErrorHelper.showToast('Please enter a valid amount', 'warning');
+      return;
+    }
+
+    if (!paymentMethod) {
+      ErrorHelper.showToast('Please select a payment method', 'warning');
+      return;
+    }
+
+    if (parseFloat(paymentAmount) > remainingAmount) {
+      ErrorHelper.showToast(
+        'Payment amount cannot exceed remaining balance',
+        'warning',
+      );
+      return;
+    }
+
+    try {
+      setSubmittingPayment(true);
+
+      const paymentData = {
+        amount: parseFloat(paymentAmount),
+        payment_date: paymentDate,
+        payment_method: paymentMethod,
+        transaction_id: transactionId.trim(),
+        notes: paymentNotes.trim(),
+      };
+
+      const response = await NetworkUtils.recordExpensePayment(
+        credentials.accessToken,
+        expense.expense_id,
+        paymentData,
+      );
+
+      if (response.success) {
+        ErrorHelper.showToast('Payment recorded successfully', 'success');
+
+        // Reset form
+        setPaymentAmount('');
+        setPaymentDate(new Date().toISOString().split('T')[0]);
+        setPaymentMethod('');
+        setTransactionId('');
+        setPaymentNotes('');
+        setShowPaymentForm(false);
+
+        // Refresh payment history
+        const historyResponse = await NetworkUtils.getExpensePayments(
+          credentials.accessToken,
+          expense.expense_id,
+        );
+        if (historyResponse.success && historyResponse.data) {
+          setPaymentHistory(historyResponse.data);
+        }
+
+        // Notify parent to refresh
+        if (onUpdate) {
+          onUpdate();
+        }
+      } else {
+        ErrorHelper.showToast(
+          response.error || 'Failed to record payment',
+          'error',
+        );
+      }
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      ErrorHelper.logError(error, 'RECORD_EXPENSE_PAYMENT');
+      ErrorHelper.showToast('Failed to record payment', 'error');
+    } finally {
+      setSubmittingPayment(false);
+    }
   };
 
   const handleEditExpense = () => {
-    Alert.alert('Edit Expense', 'Edit expense functionality coming soon!');
+    onDismiss();
+    navigation.navigate('AddExpense', { expense });
   };
 
-  const handleDeleteExpense = () => {
-    Alert.alert(
-      'Delete Expense',
-      'Are you sure you want to delete this expense? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            // TODO: Implement API call
-            Alert.alert('Success', 'Expense deleted successfully');
-            onDismiss();
-          },
-        },
-      ],
-    );
+  const handleDeleteExpense = async () => {
+    try {
+      const response = await NetworkUtils.deleteExpense(
+        credentials.accessToken,
+        expense.expense_id,
+      );
+
+      if (response.success) {
+        ErrorHelper.showToast('Expense deleted successfully', 'success');
+        if (onDelete) {
+          onDelete(expense.expense_id);
+        }
+        onDismiss();
+      } else {
+        ErrorHelper.showToast(
+          response.error || 'Failed to delete expense',
+          'error',
+        );
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      ErrorHelper.logError(error, 'DELETE_EXPENSE');
+      ErrorHelper.showToast('Failed to delete expense', 'error');
+    }
   };
 
   return (
@@ -453,18 +588,21 @@ Property Management System
               Share
             </Button>
 
-            {expense.status === 'pending' || expense.status === 'overdue' ? (
+            {expense.status?.toLowerCase() !== 'paid' ? (
               <Button
                 mode="contained"
-                onPress={handleMarkAsPaid}
+                onPress={() => {
+                  setShowPaymentForm(true);
+                  setPaymentAmount(remainingAmount.toString());
+                }}
                 style={[
                   styles.actionButton,
                   { backgroundColor: colors.success },
                 ]}
                 labelStyle={{ color: colors.white }}
-                icon="check"
+                icon="cash-plus"
               >
-                Mark Paid
+                Record Payment
               </Button>
             ) : (
               <Button
@@ -490,6 +628,233 @@ Property Management System
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Payment Form Modal */}
+        <Modal
+          visible={showPaymentForm}
+          onDismiss={() => setShowPaymentForm(false)}
+          contentContainerStyle={styles.paymentModalContainer}
+        >
+          <View
+            style={[
+              styles.paymentModalContent,
+              { backgroundColor: modalBackground },
+            ]}
+          >
+            <View style={styles.paymentModalHeader}>
+              <StandardText
+                fontWeight="bold"
+                size="lg"
+                style={{ color: textPrimary }}
+              >
+                Record Payment
+              </StandardText>
+              <TouchableOpacity onPress={() => setShowPaymentForm(false)}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Divider style={styles.divider} />
+
+            <ScrollView style={styles.paymentFormScroll}>
+              <View style={styles.paymentAmountInfo}>
+                <View style={styles.paymentInfoRow}>
+                  <StandardText size="sm" style={{ color: textSecondary }}>
+                    Total Amount
+                  </StandardText>
+                  <StandardText
+                    fontWeight="bold"
+                    size="md"
+                    style={{ color: textPrimary }}
+                  >
+                    ₹{parseFloat(expense.amount).toLocaleString()}
+                  </StandardText>
+                </View>
+                <View style={styles.paymentInfoRow}>
+                  <StandardText size="sm" style={{ color: textSecondary }}>
+                    Paid
+                  </StandardText>
+                  <StandardText
+                    fontWeight="medium"
+                    size="md"
+                    style={{ color: colors.success }}
+                  >
+                    ₹{totalPaid.toLocaleString()}
+                  </StandardText>
+                </View>
+                <View style={styles.paymentInfoRow}>
+                  <StandardText size="sm" style={{ color: textSecondary }}>
+                    Remaining
+                  </StandardText>
+                  <StandardText
+                    fontWeight="bold"
+                    size="lg"
+                    style={{ color: colors.error }}
+                  >
+                    ₹{remainingAmount.toLocaleString()}
+                  </StandardText>
+                </View>
+              </View>
+
+              <Gap size="md" />
+
+              <View style={styles.inputContainer}>
+                <StandardText
+                  size="sm"
+                  fontWeight="medium"
+                  style={{ color: textPrimary, marginBottom: 8 }}
+                >
+                  Payment Amount *
+                </StandardText>
+                <TextInput
+                  mode="outlined"
+                  value={paymentAmount}
+                  onChangeText={setPaymentAmount}
+                  keyboardType="decimal-pad"
+                  placeholder="Enter amount"
+                  left={<TextInput.Icon icon="currency-inr" />}
+                  style={{ backgroundColor: cardBackground }}
+                  outlineColor={colors.primary}
+                  activeOutlineColor={colors.primary}
+                />
+              </View>
+
+              <Gap size="sm" />
+
+              <View style={styles.inputContainer}>
+                <StandardText
+                  size="sm"
+                  fontWeight="medium"
+                  style={{ color: textPrimary, marginBottom: 8 }}
+                >
+                  Payment Method *
+                </StandardText>
+                <SearchableDropdown
+                  items={paymentMethods}
+                  selectedItem={paymentMethod}
+                  onItemSelect={setPaymentMethod}
+                  placeholder="Select payment method"
+                  searchPlaceholder="Search..."
+                />
+              </View>
+
+              <Gap size="sm" />
+
+              <View style={styles.inputContainer}>
+                <StandardText
+                  size="sm"
+                  fontWeight="medium"
+                  style={{ color: textPrimary, marginBottom: 8 }}
+                >
+                  Payment Date *
+                </StandardText>
+                <TouchableOpacity
+                  style={[styles.dateButton, { borderColor: colors.primary }]}
+                  onPress={() => setShowPaymentDatePicker(true)}
+                >
+                  <MaterialCommunityIcons
+                    name="calendar"
+                    size={20}
+                    color={colors.primary}
+                  />
+                  <StandardText
+                    size="md"
+                    style={{ color: textPrimary, marginLeft: 8 }}
+                  >
+                    {paymentDate
+                      ? new Date(paymentDate).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : 'Select date'}
+                  </StandardText>
+                </TouchableOpacity>
+              </View>
+
+              <Gap size="sm" />
+
+              <View style={styles.inputContainer}>
+                <StandardText
+                  size="sm"
+                  fontWeight="medium"
+                  style={{ color: textPrimary, marginBottom: 8 }}
+                >
+                  Transaction ID (Optional)
+                </StandardText>
+                <TextInput
+                  mode="outlined"
+                  value={transactionId}
+                  onChangeText={setTransactionId}
+                  placeholder="Reference/Transaction ID"
+                  style={{ backgroundColor: cardBackground }}
+                  outlineColor={colors.primary}
+                  activeOutlineColor={colors.primary}
+                />
+              </View>
+
+              <Gap size="sm" />
+
+              <View style={styles.inputContainer}>
+                <StandardText
+                  size="sm"
+                  fontWeight="medium"
+                  style={{ color: textPrimary, marginBottom: 8 }}
+                >
+                  Notes (Optional)
+                </StandardText>
+                <TextInput
+                  mode="outlined"
+                  value={paymentNotes}
+                  onChangeText={setPaymentNotes}
+                  placeholder="Additional notes..."
+                  multiline
+                  numberOfLines={3}
+                  style={{ backgroundColor: cardBackground }}
+                  outlineColor={colors.primary}
+                  activeOutlineColor={colors.primary}
+                />
+              </View>
+
+              <Gap size="lg" />
+            </ScrollView>
+
+            <View style={styles.paymentFormActions}>
+              <Button
+                mode="outlined"
+                onPress={() => setShowPaymentForm(false)}
+                style={{ flex: 1, borderColor: colors.error }}
+                labelStyle={{ color: colors.error }}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleRecordPayment}
+                loading={submittingPayment}
+                disabled={submittingPayment}
+                style={{ flex: 1, backgroundColor: colors.success }}
+                labelStyle={{ color: colors.white }}
+              >
+                Record
+              </Button>
+            </View>
+          </View>
+        </Modal>
+
+        <BeautifulDatePicker
+          visible={showPaymentDatePicker}
+          onDismiss={() => setShowPaymentDatePicker(false)}
+          onDateSelect={date => {
+            setPaymentDate(date.toISOString().split('T')[0]);
+          }}
+          title="Select Payment Date"
+          initialDate={paymentDate}
+        />
       </Modal>
     </Portal>
   );
@@ -615,6 +980,56 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error + '15',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  paymentModalContainer: {
+    margin: 20,
+  },
+  paymentModalContent: {
+    borderRadius: 16,
+    maxHeight: '80%',
+    elevation: 5,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  paymentModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+  },
+  paymentFormScroll: {
+    padding: 20,
+    maxHeight: 400,
+  },
+  paymentAmountInfo: {
+    backgroundColor: colors.primary + '08',
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  paymentInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inputContainer: {
+    width: '100%',
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  paymentFormActions: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
 });
 

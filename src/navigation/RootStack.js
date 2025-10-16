@@ -18,6 +18,7 @@ import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
 import RecordPayment from '../screens/RecordPayment';
 import AddInvoice from '../screens/AddInvoice';
+import AddExpense from '../screens/AddExpense';
 import OnboardingScreen, {
   ONBOARDING_STORAGE_KEY,
 } from '../screens/OnboardingScreen';
@@ -540,6 +541,21 @@ const RootStack = () => {
             component={AddTicket}
             options={{
               headerTitle: 'Add Ticket',
+              headerLeft: () => null,
+              headerShown: false,
+              headerTitleStyle: {
+                fontFamily: 'Metropolis-Medium',
+                fontSize: 18,
+                fontWeight: '600',
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="AddExpense"
+            component={AddExpense}
+            options={{
+              headerTitle: 'Add Expense',
               headerLeft: () => null,
               headerShown: false,
               headerTitleStyle: {

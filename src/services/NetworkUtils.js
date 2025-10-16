@@ -876,6 +876,176 @@ export const getPayments = async (accessToken, params = {}) => {
 };
 
 /**
+ * Revenue & Finance API calls
+ */
+export const getRevenueOverview = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getRevenueOverview called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
+  }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/finance/revenue-overview${queryString}`;
+
+  return handleApiResponse(
+    () =>
+      apiClient.get(endpoint, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_REVENUE_OVERVIEW',
+  );
+};
+
+export const getPaymentHistory = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getPaymentHistory called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
+  }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/analytics/payment-history${queryString}`;
+
+  return handleApiResponse(
+    () =>
+      apiClient.get(endpoint, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_PAYMENT_HISTORY',
+  );
+};
+
+/**
+ * Expense Management API calls
+ */
+export const getExpenses = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getExpenses called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
+  }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/expenses${queryString}`;
+
+  return handleApiResponse(
+    () =>
+      apiClient.get(endpoint, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_EXPENSES',
+  );
+};
+
+export const getExpense = async (accessToken, expenseId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/expenses/${expenseId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_EXPENSE',
+  );
+};
+
+export const createExpense = async (accessToken, expenseData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post('/expenses', expenseData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'CREATE_EXPENSE',
+  );
+};
+
+export const updateExpense = async (accessToken, expenseId, expenseData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch(`/expenses/${expenseId}`, expenseData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_EXPENSE',
+  );
+};
+
+export const deleteExpense = async (accessToken, expenseId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.delete(`/expenses/${expenseId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'DELETE_EXPENSE',
+  );
+};
+
+export const recordExpensePayment = async (
+  accessToken,
+  expenseId,
+  paymentData,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(`/expenses/${expenseId}/payments`, paymentData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'RECORD_EXPENSE_PAYMENT',
+  );
+};
+
+export const getExpensePayments = async (accessToken, expenseId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/expenses/${expenseId}/payments`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_EXPENSE_PAYMENTS',
+  );
+};
+
+export const getExpenseCategories = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.get('/expenses/categories/list', {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_EXPENSE_CATEGORIES',
+  );
+};
+
+export const createExpenseCategory = async (accessToken, categoryData) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post('/expenses/categories', categoryData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'CREATE_EXPENSE_CATEGORY',
+  );
+};
+
+export const getExpenseAnalytics = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('getExpenseAnalytics called with params:', {
+      hasToken: !!accessToken,
+      queryParams,
+    });
+  }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/expenses/analytics${queryString}`;
+
+  return handleApiResponse(
+    () =>
+      apiClient.get(endpoint, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_EXPENSE_ANALYTICS',
+  );
+};
+
+/**
  * KYC Management API calls
  */
 export const fetchKYCData = async (accessToken, property_id) => {

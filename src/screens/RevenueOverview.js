@@ -4,7 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { Button } from 'react-native-paper';
@@ -22,6 +21,10 @@ import colors from '../theme/colors';
 import { RADIUS, SHADOW } from '../theme/layout';
 import Gap from '../components/Gap/Gap';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
+import * as NetworkUtils from '../services/NetworkUtils';
+import helpers from '../navigation/helpers';
+
+const { ErrorHelper } = helpers;
 
 const RevenueOverview = ({ navigation }) => {
   const { credentials } = useContext(CredentialsContext);
@@ -61,76 +64,85 @@ const RevenueOverview = ({ navigation }) => {
     try {
       setLoading(true);
 
-      // Mock data - replace with actual API call
-      const mockData = {
-        totalRevenue: 450000,
-        monthlyRevenue: 75000,
-        yearlyRevenue: 900000,
-        pendingPayments: 25000,
-        overduePayments: 12000,
-        averageMonthly: 75000,
-        totalProperties: 3,
-        occupiedUnits: 24,
-        monthlyTrend: [
-          { month: 'Jul', amount: 68000, received: 65000, pending: 3000 },
-          { month: 'Aug', amount: 72000, received: 70000, pending: 2000 },
-          { month: 'Sep', amount: 70000, received: 68000, pending: 2000 },
-          { month: 'Oct', amount: 75000, received: 72000, pending: 3000 },
-          { month: 'Nov', amount: 78000, received: 75000, pending: 3000 },
-          { month: 'Dec', amount: 80000, received: 75000, pending: 5000 },
-        ],
-        categoryBreakdown: [
-          { category: 'Rent', amount: 360000, percentage: 80, count: 144 },
-          { category: 'Deposit', amount: 60000, percentage: 13, count: 12 },
-          { category: 'Maintenance', amount: 20000, percentage: 4, count: 24 },
-          { category: 'Utilities', amount: 10000, percentage: 3, count: 18 },
-        ],
-        topTenants: [
-          {
-            name: 'John Doe',
-            property: 'Apt 101',
-            amount: 18000,
-            payments: 12,
-          },
-          {
-            name: 'Jane Smith',
-            property: 'Apt 102',
-            amount: 20000,
-            payments: 10,
-          },
-          {
-            name: 'Mike Johnson',
-            property: 'Apt 103',
-            amount: 15000,
-            payments: 12,
-          },
-          {
-            name: 'Sarah Wilson',
-            property: 'Apt 104',
-            amount: 18000,
-            payments: 12,
-          },
-          {
-            name: 'David Brown',
-            property: 'Apt 105',
-            amount: 16500,
-            payments: 11,
-          },
-        ],
+      // Build query parameters
+      const queryParams = {
+        period: selectedPeriod,
       };
 
-      setTimeout(() => {
-        setRevenueData(mockData);
-        setLoading(false);
-        setRefreshing(false);
-      }, 1000);
+      // Add property filter if not 'all'
+      if (
+        credentials?.selectedProperty &&
+        credentials?.selectedProperty !== 'all'
+      ) {
+        queryParams.propertyId = credentials?.selectedProperty;
+      }
+
+      // Add custom date range if provided
+      if (startDate && endDate) {
+        queryParams.period = 'custom';
+        queryParams.startDate = startDate;
+        queryParams.endDate = endDate;
+      }
+
+      // Fetch revenue data from API
+      const response = await NetworkUtils.getRevenueOverview(
+        credentials.accessToken,
+        queryParams,
+      );
+
+      if (response.success && response.data) {
+        setRevenueData({
+          totalRevenue: response.data.totalRevenue || 0,
+          monthlyRevenue: response.data.monthlyRevenue || 0,
+          yearlyRevenue: response.data.yearlyRevenue || 0,
+          pendingPayments: response.data.pendingPayments || 0,
+          overduePayments: response.data.overduePayments || 0,
+          averageMonthly: response.data.averageMonthly || 0,
+          totalProperties: response.data.totalProperties || 0,
+          occupiedUnits: response.data.occupiedUnits || 0,
+          monthlyTrend: response.data.monthlyTrend || [],
+          categoryBreakdown: response.data.categoryBreakdown || [],
+          topTenants: response.data.topTenants || [],
+        });
+      } else {
+        // Set empty data on error
+        setRevenueData({
+          totalRevenue: 0,
+          monthlyRevenue: 0,
+          yearlyRevenue: 0,
+          pendingPayments: 0,
+          overduePayments: 0,
+          averageMonthly: 0,
+          totalProperties: 0,
+          occupiedUnits: 0,
+          monthlyTrend: [],
+          categoryBreakdown: [],
+          topTenants: [],
+        });
+      }
     } catch (error) {
       console.error('Error fetching revenue data:', error);
-      Alert.alert('Error', 'Failed to fetch revenue data. Please try again.');
+      ErrorHelper.logError(error, 'FETCH_REVENUE_DATA');
+
+      // Set empty data on error
+      setRevenueData({
+        totalRevenue: 0,
+        monthlyRevenue: 0,
+        yearlyRevenue: 0,
+        pendingPayments: 0,
+        overduePayments: 0,
+        averageMonthly: 0,
+        totalProperties: 0,
+        occupiedUnits: 0,
+        monthlyTrend: [],
+        categoryBreakdown: [],
+        topTenants: [],
+      });
+    } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [credentials]);
+  }, [credentials, selectedPeriod, startDate, endDate]);
 
   useEffect(() => {
     fetchRevenueData();
@@ -204,9 +216,9 @@ const RevenueOverview = ({ navigation }) => {
     } catch (error) {
       if (error.message !== 'User did not share') {
         console.error('Error downloading report:', error);
-        Alert.alert(
-          'Error',
+        ErrorHelper.showToast(
           'Failed to download the report. Please try again.',
+          'error',
         );
       }
     }
@@ -352,7 +364,9 @@ const RevenueOverview = ({ navigation }) => {
                   marginLeft: 4,
                 }}
               >
-                {Math.abs(growth)}%
+                {!isNaN(growth) && growth != null
+                  ? `${Math.abs(growth)}%`
+                  : 'N/A'}
               </StandardText>
             </View>
           </View>

@@ -1,10 +1,15 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   RefreshControl,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { Card, TextInput, Chip, Button, FAB } from 'react-native-paper';
@@ -23,6 +28,208 @@ import Gap from '../components/Gap/Gap';
 import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 import ExpenseDetailModal from '../components/ExpenseDetailModal/ExpenseDetailModal';
+import * as NetworkUtils from '../services/NetworkUtils';
+import helpers from '../navigation/helpers';
+
+const { ErrorHelper } = helpers;
+
+// Constants
+const FILTER_OPTIONS = [
+  { key: 'all', label: 'All', icon: 'filter-variant' },
+  { key: 'maintenance_repairs', label: 'Maintenance', icon: 'wrench' },
+  { key: 'utilities', label: 'Utilities', icon: 'flash' },
+  { key: 'repair', label: 'Repairs', icon: 'hammer-wrench' },
+  { key: 'cleaning', label: 'Cleaning', icon: 'broom' },
+  { key: 'other', label: 'Other', icon: 'dots-horizontal' },
+];
+
+const SORT_OPTIONS = {
+  DATE: 'date',
+  AMOUNT: 'amount',
+};
+
+const SORT_ORDER = {
+  ASC: 'asc',
+  DESC: 'desc',
+};
+
+// Helper functions
+const getStatusColor = status => {
+  switch (status) {
+    case 'paid':
+      return colors.success;
+    case 'overdue':
+      return colors.error;
+    case 'pending':
+    default:
+      return colors.warning;
+  }
+};
+
+const formatCategory = category => {
+  if (!category) return 'Uncategorized';
+  return category
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const transformCategoryFromAPI = category => {
+  if (!category?.name) return 'other';
+  return category.name
+    .toLowerCase()
+    .replace(/\s+&\s+/g, '_')
+    .replace(/\s+/g, '_');
+};
+
+const formatDate = (date, options = {}) => {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    ...options,
+  });
+};
+
+const isCurrentMonth = date => {
+  if (!date) return false;
+  const expenseDate = new Date(date);
+  const now = new Date();
+  return (
+    expenseDate.getMonth() === now.getMonth() &&
+    expenseDate.getFullYear() === now.getFullYear()
+  );
+};
+
+// Memoized Expense Card Component for performance
+const ExpenseCard = React.memo(
+  ({ expense, onPress, filterOptions, isDark }) => {
+    const textPrimary = isDark ? colors.white : colors.textPrimary;
+    const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
+    const cardBackground = isDark ? colors.backgroundDark : colors.white;
+
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <StandardCard
+          style={[styles.expenseCard, { backgroundColor: cardBackground }]}
+        >
+          <View style={styles.expenseHeader}>
+            <View style={styles.expenseInfo}>
+              <StandardText
+                fontWeight="bold"
+                size="lg"
+                style={{ color: textPrimary }}
+              >
+                {expense.title}
+              </StandardText>
+              <StandardText
+                size="sm"
+                style={{ color: textSecondary, marginTop: 2 }}
+              >
+                {expense.vendor}
+              </StandardText>
+              <View style={styles.expenseMetaRow}>
+                <View style={styles.expenseMeta}>
+                  <MaterialCommunityIcons
+                    name="file-document"
+                    size={12}
+                    color={textSecondary}
+                  />
+                  <StandardText
+                    size="xs"
+                    style={{ color: textSecondary, marginLeft: 4 }}
+                  >
+                    {expense.invoiceNumber}
+                  </StandardText>
+                </View>
+                <View style={styles.expenseMeta}>
+                  <MaterialCommunityIcons
+                    name="calendar"
+                    size={12}
+                    color={textSecondary}
+                  />
+                  <StandardText
+                    size="xs"
+                    style={{ color: textSecondary, marginLeft: 4 }}
+                  >
+                    {expense.date
+                      ? formatDate(expense.date)
+                      : `Due: ${formatDate(expense.dueDate, {
+                          year: undefined,
+                        })}`}
+                  </StandardText>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.expenseAmount}>
+              <StandardText
+                fontWeight="bold"
+                size="xl"
+                style={{ color: getStatusColor(expense.status) }}
+              >
+                -₹{expense.amount.toLocaleString()}
+              </StandardText>
+              <View
+                style={[
+                  styles.statusChip,
+                  { backgroundColor: getStatusColor(expense.status) + '20' },
+                ]}
+              >
+                <StandardText
+                  fontWeight="bold"
+                  size="sm"
+                  style={{ color: getStatusColor(expense.status) }}
+                >
+                  {expense.status.charAt(0).toUpperCase() +
+                    expense.status.slice(1)}
+                </StandardText>
+              </View>
+            </View>
+          </View>
+
+          <Gap size="sm" />
+
+          <View style={styles.expenseFooter}>
+            <View
+              style={[
+                styles.categoryChip,
+                { backgroundColor: colors.primary + '15' },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={
+                  (expense.category &&
+                    filterOptions.find(f => f.key === expense.category)
+                      ?.icon) ||
+                  'tag'
+                }
+                size={14}
+                color={colors.primary}
+              />
+              <StandardText
+                fontWeight="semibold"
+                size="sm"
+                style={{ color: colors.primary }}
+              >
+                {formatCategory(expense.category)}
+              </StandardText>
+            </View>
+
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={20}
+              color={textSecondary}
+            />
+          </View>
+        </StandardCard>
+      </TouchableOpacity>
+    );
+  },
+);
+
+ExpenseCard.displayName = 'ExpenseCard';
 
 const ExpenseTracking = ({ navigation }) => {
   const { credentials } = useContext(CredentialsContext);
@@ -33,14 +240,15 @@ const ExpenseTracking = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expenses, setExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showExpenseDetail, setShowExpenseDetail] = useState(false);
-  const [sortBy, setSortBy] = useState('date'); // date, amount
-  const [sortOrder, setSortOrder] = useState('desc'); // asc, desc
+  const [sort_by, setSortBy] = useState(SORT_OPTIONS.DATE);
+  const [sort_order, setSortOrder] = useState(SORT_ORDER.DESC);
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -48,139 +256,102 @@ const ExpenseTracking = ({ navigation }) => {
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
 
-  const filterOptions = [
-    { key: 'all', label: 'All', icon: 'filter-variant' },
-    { key: 'maintenance', label: 'Maintenance', icon: 'wrench' },
-    { key: 'utilities', label: 'Utilities', icon: 'flash' },
-    { key: 'repair', label: 'Repairs', icon: 'hammer-wrench' },
-    { key: 'cleaning', label: 'Cleaning', icon: 'broom' },
-    { key: 'other', label: 'Other', icon: 'dots-horizontal' },
-  ];
-
-  const statusFilters = [
-    { key: 'paid', label: 'Paid', icon: 'check-circle', color: colors.success },
-    {
-      key: 'pending',
-      label: 'Pending',
-      icon: 'clock-outline',
-      color: colors.warning,
-    },
-    {
-      key: 'overdue',
-      label: 'Overdue',
-      icon: 'alert-circle',
-      color: colors.error,
-    },
-  ];
-
   // Fetch expense data
   const fetchExpenses = useCallback(async () => {
-    if (!credentials?.accessToken) return;
+    if (!credentials?.accessToken) {
+      console.warn('No access token available for fetching expenses');
+      return;
+    }
 
     try {
       setLoading(true);
 
-      // Mock data - replace with actual API call
-      const mockExpenses = [
-        {
-          id: 1,
-          title: 'Property Maintenance',
-          vendor: 'ABC Maintenance Services',
-          amount: 2500,
-          category: 'maintenance',
-          date: '2025-01-15',
-          dueDate: '2025-01-10',
-          description:
-            'Monthly maintenance and general repairs for all properties',
-          status: 'paid',
-          paymentMethod: 'Bank Transfer',
-          invoiceNumber: 'INV-2025-001',
-          propertyName: 'Sunset Apartments',
-        },
-        {
-          id: 2,
-          title: 'Electricity Bill',
-          vendor: 'Power Distribution Company',
-          amount: 1800,
-          category: 'utilities',
-          date: '2025-01-10',
-          dueDate: '2025-01-08',
-          description: 'Monthly electricity consumption charges',
-          status: 'paid',
-          paymentMethod: 'Online Payment',
-          invoiceNumber: 'ELEC-2025-001',
-          propertyName: 'Sunset Apartments',
-        },
-        {
-          id: 3,
-          title: 'Water Supply',
-          vendor: 'Municipal Water Board',
-          amount: 1200,
-          category: 'utilities',
-          date: null,
-          dueDate: '2025-01-20',
-          description: 'Water supply and maintenance charges for January',
-          status: 'pending',
-          paymentMethod: 'Pending',
-          invoiceNumber: 'WATER-2025-001',
-          propertyName: 'Sunset Apartments',
-        },
-        {
-          id: 4,
-          title: 'Professional Cleaning',
-          vendor: 'CleanPro Services',
-          amount: 800,
-          category: 'cleaning',
-          date: '2025-01-05',
-          dueDate: '2025-01-05',
-          description: 'Deep cleaning service for common areas',
-          status: 'paid',
-          paymentMethod: 'Cash',
-          invoiceNumber: 'CLN-2025-001',
-          propertyName: 'Sunset Apartments',
-        },
-        {
-          id: 5,
-          title: 'Plumbing Repair',
-          vendor: 'Quick Fix Plumbers',
-          amount: 3500,
-          category: 'repair',
-          date: '2025-01-01',
-          dueDate: '2025-01-01',
-          description: 'Emergency plumbing repair for Room 103 - pipe leakage',
-          status: 'paid',
-          paymentMethod: 'UPI',
-          invoiceNumber: 'PLB-2025-001',
-          propertyName: 'Sunset Apartments - Room 103',
-        },
-        {
-          id: 6,
-          title: 'Internet Service',
-          vendor: 'FiberNet ISP',
-          amount: 1500,
-          category: 'utilities',
-          date: null,
-          dueDate: '2024-12-25',
-          description: 'High-speed internet connection - December bill',
-          status: 'overdue',
-          paymentMethod: 'Pending',
-          invoiceNumber: 'NET-2024-012',
-          propertyName: 'Sunset Apartments',
-        },
-      ];
+      // Build query parameters
+      const queryParams = {
+        sort_by: sort_by === 'date' ? 'date' : sort_by,
+        sort_order: sort_order,
+      };
 
-      setTimeout(() => {
-        setExpenses(mockExpenses);
-        setLoading(false);
-        setRefreshing(false);
-      }, 1000);
+      // Add property filter if not 'all'
+      if (
+        credentials?.selectedProperty &&
+        credentials?.selectedProperty !== 'all'
+      ) {
+        queryParams.property_id = credentials?.selectedProperty;
+      }
+
+      // Add search query if present
+      if (searchQuery.trim()) {
+        queryParams.search = searchQuery.trim();
+      }
+
+      // Add category filter if not 'all'
+      if (selectedFilter !== 'all') {
+        queryParams.category_id = selectedFilter;
+      }
+
+      // Add date range if provided
+      if (startDate) {
+        queryParams.start_date = startDate;
+      }
+      if (endDate) {
+        queryParams.end_date = endDate;
+      }
+
+      // Fetch expenses from API
+      const response = await NetworkUtils.getExpenses(
+        credentials.accessToken,
+        queryParams,
+      );
+
+      if (response.success && response.data) {
+        // Transform API response to match UI expectations
+        const transformedExpenses = (response.data || []).map(expense => ({
+          id: expense.expense_id,
+          title: expense.title,
+          amount: parseFloat(expense.amount || expense.outstanding_amount || 0),
+          vendor: expense.vendor_name || 'Unknown Vendor',
+          category: transformCategoryFromAPI(expense.category),
+          status: expense.status?.toLowerCase() || 'pending',
+          invoiceNumber: expense.invoice_number,
+          date: expense.payment_date || expense.expense_date,
+          dueDate: expense.due_date,
+          paymentMethod: expense.payment_method || 'N/A',
+          propertyName: expense.property?.name || 'N/A',
+          description: expense.description || '',
+          attachments: expense.attachments,
+          receiptUrl: expense.receipt_url,
+          invoiceUrl: expense.invoice_url,
+          notes: expense.notes,
+        }));
+
+        setExpenses(transformedExpenses);
+      } else {
+        // Handle error case
+        ErrorHelper.showToast(
+          response.error || 'Failed to fetch expenses',
+          'error',
+        );
+        setExpenses([]);
+      }
     } catch (error) {
       console.error('Error fetching expenses:', error);
-      Alert.alert('Error', 'Failed to fetch expenses. Please try again.');
+      ErrorHelper.logError(error, 'FETCH_EXPENSES');
+      ErrorHelper.showToast('Failed to load expenses', 'error');
+      setExpenses([]);
+    } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [credentials]);
+  }, [
+    credentials,
+    searchQuery,
+    selectedFilter,
+    startDate,
+    endDate,
+    sort_by,
+    sort_order,
+  ]);
 
   useEffect(() => {
     fetchExpenses();
@@ -191,87 +362,65 @@ const ExpenseTracking = ({ navigation }) => {
     fetchExpenses();
   }, [fetchExpenses]);
 
-  // Filter and sort expenses
-  const filteredExpenses = expenses
-    .filter(expense => {
-      const matchesSearch =
-        searchQuery === '' ||
-        expense.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        expense.description
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        expense.vendor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        expense.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        expense.invoiceNumber
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase());
+  // Update filtered expenses when expenses change
+  useEffect(() => {
+    setFilteredExpenses(expenses);
+  }, [expenses]);
 
-      const matchesFilter =
-        selectedFilter === 'all' || expense.category === selectedFilter;
+  // Calculate totals with useMemo for performance optimization
+  const expenseMetrics = useMemo(() => {
+    const totalExpenses = expenses.reduce(
+      (sum, expense) => sum + expense.amount,
+      0,
+    );
+    const paidExpenses = expenses
+      .filter(expense => expense.status === 'paid')
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    const pendingExpenses = expenses
+      .filter(expense => expense.status === 'pending')
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    const overdueExpenses = expenses
+      .filter(expense => expense.status === 'overdue')
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    const thisMonthExpenses = expenses
+      .filter(expense => isCurrentMonth(expense.date || expense.dueDate))
+      .reduce((sum, expense) => sum + expense.amount, 0);
 
-      const matchesDate =
-        (!startDate ||
-          (expense.date && new Date(expense.date) >= new Date(startDate))) &&
-        (!endDate ||
-          (expense.date && new Date(expense.date) <= new Date(endDate)));
+    return {
+      totalExpenses,
+      paidExpenses,
+      pendingExpenses,
+      overdueExpenses,
+      thisMonthExpenses,
+    };
+  }, [expenses]);
 
-      return matchesSearch && matchesFilter && matchesDate;
-    })
-    .sort((a, b) => {
-      let comparison = 0;
+  const {
+    totalExpenses,
+    paidExpenses,
+    pendingExpenses,
+    overdueExpenses,
+    thisMonthExpenses,
+  } = expenseMetrics;
 
-      switch (sortBy) {
-        case 'date':
-          const dateA = a.date ? new Date(a.date) : new Date(a.dueDate);
-          const dateB = b.date ? new Date(b.date) : new Date(b.dueDate);
-          comparison = dateA - dateB;
-          break;
-        case 'amount':
-          comparison = a.amount - b.amount;
-          break;
-        default:
-          comparison =
-            new Date(a.date || a.dueDate) - new Date(b.date || b.dueDate);
-      }
-
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-  // Calculate totals
-  const totalExpenses = expenses.reduce(
-    (sum, expense) => sum + expense.amount,
-    0,
-  );
-  const paidExpenses = expenses
-    .filter(expense => expense.status === 'paid')
-    .reduce((sum, expense) => sum + expense.amount, 0);
-  const pendingExpenses = expenses
-    .filter(expense => expense.status === 'pending')
-    .reduce((sum, expense) => sum + expense.amount, 0);
-  const overdueExpenses = expenses
-    .filter(expense => expense.status === 'overdue')
-    .reduce((sum, expense) => sum + expense.amount, 0);
-
-  // Calculate this month expenses
-  const thisMonthExpenses = expenses
-    .filter(expense => {
-      const expenseDate = new Date(expense.date || expense.dueDate);
-      const now = new Date();
-      return (
-        expenseDate.getMonth() === now.getMonth() &&
-        expenseDate.getFullYear() === now.getFullYear()
-      );
-    })
-    .reduce((sum, expense) => sum + expense.amount, 0);
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      searchQuery.trim() !== '' ||
+      selectedFilter !== 'all' ||
+      startDate ||
+      endDate
+    );
+  }, [searchQuery, selectedFilter, startDate, endDate]);
 
   // Download expense report
   const downloadReport = useCallback(async () => {
-    try {
-      if (filteredExpenses.length === 0) {
-        Alert.alert('No Data', 'There are no expenses to export.');
-        return;
-      }
+    if (filteredExpenses.length === 0) {
+      ErrorHelper.showToast('There are no expenses to export.', 'warning');
+      return;
+    }
 
+    try {
       const headers = [
         'Invoice No',
         'Title',
@@ -295,15 +444,20 @@ const ExpenseTracking = ({ navigation }) => {
         headers.join(','),
         ...filteredExpenses.map(expense =>
           [
-            `"${expense.invoiceNumber}"`,
-            `"${expense.title}"`,
-            `"${expense.vendor}"`,
-            `"${expense.propertyName}"`,
-            expense.amount,
-            expense.category,
-            expense.status,
-            expense.paymentMethod,
-            expense.dueDate,
+            `"${expense.invoiceNumber || ''}"`,
+            `"${expense.title || ''}"`,
+            `"${expense.vendor || ''}"`,
+            `"${expense.propertyName || ''}"`,
+            expense.amount || 0,
+            `"${formatCategory(expense.category) || 'N/A'}"`,
+            `"${
+              expense.status
+                ? expense.status.charAt(0).toUpperCase() +
+                  expense.status.slice(1)
+                : 'N/A'
+            }"`,
+            expense.paymentMethod || 'N/A',
+            expense.dueDate || 'N/A',
             expense.date || 'Not Paid',
             `"${expense.description || ''}"`,
           ].join(','),
@@ -330,12 +484,19 @@ const ExpenseTracking = ({ navigation }) => {
         filename: filename,
         type: 'text/csv',
       });
+
+      try {
+        await RNFS.unlink(filePath);
+      } catch (cleanupError) {
+        console.warn('Failed to clean up temporary file:', cleanupError);
+      }
     } catch (error) {
-      if (error.message !== 'User did not share') {
+      if (error?.message !== 'User did not share') {
         console.error('Error downloading report:', error);
-        Alert.alert(
-          'Error',
+        ErrorHelper.logError(error, 'DOWNLOAD_REPORT');
+        ErrorHelper.showToast(
           'Failed to download the report. Please try again.',
+          'error',
         );
       }
     }
@@ -351,20 +512,33 @@ const ExpenseTracking = ({ navigation }) => {
   ]);
 
   // Handle expense click
-  const handleExpenseClick = expense => {
+  const handleExpenseClick = useCallback(expense => {
     setSelectedExpense(expense);
     setShowExpenseDetail(true);
-  };
+  }, []);
+
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    setStartDate(null);
+    setEndDate(null);
+    setSearchQuery('');
+    setSelectedFilter('all');
+  }, []);
 
   // Toggle sort order
-  const toggleSort = newSortBy => {
-    if (sortBy === newSortBy) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(newSortBy);
-      setSortOrder('desc');
-    }
-  };
+  const toggleSort = useCallback(
+    newSortBy => {
+      if (sort_by === newSortBy) {
+        setSortOrder(prevOrder =>
+          prevOrder === SORT_ORDER.ASC ? SORT_ORDER.DESC : SORT_ORDER.ASC,
+        );
+      } else {
+        setSortBy(newSortBy);
+        setSortOrder(SORT_ORDER.DESC);
+      }
+    },
+    [sort_by],
+  );
 
   if (loading) {
     return (
@@ -658,12 +832,7 @@ const ExpenseTracking = ({ navigation }) => {
           <View style={styles.downloadActions}>
             <Button
               mode="outlined"
-              onPress={() => {
-                setStartDate(null);
-                setEndDate(null);
-                setSearchQuery('');
-                setSelectedFilter('all');
-              }}
+              onPress={clearFilters}
               style={[styles.clearButton, { borderColor: colors.error }]}
               labelStyle={{ color: colors.error }}
               icon="filter-remove"
@@ -720,7 +889,7 @@ const ExpenseTracking = ({ navigation }) => {
             showsHorizontalScrollIndicator={false}
             style={styles.filterContainer}
           >
-            {filterOptions.map(filter => (
+            {FILTER_OPTIONS.map(filter => (
               <Chip
                 key={filter.key}
                 selected={selectedFilter === filter.key}
@@ -773,21 +942,28 @@ const ExpenseTracking = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.sortButton,
-                sortBy === 'date' && { backgroundColor: colors.error + '20' },
+                sort_by === SORT_OPTIONS.DATE && {
+                  backgroundColor: colors.error + '20',
+                },
               ]}
-              onPress={() => toggleSort('date')}
+              onPress={() => toggleSort(SORT_OPTIONS.DATE)}
             >
               <StandardText
                 size="sm"
                 style={{
-                  color: sortBy === 'date' ? colors.error : textSecondary,
+                  color:
+                    sort_by === SORT_OPTIONS.DATE
+                      ? colors.error
+                      : textSecondary,
                 }}
               >
                 Date
               </StandardText>
-              {sortBy === 'date' && (
+              {sort_by === SORT_OPTIONS.DATE && (
                 <MaterialCommunityIcons
-                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  name={
+                    sort_order === SORT_ORDER.ASC ? 'arrow-up' : 'arrow-down'
+                  }
                   size={16}
                   color={colors.error}
                 />
@@ -797,21 +973,28 @@ const ExpenseTracking = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.sortButton,
-                sortBy === 'amount' && { backgroundColor: colors.error + '20' },
+                sort_by === SORT_OPTIONS.AMOUNT && {
+                  backgroundColor: colors.error + '20',
+                },
               ]}
-              onPress={() => toggleSort('amount')}
+              onPress={() => toggleSort(SORT_OPTIONS.AMOUNT)}
             >
               <StandardText
                 size="sm"
                 style={{
-                  color: sortBy === 'amount' ? colors.error : textSecondary,
+                  color:
+                    sort_by === SORT_OPTIONS.AMOUNT
+                      ? colors.error
+                      : textSecondary,
                 }}
               >
                 Amount
               </StandardText>
-              {sortBy === 'amount' && (
+              {sort_by === SORT_OPTIONS.AMOUNT && (
                 <MaterialCommunityIcons
-                  name={sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}
+                  name={
+                    sort_order === SORT_ORDER.ASC ? 'arrow-up' : 'arrow-down'
+                  }
                   size={16}
                   color={colors.error}
                 />
@@ -852,158 +1035,13 @@ const ExpenseTracking = ({ navigation }) => {
         {/* Expenses List */}
         {filteredExpenses.length > 0 ? (
           filteredExpenses.map(expense => (
-            <TouchableOpacity
+            <ExpenseCard
               key={expense.id}
+              expense={expense}
               onPress={() => handleExpenseClick(expense)}
-              activeOpacity={0.7}
-            >
-              <StandardCard
-                style={[
-                  styles.expenseCard,
-                  { backgroundColor: cardBackground },
-                ]}
-              >
-                <View style={styles.expenseHeader}>
-                  <View style={styles.expenseInfo}>
-                    <StandardText
-                      fontWeight="bold"
-                      size="lg"
-                      style={{ color: textPrimary }}
-                    >
-                      {expense.title}
-                    </StandardText>
-                    <StandardText
-                      size="sm"
-                      style={{ color: textSecondary, marginTop: 2 }}
-                    >
-                      {expense.vendor}
-                    </StandardText>
-                    <View style={styles.expenseMetaRow}>
-                      <View style={styles.expenseMeta}>
-                        <MaterialCommunityIcons
-                          name="file-document"
-                          size={12}
-                          color={textSecondary}
-                        />
-                        <StandardText
-                          size="xs"
-                          style={{ color: textSecondary, marginLeft: 4 }}
-                        >
-                          {expense.invoiceNumber}
-                        </StandardText>
-                      </View>
-                      <View style={styles.expenseMeta}>
-                        <MaterialCommunityIcons
-                          name="calendar"
-                          size={12}
-                          color={textSecondary}
-                        />
-                        <StandardText
-                          size="xs"
-                          style={{ color: textSecondary, marginLeft: 4 }}
-                        >
-                          {expense.date
-                            ? new Date(expense.date).toLocaleDateString(
-                                'en-IN',
-                                {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                },
-                              )
-                            : `Due: ${new Date(
-                                expense.dueDate,
-                              ).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                              })}`}
-                        </StandardText>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View style={styles.expenseAmount}>
-                    <StandardText
-                      fontWeight="bold"
-                      size="xl"
-                      style={{
-                        color:
-                          expense.status === 'paid'
-                            ? colors.success
-                            : expense.status === 'overdue'
-                            ? colors.error
-                            : colors.warning,
-                      }}
-                    >
-                      -₹{expense.amount.toLocaleString()}
-                    </StandardText>
-                    <View
-                      style={[
-                        styles.statusChip,
-                        {
-                          backgroundColor:
-                            expense.status === 'paid'
-                              ? colors.success + '20'
-                              : expense.status === 'overdue'
-                              ? colors.error + '20'
-                              : colors.warning + '20',
-                        },
-                      ]}
-                    >
-                      <StandardText
-                        fontWeight="bold"
-                        size="sm"
-                        style={{
-                          color:
-                            expense.status === 'paid'
-                              ? colors.success
-                              : expense.status === 'overdue'
-                              ? colors.error
-                              : colors.warning,
-                        }}
-                      >
-                        {expense.status.charAt(0).toUpperCase() +
-                          expense.status.slice(1)}
-                      </StandardText>
-                    </View>
-                  </View>
-                </View>
-
-                <Gap size="sm" />
-
-                <View style={styles.expenseFooter}>
-                  <View
-                    style={[
-                      styles.categoryChip,
-                      { backgroundColor: colors.primary + '15' },
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={
-                        filterOptions.find(f => f.key === expense.category)
-                          ?.icon || 'tag'
-                      }
-                      size={14}
-                      color={colors.primary}
-                    />
-                    <StandardText
-                      fontWeight="semibold"
-                      size="sm"
-                      style={{ color: colors.primary }}
-                    >
-                      {expense.category.charAt(0).toUpperCase() +
-                        expense.category.slice(1)}
-                    </StandardText>
-                  </View>
-
-                  <MaterialCommunityIcons
-                    name="chevron-right"
-                    size={20}
-                    color={textSecondary}
-                  />
-                </View>
-              </StandardCard>
-            </TouchableOpacity>
+              filterOptions={FILTER_OPTIONS}
+              isDark={isDark}
+            />
           ))
         ) : (
           <View style={styles.emptyContainer}>
@@ -1018,7 +1056,7 @@ const ExpenseTracking = ({ navigation }) => {
               size="lg"
               style={{ color: textPrimary, textAlign: 'center' }}
             >
-              {searchQuery || selectedFilter !== 'all' || startDate || endDate
+              {hasActiveFilters
                 ? 'No expenses found'
                 : 'No expense records yet'}
             </StandardText>
@@ -1031,7 +1069,7 @@ const ExpenseTracking = ({ navigation }) => {
                 paddingHorizontal: 32,
               }}
             >
-              {searchQuery || selectedFilter !== 'all' || startDate || endDate
+              {hasActiveFilters
                 ? 'Try adjusting your search or filter criteria'
                 : 'Expense records will appear here once expenses are added'}
             </StandardText>
@@ -1047,10 +1085,7 @@ const ExpenseTracking = ({ navigation }) => {
         style={[styles.fab, { backgroundColor: colors.error }]}
         color={colors.white}
         onPress={() => {
-          Alert.alert(
-            'Add Expense',
-            'Add new expense functionality coming soon!',
-          );
+          navigation.navigate('AddExpense');
         }}
       />
 

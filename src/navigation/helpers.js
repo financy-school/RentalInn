@@ -1463,6 +1463,34 @@ export class ErrorHelper {
   }
 
   /**
+   * Show toast notification (uses Alert as fallback)
+   * @param {string} message - Toast message
+   * @param {string} type - Toast type: 'success', 'error', 'warning', 'info'
+   * @param {number} duration - Duration in milliseconds
+   */
+  static showToast(message, type = 'info', duration = 3000) {
+    // In a real implementation, you would use a proper toast library
+    // For now, using Alert as a simple fallback
+    if (__DEV__) {
+      console.log(`[Toast ${type.toUpperCase()}]: ${message}`);
+    }
+
+    // Use Alert for simple notifications
+    Alert.alert(
+      type === 'error'
+        ? 'Error'
+        : type === 'success'
+        ? 'Success'
+        : type === 'warning'
+        ? 'Warning'
+        : 'Info',
+      message,
+      [{ text: 'OK', style: type === 'error' ? 'destructive' : 'default' }],
+      { cancelable: true },
+    );
+  }
+
+  /**
    * Get error statistics
    * @returns {Object} - Error statistics
    */
