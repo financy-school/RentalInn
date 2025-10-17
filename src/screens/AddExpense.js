@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { Button, TextInput as PaperInput, Chip } from 'react-native-paper';
+import { TextInput as PaperInput, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ThemeContext } from '../context/ThemeContext';
 import StandardText from '../components/StandardText/StandardText';
@@ -17,6 +17,7 @@ import { CredentialsContext } from '../context/CredentialsContext';
 import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import SearchableDropdown from '../components/SearchableDropdown/SearchableDropdown';
 import StyledTextInput from '../components/StyledTextInput/StyledTextInput';
+import StyledButton from '../components/StyledButton/StyledButton';
 import Gap from '../components/Gap/Gap';
 import colors from '../theme/colors';
 import { RADIUS, SHADOW } from '../theme/layout';
@@ -509,6 +510,9 @@ const AddExpense = ({ navigation, route }) => {
                 ]}
                 textStyle={{
                   color: priority === option.key ? option.color : textPrimary,
+                  fontFamily: 'Metropolis-Medium',
+                  fontSize: 14,
+                  fontWeight: '500',
                 }}
               >
                 {option.label}
@@ -552,6 +556,9 @@ const AddExpense = ({ navigation, route }) => {
                 ]}
                 textStyle={{
                   color: status === option.key ? option.color : textPrimary,
+                  fontFamily: 'Metropolis-Medium',
+                  fontSize: 14,
+                  fontWeight: '500',
                 }}
               >
                 {option.label}
@@ -597,24 +604,40 @@ const AddExpense = ({ navigation, route }) => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <Button
-            mode="outlined"
-            onPress={() => navigation.goBack()}
-            style={[styles.button, { borderColor: colors.error }]}
-            labelStyle={{ color: colors.error }}
-          >
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
+          <StyledButton
+            title={
+              submitting
+                ? expenseToEdit
+                  ? 'Updating...'
+                  : 'Creating...'
+                : expenseToEdit
+                ? 'Update Expense'
+                : 'Create Expense'
+            }
+            icon={
+              submitting
+                ? 'loading'
+                : expenseToEdit
+                ? 'content-save-edit'
+                : 'plus-circle'
+            }
+            variant="primary"
+            size="large"
             onPress={handleSubmit}
-            loading={submitting}
             disabled={submitting}
-            style={[styles.button, { backgroundColor: colors.success }]}
-            labelStyle={{ color: colors.white }}
-          >
-            {expenseToEdit ? 'Update' : 'Create'}
-          </Button>
+            loading={submitting}
+            fullWidth={true}
+          />
+
+          <StyledButton
+            title="Cancel"
+            icon="close"
+            variant="outlined"
+            size="medium"
+            onPress={() => navigation.goBack()}
+            disabled={submitting}
+            fullWidth={true}
+          />
         </View>
 
         <Gap size="xxl" />
@@ -685,11 +708,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   actionButtons: {
-    flexDirection: 'row',
     gap: 12,
-  },
-  button: {
-    flex: 1,
+    marginTop: 4,
   },
 });
 

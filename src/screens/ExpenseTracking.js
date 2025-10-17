@@ -28,8 +28,9 @@ import Gap from '../components/Gap/Gap';
 import BeautifulDatePicker from '../components/BeautifulDatePicker';
 import PropertySelector from '../components/PropertySelector/PropertySelector';
 import ExpenseDetailModal from '../components/ExpenseDetailModal/ExpenseDetailModal';
-import * as NetworkUtils from '../services/NetworkUtils';
+
 import helpers from '../navigation/helpers';
+import { getExpenses } from '../services/NetworkUtils';
 
 const { ErrorHelper } = helpers;
 
@@ -299,10 +300,7 @@ const ExpenseTracking = ({ navigation }) => {
       }
 
       // Fetch expenses from API
-      const response = await NetworkUtils.getExpenses(
-        credentials.accessToken,
-        queryParams,
-      );
+      const response = await getExpenses(credentials.accessToken, queryParams);
 
       if (response.success && response.data) {
         // Transform API response to match UI expectations
@@ -760,7 +758,7 @@ const ExpenseTracking = ({ navigation }) => {
               <MaterialCommunityIcons
                 name="file-download-outline"
                 size={24}
-                color={colors.error}
+                color={colors.primary}
               />
               <View style={styles.downloadHeaderText}>
                 <StandardText
@@ -781,13 +779,13 @@ const ExpenseTracking = ({ navigation }) => {
 
           <View style={styles.dateRangeContainer}>
             <TouchableOpacity
-              style={[styles.dateButton, { borderColor: colors.error }]}
+              style={[styles.dateButton, { borderColor: colors.primary }]}
               onPress={() => setShowStartDatePicker(true)}
             >
               <MaterialCommunityIcons
                 name="calendar-start"
                 size={20}
-                color={colors.error}
+                color={colors.primary}
               />
               <StandardText
                 size="sm"
@@ -807,13 +805,13 @@ const ExpenseTracking = ({ navigation }) => {
             />
 
             <TouchableOpacity
-              style={[styles.dateButton, { borderColor: colors.error }]}
+              style={[styles.dateButton, { borderColor: colors.primary }]}
               onPress={() => setShowEndDatePicker(true)}
             >
               <MaterialCommunityIcons
                 name="calendar-end"
                 size={20}
-                color={colors.error}
+                color={colors.primary}
               />
               <StandardText
                 size="sm"
@@ -833,8 +831,11 @@ const ExpenseTracking = ({ navigation }) => {
             <Button
               mode="outlined"
               onPress={clearFilters}
-              style={[styles.clearButton, { borderColor: colors.error }]}
-              labelStyle={{ color: colors.error }}
+              style={[styles.clearButton, { borderColor: colors.primary }]}
+              labelStyle={{
+                color: colors.primary,
+                fontFamily: 'Metropolis-Medium',
+              }}
               icon="filter-remove"
             >
               Clear
@@ -843,7 +844,13 @@ const ExpenseTracking = ({ navigation }) => {
             <Button
               mode="contained"
               onPress={downloadReport}
-              style={[styles.downloadButton, { backgroundColor: colors.error }]}
+              style={[
+                styles.downloadButton,
+                { backgroundColor: colors.primary },
+              ]}
+              labelStyle={{
+                fontFamily: 'Metropolis-Medium',
+              }}
               disabled={filteredExpenses.length === 0}
               icon="download"
             >
@@ -896,19 +903,22 @@ const ExpenseTracking = ({ navigation }) => {
                 onPress={() => setSelectedFilter(filter.key)}
                 style={[
                   styles.filterChip,
-                  selectedFilter === filter.key && {
-                    backgroundColor: colors.error,
-                  },
-                ]}
-                textStyle={[
-                  styles.filterChipText,
                   {
-                    color:
+                    backgroundColor:
                       selectedFilter === filter.key
-                        ? colors.white
-                        : textPrimary,
+                        ? colors.primary
+                        : isDark
+                        ? colors.backgroundDark
+                        : colors.cardBackground,
                   },
                 ]}
+                textStyle={{
+                  color:
+                    selectedFilter === filter.key ? colors.white : textPrimary,
+                  fontFamily: 'Metropolis-Medium',
+                  fontSize: 12,
+                  fontWeight: selectedFilter === filter.key ? '600' : '400',
+                }}
                 icon={() => (
                   <MaterialCommunityIcons
                     name={filter.icon}
@@ -942,8 +952,13 @@ const ExpenseTracking = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.sortButton,
-                sort_by === SORT_OPTIONS.DATE && {
-                  backgroundColor: colors.error + '20',
+                {
+                  backgroundColor:
+                    sort_by === SORT_OPTIONS.DATE
+                      ? colors.primary + '20'
+                      : isDark
+                      ? colors.backgroundDark
+                      : colors.cardBackground,
                 },
               ]}
               onPress={() => toggleSort(SORT_OPTIONS.DATE)}
@@ -953,7 +968,7 @@ const ExpenseTracking = ({ navigation }) => {
                 style={{
                   color:
                     sort_by === SORT_OPTIONS.DATE
-                      ? colors.error
+                      ? colors.primary
                       : textSecondary,
                 }}
               >
@@ -965,7 +980,7 @@ const ExpenseTracking = ({ navigation }) => {
                     sort_order === SORT_ORDER.ASC ? 'arrow-up' : 'arrow-down'
                   }
                   size={16}
-                  color={colors.error}
+                  color={colors.primary}
                 />
               )}
             </TouchableOpacity>
@@ -973,8 +988,13 @@ const ExpenseTracking = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.sortButton,
-                sort_by === SORT_OPTIONS.AMOUNT && {
-                  backgroundColor: colors.error + '20',
+                {
+                  backgroundColor:
+                    sort_by === SORT_OPTIONS.AMOUNT
+                      ? colors.primary + '20'
+                      : isDark
+                      ? colors.backgroundDark
+                      : colors.cardBackground,
                 },
               ]}
               onPress={() => toggleSort(SORT_OPTIONS.AMOUNT)}
@@ -984,7 +1004,7 @@ const ExpenseTracking = ({ navigation }) => {
                 style={{
                   color:
                     sort_by === SORT_OPTIONS.AMOUNT
-                      ? colors.error
+                      ? colors.primary
                       : textSecondary,
                 }}
               >
@@ -996,7 +1016,7 @@ const ExpenseTracking = ({ navigation }) => {
                     sort_order === SORT_ORDER.ASC ? 'arrow-up' : 'arrow-down'
                   }
                   size={16}
-                  color={colors.error}
+                  color={colors.primary}
                 />
               )}
             </TouchableOpacity>
@@ -1017,13 +1037,13 @@ const ExpenseTracking = ({ navigation }) => {
           <View
             style={[
               styles.countBadge,
-              { backgroundColor: colors.error + '20' },
+              { backgroundColor: colors.primary + '20' },
             ]}
           >
             <StandardText
               fontWeight="bold"
               size="sm"
-              style={{ color: colors.error }}
+              style={{ color: colors.primary }}
             >
               {filteredExpenses.length}
             </StandardText>
@@ -1082,7 +1102,7 @@ const ExpenseTracking = ({ navigation }) => {
       {/* FAB for adding new expense */}
       <FAB
         icon="plus"
-        style={[styles.fab, { backgroundColor: colors.error }]}
+        style={[styles.fab, { backgroundColor: colors.primary }]}
         color={colors.white}
         onPress={() => {
           navigation.navigate('AddExpense');
@@ -1111,6 +1131,7 @@ const ExpenseTracking = ({ navigation }) => {
       />
 
       {/* Expense Detail Modal */}
+      {console.log('Selected Expense:', selectedExpense)}
       {selectedExpense && (
         <ExpenseDetailModal
           visible={showExpenseDetail}
@@ -1119,6 +1140,15 @@ const ExpenseTracking = ({ navigation }) => {
             setShowExpenseDetail(false);
             setSelectedExpense(null);
           }}
+          onUpdate={fetchExpenses}
+          onDelete={expenseId => {
+            setExpenses(prevExpenses =>
+              prevExpenses.filter(exp => exp.id !== expenseId),
+            );
+            setShowExpenseDetail(false);
+            setSelectedExpense(null);
+          }}
+          navigation={navigation}
           theme={mode}
         />
       )}
@@ -1154,7 +1184,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
     borderWidth: 1,
     borderColor: 'rgba(238, 123, 17, 0.08)',
   },
@@ -1183,7 +1212,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
     borderWidth: 1,
     borderColor: 'rgba(238, 123, 17, 0.08)',
   },
@@ -1249,7 +1277,6 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     marginRight: 8,
-    backgroundColor: '#f5f5f5',
   },
   filterChipText: {
     fontSize: 12,
@@ -1268,7 +1295,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#f5f5f5',
     gap: 4,
   },
   listHeader: {
@@ -1286,9 +1312,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: RADIUS.medium,
     ...SHADOW.medium,
-    shadowColor: colors.error,
+    shadowColor: colors.primary,
     borderWidth: 1,
-    borderColor: 'rgba(244, 67, 54, 0.08)',
+    borderColor: 'rgba(238, 123, 17, 0.08)',
   },
   expenseHeader: {
     flexDirection: 'row',

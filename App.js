@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { CredentialsProvider } from './src/context/CredentialsContext';
 import { PropertyProvider } from './src/context/PropertyContext';
+import { ToastProvider, useToast } from './src/context/ToastContext';
 
 // Navigation
 import RootStack from './src/navigation/RootStack';
@@ -44,8 +45,12 @@ if (__DEV__) {
   ]);
 }
 
-const App = () => {
+const AppContent = () => {
+  const { showToast } = useToast();
+
   useEffect(() => {
+    ErrorHelper.setToastFunction(showToast);
+
     // Initialize app lifecycle logging
     ErrorHelper.logInfo('App Started', 'APP_LIFECYCLE');
 
@@ -66,27 +71,35 @@ const App = () => {
       unsubscribeNetwork();
       NetworkHelper.unsubscribeAll();
     };
-  }, []);
+  }, [showToast]);
 
+  return (
+    <ThemeProvider>
+      <CredentialsProvider>
+        <PropertyProvider>
+          <AppThemeWrapper>
+            <StatusBar
+              barStyle="dark-content"
+              backgroundColor="transparent"
+              translucent
+            />
+            <RootStack />
+          </AppThemeWrapper>
+        </PropertyProvider>
+      </CredentialsProvider>
+    </ThemeProvider>
+  );
+};
+
+const App = () => {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
           <SafeAreaView style={styles.safeArea}>
-            <ThemeProvider>
-              <CredentialsProvider>
-                <PropertyProvider>
-                  <AppThemeWrapper>
-                    <StatusBar
-                      barStyle="dark-content"
-                      backgroundColor="transparent"
-                      translucent
-                    />
-                    <RootStack />
-                  </AppThemeWrapper>
-                </PropertyProvider>
-              </CredentialsProvider>
-            </ThemeProvider>
+            <ToastProvider>
+              <AppContent />
+            </ToastProvider>
           </SafeAreaView>
         </SafeAreaProvider>
       </GestureHandlerRootView>

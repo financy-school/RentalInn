@@ -1151,6 +1151,7 @@ export class NetworkHelper {
 export class ErrorHelper {
   static errorLog = [];
   static maxLogSize = 500;
+  static toastFunction = null;
   static errorCategories = {
     NETWORK: 'network',
     AUTH: 'authentication',
@@ -1463,31 +1464,44 @@ export class ErrorHelper {
   }
 
   /**
-   * Show toast notification (uses Alert as fallback)
+   * Show toast notification using ToastContext
    * @param {string} message - Toast message
    * @param {string} type - Toast type: 'success', 'error', 'warning', 'info'
    * @param {number} duration - Duration in milliseconds
    */
   static showToast(message, type = 'info', duration = 3000) {
-    // In a real implementation, you would use a proper toast library
-    // For now, using Alert as a simple fallback
     if (__DEV__) {
       console.log(`[Toast ${type.toUpperCase()}]: ${message}`);
     }
 
-    // Use Alert for simple notifications
-    Alert.alert(
-      type === 'error'
-        ? 'Error'
-        : type === 'success'
-        ? 'Success'
-        : type === 'warning'
-        ? 'Warning'
-        : 'Info',
-      message,
-      [{ text: 'OK', style: type === 'error' ? 'destructive' : 'default' }],
-      { cancelable: true },
-    );
+    // Use the global toast function if available
+    if (ErrorHelper.toastFunction) {
+      ErrorHelper.toastFunction(message, type, duration);
+    } else {
+      // Fallback to Alert if toast context is not available
+      console.warn('Toast context not initialized, using Alert as fallback');
+      Alert.alert(
+        type === 'error'
+          ? 'Error'
+          : type === 'success'
+          ? 'Success'
+          : type === 'warning'
+          ? 'Warning'
+          : 'Info',
+        message,
+        [{ text: 'OK', style: type === 'error' ? 'destructive' : 'default' }],
+        { cancelable: true },
+      );
+    }
+  }
+
+  /**
+   * Set the toast function from ToastContext
+   * This should be called when the app initializes with ToastProvider
+   * @param {Function} toastFunction - The showToast function from ToastContext
+   */
+  static setToastFunction(toastFunction) {
+    ErrorHelper.toastFunction = toastFunction;
   }
 
   /**

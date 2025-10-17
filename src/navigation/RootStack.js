@@ -17,6 +17,7 @@ import AddProperty from '../screens/AddProperty';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
 import RecordPayment from '../screens/RecordPayment';
+import RecordExpensePayment from '../screens/RecordExpensePayment';
 import AddInvoice from '../screens/AddInvoice';
 import AddExpense from '../screens/AddExpense';
 import OnboardingScreen, {
@@ -367,6 +368,24 @@ const RootStack = () => {
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Record Payment',
+            headerTintColor: colors.black,
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            headerTitleStyle: {
+              fontFamily: 'Metropolis-Medium',
+              fontSize: 18,
+              fontWeight: '600',
+            },
+          }}
+        />
+
+        <Stack.Screen
+          name="RecordExpensePayment"
+          component={RecordExpensePayment}
+          options={{
+            ...authenticatedScreenOptions,
+            headerTitle: 'Record Expense Payment',
             headerTintColor: colors.black,
             headerShown: false,
             presentation: 'modal',

@@ -25,6 +25,7 @@ const StyledTextInput = ({
           {
             backgroundColor: theme.colors.surface,
             borderRadius: 12,
+            fontFamily: 'Metropolis-Regular',
           },
           props.style,
         ]}
@@ -33,10 +34,17 @@ const StyledTextInput = ({
             primary: theme.colors.primary,
             outline: error ? theme.colors.error : theme.colors.outline,
           },
+          fonts: {
+            regular: {
+              fontFamily: 'Metropolis-Regular',
+            },
+          },
         }}
         contentStyle={{
           paddingLeft: 16,
+          fontFamily: 'Metropolis-Regular',
         }}
+        placeholderTextColor={theme.colors.onSurfaceVariant}
       />
       {(error || helperText) && (
         <StandardText
