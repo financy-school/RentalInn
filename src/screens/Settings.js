@@ -816,16 +816,16 @@ What's New:
             </StandardText>
           </View>
 
-          <SettingItem
+          {/* <SettingItem
             title="Dark Mode"
             subtitle="Switch between light and dark themes"
             value={settings.darkMode}
             onToggle={() => toggleSetting('darkMode')}
             textColor={textPrimary}
             subtitleColor={textSecondary}
-          />
+          /> */}
 
-          <SettingActionItem
+          {/* <SettingActionItem
             title="Language"
             subtitle={
               languageOptions.find(lang => lang.value === settings.language)
@@ -834,9 +834,9 @@ What's New:
             onPress={handleLanguageSelection}
             textColor={textPrimary}
             subtitleColor={textSecondary}
-          />
+          /> */}
 
-          <SettingActionItem
+          {/* <SettingActionItem
             title="Currency"
             subtitle={
               currencyOptions.find(curr => curr.value === settings.currency)
@@ -845,7 +845,7 @@ What's New:
             onPress={handleCurrencySelection}
             textColor={textPrimary}
             subtitleColor={textSecondary}
-          />
+          /> */}
 
           <SettingItem
             title="Auto Backup"
@@ -878,13 +878,13 @@ What's New:
             </StandardText>
           </View>
 
-          <SettingActionItem
+          {/* <SettingActionItem
             title="Change Password"
             subtitle="Update your account password"
             onPress={handleChangePassword}
             textColor={textPrimary}
             subtitleColor={textSecondary}
-          />
+          /> */}
 
           <SettingItem
             title="Analytics"
@@ -908,7 +908,7 @@ What's New:
         <Gap size="lg" />
 
         {/* Data Management */}
-        <Card
+        {/* <Card
           style={[styles.settingsCard, { backgroundColor: cardBackground }]}
         >
           <View style={styles.sectionHeader}>
@@ -973,7 +973,7 @@ What's New:
             subtitleColor={textSecondary}
             isLast
           />
-        </Card>
+        </Card> */}
 
         <Gap size="lg" />
 
@@ -1011,13 +1011,13 @@ What's New:
             subtitleColor={textSecondary}
           />
 
-          <SettingActionItem
+          {/* <SettingActionItem
             title="Rate App"
             subtitle="Rate RentalInn on App Store"
             onPress={handleRateApp}
             textColor={textPrimary}
             subtitleColor={textSecondary}
-          />
+          /> */}
 
           <SettingActionItem
             title="Share App"
