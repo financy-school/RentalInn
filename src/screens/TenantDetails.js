@@ -29,11 +29,15 @@ import {
   createDocument,
   updateKYC,
   uploadToS3,
+  getKYCLink,
+  approveKYC,
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { PropertyContext } from '../context/PropertyContext';
 import Share from 'react-native-share';
 import { pick } from '@react-native-documents/picker';
+import Clipboard from '@react-native-clipboard/clipboard';
+import { ErrorHelper } from '../navigation/helpers';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -88,6 +92,9 @@ const TenantDetails = ({ navigation, route }) => {
   const [verificationDocument, setVerificationDocument] = useState(null);
   const [consentChecked, setConsentChecked] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
+  const [kycLink, setKycLink] = useState('');
+  const [kycLinkLoading, setKycLinkLoading] = useState(false);
+  const [kycApproving, setKycApproving] = useState(false);
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -327,6 +334,113 @@ const TenantDetails = ({ navigation, route }) => {
     } finally {
       setVerificationLoading(false);
     }
+  };
+
+  const fetchKycLink = async () => {
+    try {
+      setKycLinkLoading(true);
+      const response = await getKYCLink(
+        credentials.accessToken,
+        tenant.tenant_id,
+      );
+
+      if (response.success) {
+        setKycLink(response.data.link);
+      } else {
+      }
+    } catch (error) {
+      ErrorHelper.showErrorAlert(error, navigation);
+    } finally {
+      setKycLinkLoading(false);
+    }
+  };
+
+  const handleCopyKycLink = async () => {
+    if (!kycLink) {
+      await fetchKycLink();
+      return;
+    }
+
+    try {
+      Clipboard.setString(kycLink);
+      Alert.alert('Success', 'KYC link copied to clipboard!');
+    } catch (err) {
+      ErrorHelper.showErrorAlert(err, navigation);
+    }
+  };
+
+  const handleShareKycLink = async () => {
+    if (!kycLink) {
+      await fetchKycLink();
+      return;
+    }
+
+    try {
+      await Share.open({
+        title: 'Share KYC Link',
+        message: `Complete your KYC verification: ${kycLink}`,
+      });
+    } catch (err) {
+      console.log('Share cancelled or failed:', err);
+    }
+  };
+
+  const handleApproveKyc = async () => {
+    if (!tenant.kycDocuments || tenant.kycDocuments.length === 0) {
+      ErrorHelper.showErrorAlert(
+        'No KYC document found for this tenant.',
+        navigation,
+      );
+      return;
+    }
+
+    const kyc = tenant.kycDocuments[0];
+
+    if (kyc.status === 'VERIFIED') {
+      ErrorHelper.showErrorAlert('KYC is already approved.', navigation);
+      return;
+    }
+
+    Alert.alert(
+      'Approve KYC',
+      'Are you sure you want to approve this KYC? An invoice will be generated automatically.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Approve',
+          onPress: async () => {
+            try {
+              setKycApproving(true);
+              const response = await approveKYC(
+                credentials.accessToken,
+                kyc.kyc_id,
+              );
+
+              if (response.success) {
+                Alert.alert(
+                  'Success',
+                  'KYC approved successfully! Invoice has been generated.',
+                );
+                // Refresh tenant data
+                const updatedTenant = await getTenant(
+                  credentials.accessToken,
+                  tenant.tenant_id,
+                );
+                if (updatedTenant.success) {
+                  setTenant(updatedTenant.data);
+                }
+              } else {
+                ErrorHelper.showErrorAlert(response.error, navigation);
+              }
+            } catch (error) {
+              ErrorHelper.showErrorAlert(error, navigation);
+            } finally {
+              setKycApproving(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   // Ledger data from real tenant data
@@ -733,45 +847,45 @@ const TenantDetails = ({ navigation, route }) => {
               <StandardText
                 style={[styles.verificationLabel, { color: textSecondary }]}
               >
-                Web Check-in:
+                Web Check-in (KYC):
               </StandardText>
-              <TouchableOpacity
-                style={[styles.checkInButton, { borderColor: colors.primary }]}
-              >
-                <StandardText
-                  style={[styles.checkInButtonText, { color: colors.primary }]}
-                >
-                  Check-in
-                </StandardText>
-                <MaterialCommunityIcons
-                  name="link"
-                  size={16}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.verificationRow}>
-              <StandardText
-                style={[styles.verificationLabel, { color: textSecondary }]}
-              >
-                Renting Terms:
-              </StandardText>
-              <View
-                style={[
-                  styles.verificationChip,
-                  { backgroundColor: colors.success + '20' },
-                ]}
-              >
-                <StandardText
-                  fontWeight="semibold"
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
                   style={[
-                    styles.verificationChipText,
-                    { color: colors.success },
+                    styles.checkInButton,
+                    { borderColor: colors.primary },
                   ]}
+                  onPress={handleCopyKycLink}
+                  disabled={kycLinkLoading}
                 >
-                  Approved
-                </StandardText>
+                  <StandardText
+                    style={[
+                      styles.checkInButtonText,
+                      { color: colors.primary },
+                    ]}
+                  >
+                    {kycLinkLoading ? 'Loading...' : 'Copy Link'}
+                  </StandardText>
+                  <MaterialCommunityIcons
+                    name="content-copy"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.checkInButton,
+                    { borderColor: colors.primary },
+                  ]}
+                  onPress={handleShareKycLink}
+                  disabled={kycLinkLoading}
+                >
+                  <MaterialCommunityIcons
+                    name="share-variant"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -788,7 +902,63 @@ const TenantDetails = ({ navigation, route }) => {
                     backgroundColor:
                       tenant.kycDocuments &&
                       tenant.kycDocuments.length > 0 &&
-                      tenant.kycDocuments[0].status === 'verified'
+                      tenant.kycDocuments[0].status === 'VERIFIED'
+                        ? colors.success + '20'
+                        : tenant.kycDocuments &&
+                          tenant.kycDocuments.length > 0 &&
+                          tenant.kycDocuments[0].status === 'IN_REVIEW'
+                        ? colors.warning + '20'
+                        : colors.error + '20',
+                  },
+                ]}
+              >
+                <StandardText
+                  fontWeight="semibold"
+                  style={[
+                    styles.verificationChipText,
+                    {
+                      color:
+                        tenant.kycDocuments &&
+                        tenant.kycDocuments.length > 0 &&
+                        tenant.kycDocuments[0].status === 'VERIFIED'
+                          ? colors.success
+                          : tenant.kycDocuments &&
+                            tenant.kycDocuments.length > 0 &&
+                            tenant.kycDocuments[0].status === 'IN_REVIEW'
+                          ? colors.warning
+                          : colors.error,
+                    },
+                  ]}
+                >
+                  {tenant.kycDocuments &&
+                  tenant.kycDocuments.length > 0 &&
+                  tenant.kycDocuments[0].status === 'VERIFIED'
+                    ? 'Verified'
+                    : tenant.kycDocuments &&
+                      tenant.kycDocuments.length > 0 &&
+                      tenant.kycDocuments[0].status === 'IN_REVIEW'
+                    ? 'Pending Approval'
+                    : tenant.kycDocuments && tenant.kycDocuments.length > 0
+                    ? tenant.kycDocuments[0].status || 'Pending'
+                    : 'Not Submitted'}
+                </StandardText>
+              </View>
+            </View>
+
+            <View style={styles.verificationRow}>
+              <StandardText
+                style={[styles.verificationLabel, { color: textSecondary }]}
+              >
+                Agreement Signed:
+              </StandardText>
+              <View
+                style={[
+                  styles.verificationChip,
+                  {
+                    backgroundColor:
+                      tenant.kycDocuments &&
+                      tenant.kycDocuments.length > 0 &&
+                      tenant.kycDocuments[0].agreement_signed
                         ? colors.success + '20'
                         : colors.warning + '20',
                   },
@@ -802,7 +972,7 @@ const TenantDetails = ({ navigation, route }) => {
                       color:
                         tenant.kycDocuments &&
                         tenant.kycDocuments.length > 0 &&
-                        tenant.kycDocuments[0].status === 'verified'
+                        tenant.kycDocuments[0].agreement_signed
                           ? colors.success
                           : colors.warning,
                     },
@@ -810,76 +980,42 @@ const TenantDetails = ({ navigation, route }) => {
                 >
                   {tenant.kycDocuments &&
                   tenant.kycDocuments.length > 0 &&
-                  tenant.kycDocuments[0].status === 'verified'
-                    ? 'Verified'
-                    : tenant.kycDocuments && tenant.kycDocuments.length > 0
-                    ? tenant.kycDocuments[0].status || 'Pending'
-                    : 'Not Submitted'}
+                  tenant.kycDocuments[0].agreement_signed
+                    ? 'Signed'
+                    : 'Not Signed'}
                 </StandardText>
               </View>
             </View>
 
-            <View style={styles.verificationRow}>
-              <StandardText
-                style={[styles.verificationLabel, { color: textSecondary }]}
-              >
-                Rental Agreement:
-              </StandardText>
-              <View
-                style={[
-                  styles.verificationChip,
-                  {
-                    backgroundColor:
-                      tenant.rentals &&
-                      tenant.rentals.length > 0 &&
-                      tenant.rentals[0].isActive
-                        ? colors.success + '20'
-                        : colors.warning + '20',
-                  },
-                ]}
-              >
-                <StandardText
-                  fontWeight="semibold"
-                  style={[
-                    styles.verificationChipText,
-                    {
-                      color:
-                        tenant.rentals &&
-                        tenant.rentals.length > 0 &&
-                        tenant.rentals[0].isActive
-                          ? colors.success
-                          : colors.warning,
-                    },
-                  ]}
-                >
-                  {tenant.rentals &&
-                  tenant.rentals.length > 0 &&
-                  tenant.rentals[0].isActive
-                    ? 'Active'
-                    : tenant.rentals && tenant.rentals.length > 0
-                    ? 'Inactive'
-                    : 'Not Created'}
-                </StandardText>
-              </View>
-            </View>
-
-            <View style={styles.verificationRow}>
-              <StandardText
-                style={[styles.verificationLabel, { color: textSecondary }]}
-              >
-                Background Verification
-              </StandardText>
-              <TouchableOpacity
-                style={styles.verifyButton}
-                onPress={openBackgroundVerificationModal}
-              >
-                <StandardText
-                  style={[styles.verifyButtonText, { color: colors.primary }]}
-                >
-                  Verify
-                </StandardText>
-              </TouchableOpacity>
-            </View>
+            {tenant.kycDocuments &&
+              tenant.kycDocuments.length > 0 &&
+              tenant.kycDocuments[0].status === 'IN_REVIEW' && (
+                <View style={styles.verificationRow}>
+                  <StandardText
+                    style={[styles.verificationLabel, { color: textSecondary }]}
+                  >
+                    KYC Approval:
+                  </StandardText>
+                  <TouchableOpacity
+                    style={[
+                      styles.approveButton,
+                      { backgroundColor: colors.success },
+                      kycApproving && { opacity: 0.6 },
+                    ]}
+                    onPress={handleApproveKyc}
+                    disabled={kycApproving}
+                  >
+                    <StandardText
+                      style={[
+                        styles.approveButtonText,
+                        { color: colors.white },
+                      ]}
+                    >
+                      {kycApproving ? 'Approving...' : 'Approve KYC'}
+                    </StandardText>
+                  </TouchableOpacity>
+                </View>
+              )}
           </View>
         </Card>
 
@@ -1709,6 +1845,15 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: {
     fontSize: 14,
+  },
+  approveButton: {
+    borderRadius: RADIUS.small,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+  },
+  approveButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   // Modal Styles
   modalOverlay: {

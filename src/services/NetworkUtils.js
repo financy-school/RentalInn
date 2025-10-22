@@ -1078,3 +1078,23 @@ export const getKYCByTenantId = async (accessToken, tenantId) => {
     'GET_KYC_BY_TENANT_ID',
   );
 };
+
+export const getKYCLink = async (accessToken, tenantId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/kyc/tenant/${tenantId}/link`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_KYC_LINK',
+  );
+};
+
+export const approveKYC = async (accessToken, kycId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(`/kyc/${kycId}/approve`, {}, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'APPROVE_KYC',
+  );
+};
