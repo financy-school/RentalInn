@@ -1471,7 +1471,6 @@ const Home = ({ navigation }) => {
               >
                 Recent Submissions
               </StandardText>
-              {console.log(tenantData.recent_kyc_submissions)}
               <View style={styles.kycList}>
                 {(tenantData.recent_kyc_submissions || [])
                   .slice(0, 3)
@@ -1496,6 +1495,8 @@ const Home = ({ navigation }) => {
                                   ? colors.success + '20'
                                   : kyc.status === 'pending'
                                   ? colors.warning + '20'
+                                  : kyc.status === 'in_review'
+                                  ? colors.info + '20'
                                   : colors.error + '20',
                             },
                           ]}
@@ -1505,6 +1506,8 @@ const Home = ({ navigation }) => {
                               kyc.status === 'verified'
                                 ? 'check'
                                 : kyc.status === 'pending'
+                                ? 'progress-clock'
+                                : kyc.status === 'in_review'
                                 ? 'clock'
                                 : 'close'
                             }
@@ -1514,6 +1517,8 @@ const Home = ({ navigation }) => {
                                 ? colors.success
                                 : kyc.status === 'pending'
                                 ? colors.warning
+                                : kyc.status === 'in_review'
+                                ? colors.info
                                 : colors.error
                             }
                           />
@@ -1541,6 +1546,8 @@ const Home = ({ navigation }) => {
                                 ? colors.success + '20'
                                 : kyc.status === 'pending'
                                 ? colors.warning + '20'
+                                : kyc.status === 'in_review'
+                                ? colors.info + '20'
                                 : colors.error + '20',
                           },
                         ]}
@@ -1554,6 +1561,8 @@ const Home = ({ navigation }) => {
                                 ? colors.success
                                 : kyc.status === 'pending'
                                 ? colors.warning
+                                : kyc.status === 'in_review'
+                                ? colors.info
                                 : colors.error,
                           }}
                         >

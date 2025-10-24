@@ -236,16 +236,19 @@ const TenantDetails = ({ navigation, route }) => {
       if (err.code === 'DOCUMENT_PICKER_CANCELED') {
         // User cancelled the picker
       } else {
-        Alert.alert('Error', 'Failed to pick document. Please try again.');
+        ErrorHelper.showToast(
+          err?.message || 'Failed to pick document',
+          'error',
+        );
       }
     }
   };
 
   const handleBackgroundVerification = async () => {
     if (!verificationDocument || !consentChecked) {
-      Alert.alert(
-        'Error',
-        'Please upload a document and provide consent to proceed.',
+      ErrorHelper.showToast(
+        'Please select a document and provide consent to proceed.',
+        'error',
       );
       return;
     }
@@ -260,9 +263,9 @@ const TenantDetails = ({ navigation, route }) => {
       );
 
       if (!kycResponse.success || !kycResponse.data) {
-        Alert.alert(
-          'Error',
-          'KYC data not found for this tenant. Please ensure KYC is set up first.',
+        ErrorHelper.showToast(
+          'Failed to retrieve KYC data. Please try again.',
+          'error',
         );
         return;
       }
@@ -270,7 +273,7 @@ const TenantDetails = ({ navigation, route }) => {
       const kyc_id = kycResponse.data.items[0].kyc_id;
 
       if (!verificationDocument) {
-        Alert.alert('Error', 'Please select a document to upload.');
+        ErrorHelper.showToast('Please select a document to upload.', 'error');
         return;
       }
 
@@ -293,10 +296,9 @@ const TenantDetails = ({ navigation, route }) => {
       );
 
       if (!createResponse.success) {
-        Alert.alert(
-          'Error',
-          createResponse.error ||
-            'Failed to create document record. Please try again.',
+        ErrorHelper.showToast(
+          createResponse.error || 'Failed to create document record',
+          'error',
         );
         return;
       }
@@ -321,9 +323,9 @@ const TenantDetails = ({ navigation, route }) => {
       if (updateResponse.success) {
         closeBackgroundVerificationModal();
       } else {
-        Alert.alert(
-          'Error',
+        ErrorHelper.showToast(
           updateResponse.error || 'Failed to update KYC. Please try again.',
+          'error',
         );
       }
     } catch (verificationError) {
@@ -336,52 +338,64 @@ const TenantDetails = ({ navigation, route }) => {
     }
   };
 
-  const fetchKycLink = async () => {
+  const handleCopyKycLink = async () => {
     try {
       setKycLinkLoading(true);
-      const response = await getKYCLink(
-        credentials.accessToken,
-        tenant.tenant_id,
-      );
+      let linkToCopy = kycLink;
 
-      if (response.success) {
-        setKycLink(response.data.link);
-      } else {
+      if (!linkToCopy) {
+        // Fetch the link directly without calling fetchKycLink to avoid duplicate API calls
+        const response = await getKYCLink(
+          credentials.accessToken,
+          tenant.tenant_id,
+        );
+
+        if (response.success) {
+          linkToCopy = response.data.link;
+          setKycLink(linkToCopy); // Update state for future use
+        } else {
+          ErrorHelper.showToast('Failed to fetch KYC link', 'error');
+          return;
+        }
       }
-    } catch (error) {
-      ErrorHelper.showErrorAlert(error, navigation);
+
+      Clipboard.setString(linkToCopy);
+      ErrorHelper.showToast('KYC link copied to clipboard!', 'success');
+    } catch (err) {
+      ErrorHelper.showToast('Failed to copy KYC link', 'error');
     } finally {
       setKycLinkLoading(false);
     }
   };
 
-  const handleCopyKycLink = async () => {
-    if (!kycLink) {
-      await fetchKycLink();
-      return;
-    }
-
-    try {
-      Clipboard.setString(kycLink);
-      Alert.alert('Success', 'KYC link copied to clipboard!');
-    } catch (err) {
-      ErrorHelper.showErrorAlert(err, navigation);
-    }
-  };
-
   const handleShareKycLink = async () => {
-    if (!kycLink) {
-      await fetchKycLink();
-      return;
-    }
-
     try {
+      setKycLinkLoading(true);
+      let linkToShare = kycLink;
+
+      if (!linkToShare) {
+        const response = await getKYCLink(
+          credentials.accessToken,
+          tenant.tenant_id,
+        );
+
+        if (response.success) {
+          linkToShare = response.data.link;
+          setKycLink(linkToShare);
+        } else {
+          ErrorHelper.showToast('Failed to fetch KYC link', 'error');
+          return;
+        }
+      }
+
       await Share.open({
         title: 'Share KYC Link',
-        message: `Complete your KYC verification: ${kycLink}`,
+        message: `Complete your KYC verification: ${linkToShare}`,
       });
     } catch (err) {
       console.log('Share cancelled or failed:', err);
+    } finally {
+      setKycLinkLoading(false);
     }
   };
 
@@ -417,9 +431,9 @@ const TenantDetails = ({ navigation, route }) => {
               );
 
               if (response.success) {
-                Alert.alert(
-                  'Success',
+                ErrorHelper.showToast(
                   'KYC approved successfully! Invoice has been generated.',
+                  'success',
                 );
                 // Refresh tenant data
                 const updatedTenant = await getTenant(
@@ -430,10 +444,16 @@ const TenantDetails = ({ navigation, route }) => {
                   setTenant(updatedTenant.data);
                 }
               } else {
-                ErrorHelper.showErrorAlert(response.error, navigation);
+                ErrorHelper.showToast(
+                  response.error || 'Failed to approve KYC',
+                  'error',
+                );
               }
             } catch (error) {
-              ErrorHelper.showErrorAlert(error, navigation);
+              ErrorHelper.showToast(
+                error?.message || 'Failed to approve KYC',
+                'error',
+              );
             } finally {
               setKycApproving(false);
             }
@@ -989,7 +1009,7 @@ const TenantDetails = ({ navigation, route }) => {
 
             {tenant.kycDocuments &&
               tenant.kycDocuments.length > 0 &&
-              tenant.kycDocuments[0].status === 'IN_REVIEW' && (
+              tenant.kycDocuments[0].status === 'in_review' && (
                 <View style={styles.verificationRow}>
                   <StandardText
                     style={[styles.verificationLabel, { color: textSecondary }]}
