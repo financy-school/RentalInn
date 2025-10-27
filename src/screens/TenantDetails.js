@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   FlatList,
+  Linking,
 } from 'react-native';
 import { Button, Card, Divider, Checkbox } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -97,6 +98,7 @@ const TenantDetails = ({ navigation, route }) => {
   const [kycLinkLoading, setKycLinkLoading] = useState(false);
   const [kycApproving, setKycApproving] = useState(false);
   const [kycDocumentUrl, setKycDocumentUrl] = useState(null);
+  const [downloadingDocument, setDownloadingDocument] = useState(false);
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -169,6 +171,8 @@ const TenantDetails = ({ navigation, route }) => {
         );
         if (docRes?.data?.download_url) {
           setKycDocumentUrl(docRes.data.download_url);
+        } else {
+          setKycDocumentUrl(null);
         }
       } catch (err) {
         console.error('Error fetching KYC document URL:', err);
@@ -502,6 +506,26 @@ const TenantDetails = ({ navigation, route }) => {
         },
       ],
     );
+  };
+
+  const handleViewDocument = async () => {
+    if (!kycDocumentUrl) {
+      ErrorHelper.showToast('Document URL not available', 'error');
+      return;
+    }
+
+    try {
+      setDownloadingDocument(true);
+      await Linking.openURL(kycDocumentUrl);
+      ErrorHelper.showToast('Opening document...', 'success');
+    } catch (error) {
+      ErrorHelper.showToast(
+        error?.message || 'Failed to open document. Please try again.',
+        'error',
+      );
+    } finally {
+      setDownloadingDocument(false);
+    }
   };
 
   // Ledger data from real tenant data
@@ -1173,41 +1197,30 @@ const TenantDetails = ({ navigation, route }) => {
                             Document
                           </StandardText>
                           <TouchableOpacity
-                            onPress={() => {
-                              // Open the document URL
-                              if (kycDocumentUrl) {
-                                Share.open({ url: kycDocumentUrl })
-                                  .then(() => {})
-                                  .catch(err => {
-                                    ErrorHelper.showToast(
-                                      'Failed to open document',
-                                      'error',
-                                    );
-                                  });
-                              } else {
-                                ErrorHelper.showToast(
-                                  'Document URL not available',
-                                  'error',
-                                );
-                              }
-                            }}
-                            disabled={!kycDocumentUrl}
+                            onPress={handleViewDocument}
+                            disabled={!kycDocumentUrl || downloadingDocument}
                           >
                             <StandardText
                               fontWeight="600"
                               style={[
                                 styles.documentDetailValue,
                                 {
-                                  color: kycDocumentUrl
-                                    ? colors.primary
-                                    : colors.textSecondary,
-                                  textDecorationLine: kycDocumentUrl
-                                    ? 'underline'
-                                    : 'none',
+                                  color:
+                                    kycDocumentUrl && !downloadingDocument
+                                      ? colors.primary
+                                      : colors.textSecondary,
+                                  textDecorationLine:
+                                    kycDocumentUrl && !downloadingDocument
+                                      ? 'underline'
+                                      : 'none',
                                 },
                               ]}
                             >
-                              {kycDocumentUrl ? 'View Document' : 'Loading...'}
+                              {downloadingDocument
+                                ? 'Opening...'
+                                : kycDocumentUrl
+                                ? 'View Document'
+                                : 'Loading...'}
                             </StandardText>
                           </TouchableOpacity>
                         </View>
