@@ -31,6 +31,7 @@ import {
   uploadToS3,
   getKYCLink,
   approveKYC,
+  getDocument,
 } from '../services/NetworkUtils';
 import { CredentialsContext } from '../context/CredentialsContext';
 import { PropertyContext } from '../context/PropertyContext';
@@ -95,6 +96,7 @@ const TenantDetails = ({ navigation, route }) => {
   const [kycLink, setKycLink] = useState('');
   const [kycLinkLoading, setKycLinkLoading] = useState(false);
   const [kycApproving, setKycApproving] = useState(false);
+  const [kycDocumentUrl, setKycDocumentUrl] = useState(null);
 
   // Theme variables
   const isDark = mode === 'dark';
@@ -137,6 +139,45 @@ const TenantDetails = ({ navigation, route }) => {
 
     fetchTenantDetails();
   }, [tenant_id, credentials, navigation, tenant]);
+
+  // Fetch KYC document download URL
+  useEffect(() => {
+    const fetchKycDocumentUrl = async () => {
+      if (
+        !tenant ||
+        !tenant.kycDocuments ||
+        tenant.kycDocuments.length === 0 ||
+        !tenant.kycDocuments[0].documentUrl
+      ) {
+        setKycDocumentUrl(null);
+        return;
+      }
+
+      const documentId = tenant.kycDocuments[0].documentUrl;
+      const propertyId = tenant.property_id;
+
+      if (!propertyId) {
+        setKycDocumentUrl(null);
+        return;
+      }
+
+      try {
+        const docRes = await getDocument(
+          credentials.accessToken,
+          propertyId,
+          documentId,
+        );
+        if (docRes?.data?.download_url) {
+          setKycDocumentUrl(docRes.data.download_url);
+        }
+      } catch (err) {
+        console.error('Error fetching KYC document URL:', err);
+        setKycDocumentUrl(null);
+      }
+    };
+
+    fetchKycDocumentUrl();
+  }, [tenant, credentials]);
 
   const openMenu = () => {
     if (!anchorRef.current || !anchorRef.current.measureInWindow) {
@@ -940,11 +981,11 @@ const TenantDetails = ({ navigation, route }) => {
                       color:
                         tenant.kycDocuments &&
                         tenant.kycDocuments.length > 0 &&
-                        tenant.kycDocuments[0].status === 'VERIFIED'
+                        tenant.kycDocuments[0].status === 'verified'
                           ? colors.success
                           : tenant.kycDocuments &&
                             tenant.kycDocuments.length > 0 &&
-                            tenant.kycDocuments[0].status === 'IN_REVIEW'
+                            tenant.kycDocuments[0].status === 'in_review'
                           ? colors.warning
                           : colors.error,
                     },
@@ -952,11 +993,11 @@ const TenantDetails = ({ navigation, route }) => {
                 >
                   {tenant.kycDocuments &&
                   tenant.kycDocuments.length > 0 &&
-                  tenant.kycDocuments[0].status === 'VERIFIED'
+                  tenant.kycDocuments[0].status === 'verified'
                     ? 'Verified'
                     : tenant.kycDocuments &&
                       tenant.kycDocuments.length > 0 &&
-                      tenant.kycDocuments[0].status === 'IN_REVIEW'
+                      tenant.kycDocuments[0].status === 'in_review'
                     ? 'Pending Approval'
                     : tenant.kycDocuments && tenant.kycDocuments.length > 0
                     ? tenant.kycDocuments[0].status || 'Pending'
@@ -1035,6 +1076,145 @@ const TenantDetails = ({ navigation, route }) => {
                     </StandardText>
                   </TouchableOpacity>
                 </View>
+              )}
+
+            {/* KYC Document Details */}
+            {tenant.kycDocuments &&
+              tenant.kycDocuments.length > 0 &&
+              tenant.kycDocuments[0].documentType && (
+                <>
+                  <Divider style={{ marginVertical: SPACING.md }} />
+                  <View style={styles.documentDetailsSection}>
+                    <StandardText
+                      fontWeight="bold"
+                      style={[
+                        styles.documentDetailsTitle,
+                        { color: textPrimary },
+                      ]}
+                    >
+                      Uploaded Document
+                    </StandardText>
+
+                    <View style={styles.documentDetailRow}>
+                      <MaterialCommunityIcons
+                        name="file-document"
+                        size={20}
+                        color={colors.primary}
+                        style={{ marginRight: SPACING.sm }}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <StandardText
+                          style={[
+                            styles.documentDetailLabel,
+                            { color: textSecondary },
+                          ]}
+                        >
+                          Document Type
+                        </StandardText>
+                        <StandardText
+                          fontWeight="600"
+                          style={[
+                            styles.documentDetailValue,
+                            { color: textPrimary },
+                          ]}
+                        >
+                          {tenant.kycDocuments[0].documentType
+                            ?.toUpperCase()
+                            .replace('_', ' ') || 'N/A'}
+                        </StandardText>
+                      </View>
+                    </View>
+
+                    {tenant.kycDocuments[0].documentNumber && (
+                      <View style={styles.documentDetailRow}>
+                        <MaterialCommunityIcons
+                          name="card-account-details"
+                          size={20}
+                          color={colors.primary}
+                          style={{ marginRight: SPACING.sm }}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <StandardText
+                            style={[
+                              styles.documentDetailLabel,
+                              { color: textSecondary },
+                            ]}
+                          >
+                            Document Number
+                          </StandardText>
+                          <StandardText
+                            fontWeight="600"
+                            style={[
+                              styles.documentDetailValue,
+                              { color: textPrimary },
+                            ]}
+                          >
+                            {tenant.kycDocuments[0].documentNumber}
+                          </StandardText>
+                        </View>
+                      </View>
+                    )}
+
+                    {tenant.kycDocuments[0].documentUrl && (
+                      <View style={styles.documentDetailRow}>
+                        <MaterialCommunityIcons
+                          name="link"
+                          size={20}
+                          color={colors.primary}
+                          style={{ marginRight: SPACING.sm }}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <StandardText
+                            style={[
+                              styles.documentDetailLabel,
+                              { color: textSecondary },
+                            ]}
+                          >
+                            Document
+                          </StandardText>
+                          <TouchableOpacity
+                            onPress={() => {
+                              // Open the document URL
+                              if (kycDocumentUrl) {
+                                Share.open({ url: kycDocumentUrl })
+                                  .then(() => {})
+                                  .catch(err => {
+                                    ErrorHelper.showToast(
+                                      'Failed to open document',
+                                      'error',
+                                    );
+                                  });
+                              } else {
+                                ErrorHelper.showToast(
+                                  'Document URL not available',
+                                  'error',
+                                );
+                              }
+                            }}
+                            disabled={!kycDocumentUrl}
+                          >
+                            <StandardText
+                              fontWeight="600"
+                              style={[
+                                styles.documentDetailValue,
+                                {
+                                  color: kycDocumentUrl
+                                    ? colors.primary
+                                    : colors.textSecondary,
+                                  textDecorationLine: kycDocumentUrl
+                                    ? 'underline'
+                                    : 'none',
+                                },
+                              ]}
+                            >
+                              {kycDocumentUrl ? 'View Document' : 'Loading...'}
+                            </StandardText>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </>
               )}
           </View>
         </Card>
@@ -2018,6 +2198,27 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     borderRadius: RADIUS.small,
+  },
+  documentDetailsSection: {
+    gap: SPACING.md,
+    paddingTop: SPACING.sm,
+  },
+  documentDetailsTitle: {
+    fontSize: 16,
+    marginBottom: SPACING.sm,
+  },
+  documentDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  documentDetailLabel: {
+    fontSize: 12,
+    marginBottom: SPACING.xs / 2,
+  },
+  documentDetailValue: {
+    fontSize: 14,
   },
 });
 
