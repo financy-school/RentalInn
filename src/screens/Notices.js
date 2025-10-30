@@ -1,118 +1,57 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import {
   View,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  Alert,
   StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
 } from 'react-native';
-import { Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Components
-import StandardText from '../components/StandardText/StandardText';
 import StandardHeader from '../components/StandardHeader/StandardHeader';
+import StandardText from '../components/StandardText/StandardText';
 import StandardCard from '../components/StandardCard/StandardCard';
-import Gap from '../components/Gap/Gap';
 import AnimatedLoader from '../components/AnimatedLoader/AnimatedLoader';
+import colors from '../theme/colors';
+import { SHADOW, RADIUS } from '../theme/layout';
 
 // Context
 import { ThemeContext } from '../context/ThemeContext';
+import { CredentialsContext } from '../context/CredentialsContext';
 
-// Theme
-import colors from '../theme/colors';
-import { RADIUS, SHADOW } from '../theme/layout';
+// Services
+import {
+  getNotifications,
+  getNotificationStats,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
+} from '../services/NetworkUtils';
 
 const Notices = ({ navigation }) => {
   // Theme
   const { theme: mode } = useContext(ThemeContext);
+  const { credentials } = useContext(CredentialsContext);
   const isDark = mode === 'dark';
   const cardBackground = isDark ? colors.backgroundDark : colors.white;
   const textPrimary = isDark ? colors.white : colors.textPrimary;
   const textSecondary = isDark ? colors.light_gray : colors.textSecondary;
 
-  // Mock data
-  const mockNotices = React.useMemo(
-    () => [
-      {
-        id: '1',
-        title: 'Rent Due Reminder',
-        description:
-          'Monthly rent payment is due for Room 101. Please ensure payment is made by the due date.',
-        type: 'payment',
-        priority: 'high',
-        date: '2025-09-05',
-        tenantName: 'John Doe',
-        roomNumber: '101',
-        amount: '₹15,000',
-        status: 'pending',
-        isRead: false,
-      },
-      {
-        id: '2',
-        title: 'Maintenance Request',
-        description:
-          'AC repair needed in Room 205. Tenant reported cooling issues.',
-        type: 'maintenance',
-        priority: 'medium',
-        date: '2025-09-04',
-        tenantName: 'Jane Smith',
-        roomNumber: '205',
-        status: 'in-progress',
-        isRead: true,
-      },
-      {
-        id: '3',
-        title: 'Lease Renewal',
-        description:
-          'Lease agreement expires next month for Room 303. Renewal discussion needed.',
-        type: 'lease',
-        priority: 'low',
-        date: '2025-09-03',
-        tenantName: 'Mike Johnson',
-        roomNumber: '303',
-        status: 'pending',
-        isRead: false,
-      },
-      {
-        id: '4',
-        title: 'Payment Received',
-        description:
-          'Rent payment confirmed for Room 102. Thank you for timely payment.',
-        type: 'payment',
-        priority: 'low',
-        date: '2025-09-02',
-        tenantName: 'Sarah Wilson',
-        roomNumber: '102',
-        amount: '₹12,000',
-        status: 'completed',
-        isRead: false,
-      },
-      {
-        id: '5',
-        title: 'Maintenance Completed',
-        description:
-          'Plumbing issue resolved in Room 405. All repairs completed successfully.',
-        type: 'maintenance',
-        priority: 'medium',
-        date: '2025-09-01',
-        tenantName: 'David Brown',
-        roomNumber: '405',
-        status: 'completed',
-        isRead: true,
-      },
-    ],
-    [],
-  );
-
   // State
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [notices, setNotices] = useState(mockNotices);
+  const [notices, setNotices] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [stats, setStats] = useState({
+    total: 0,
+    unread: 0,
+    high_priority: 0,
+    pending: 0,
+  });
 
-  // Filter options with counts matching PaymentHistory style
+  // Filter options
   const filterOptions = [
     { key: 'all', label: 'All Notices', icon: 'bell' },
     { key: 'unread', label: 'Unread', icon: 'bell-ring' },
@@ -122,78 +61,191 @@ const Notices = ({ navigation }) => {
   ];
 
   const getFilterCounts = () => {
-    const unreadCount = notices.filter(notice => !notice.isRead).length;
-    const paymentCount = notices.filter(
-      notice => notice.type === 'payment',
-    ).length;
-    const maintenanceCount = notices.filter(
-      notice => notice.type === 'maintenance',
-    ).length;
-    const leaseCount = notices.filter(notice => notice.type === 'lease').length;
+    // Ensure notices is always an array before filtering
+    const noticesArray = Array.isArray(notices) ? notices : [];
 
     return {
-      all: notices.length,
-      unread: unreadCount,
-      payment: paymentCount,
-      maintenance: maintenanceCount,
-      lease: leaseCount,
+      all: noticesArray.length,
+      unread: noticesArray.filter(n => !n.is_read).length,
+      payment: noticesArray.filter(n => n.type === 'payment').length,
+      maintenance: noticesArray.filter(n => n.type === 'maintenance').length,
+      lease: noticesArray.filter(n => n.type === 'lease').length,
     };
   };
 
   const filterCounts = getFilterCounts();
 
-  // Stats calculations
-  const totalNotices = notices.length;
-  const unreadNotices = notices.filter(notice => !notice.isRead).length;
-  const highPriorityNotices = notices.filter(
-    notice => notice.priority === 'high',
-  ).length;
-  const pendingActions = notices.filter(
-    notice => notice.status === 'pending',
-  ).length;
-
-  // Load notices
+  // Load notifications from API
   const loadNotices = useCallback(async () => {
+    if (!credentials?.accessToken) {
+      console.warn('No access token available');
+      return;
+    }
+
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setNotices(mockNotices);
+
+      // Get notifications
+      const notificationsResponse = await getNotifications(
+        credentials.accessToken,
+        {
+          page: 1,
+          limit: 50,
+        },
+      );
+
+      console.log('📥 Notifications API response:', {
+        success: notificationsResponse?.success,
+        dataType: typeof notificationsResponse?.data,
+        isArray: Array.isArray(notificationsResponse?.data),
+        dataKeys: notificationsResponse?.data
+          ? Object.keys(notificationsResponse.data)
+          : 'null',
+      });
+
+      if (notificationsResponse.success) {
+        // Handle both paginated and non-paginated responses
+        let notificationsData = notificationsResponse.data;
+
+        // If data is an object with a 'data' property (paginated response)
+        if (
+          notificationsData &&
+          typeof notificationsData === 'object' &&
+          !Array.isArray(notificationsData)
+        ) {
+          if (Array.isArray(notificationsData.data)) {
+            notificationsData = notificationsData.data;
+          } else if (Array.isArray(notificationsData.notifications)) {
+            notificationsData = notificationsData.notifications;
+          }
+        }
+
+        // Ensure we always set an array
+        setNotices(Array.isArray(notificationsData) ? notificationsData : []);
+      } else {
+        setNotices([]);
+      }
+
+      // Get stats
+      const statsResponse = await getNotificationStats(credentials.accessToken);
+      if (statsResponse.success && statsResponse.data) {
+        setStats(statsResponse.data);
+      }
     } catch (error) {
-      console.error('Failed to load notices:', error);
-      Alert.alert('Error', 'Failed to load notices. Please try again.');
+      console.error('Error loading notifications:', error);
+      setNotices([]); // Ensure notices is always an array even on error
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  }, [mockNotices]);
+  }, [credentials]);
 
   // Refresh notices
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadNotices();
+    setRefreshing(false);
   }, [loadNotices]);
 
   // Filter notices
-  const filteredNotices = (notices || []).filter(notice => {
-    switch (selectedFilter) {
-      case 'unread':
-        return !notice.isRead;
-      case 'payment':
-      case 'maintenance':
-      case 'lease':
-        return notice.type === selectedFilter;
-      default:
-        return true;
-    }
-  });
+  const filteredNotices = (Array.isArray(notices) ? notices : []).filter(
+    notice => {
+      if (selectedFilter === 'all') return true;
+      if (selectedFilter === 'unread') return !notice.is_read;
+      return notice.type === selectedFilter;
+    },
+  );
 
   // Mark notice as read
-  const handleNoticePress = noticeId => {
-    setNotices(prev =>
-      (prev || []).map(notice =>
-        notice.id === noticeId ? { ...notice, isRead: true } : notice,
-      ),
+  const handleNoticePress = async noticeId => {
+    if (!credentials?.accessToken) return;
+
+    try {
+      // Find the notice
+      const noticesArray = Array.isArray(notices) ? notices : [];
+      const notice = noticesArray.find(n => n.notification_id === noticeId);
+      if (!notice || notice.is_read) return;
+
+      // Mark as read in API
+      await markNotificationAsRead(credentials.accessToken, noticeId);
+
+      // Update local state
+      setNotices(prevNotices => {
+        const prevArray = Array.isArray(prevNotices) ? prevNotices : [];
+        return prevArray.map(n =>
+          n.notification_id === noticeId ? { ...n, is_read: true } : n,
+        );
+      });
+
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        unread: Math.max(0, prev.unread - 1),
+      }));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // Delete notification
+  const handleDeleteNotice = async noticeId => {
+    if (!credentials?.accessToken) return;
+
+    Alert.alert(
+      'Delete Notification',
+      'Are you sure you want to delete this notification?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteNotification(credentials.accessToken, noticeId);
+
+              // Update local state
+              setNotices(prevNotices => {
+                const prevArray = Array.isArray(prevNotices) ? prevNotices : [];
+                return prevArray.filter(n => n.notification_id !== noticeId);
+              });
+
+              // Reload stats
+              const statsResponse = await getNotificationStats(
+                credentials.accessToken,
+              );
+              if (statsResponse.success && statsResponse.data) {
+                setStats(statsResponse.data);
+              }
+            } catch (error) {
+              console.error('Error deleting notification:', error);
+              Alert.alert('Error', 'Failed to delete notification');
+            }
+          },
+        },
+      ],
     );
+  };
+
+  // Mark all as read
+  const handleMarkAllRead = async () => {
+    if (!credentials?.accessToken) return;
+
+    try {
+      await markAllNotificationsAsRead(credentials.accessToken);
+
+      // Update local state
+      setNotices(prevNotices => {
+        const prevArray = Array.isArray(prevNotices) ? prevNotices : [];
+        return prevArray.map(n => ({ ...n, is_read: true }));
+      });
+
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        unread: 0,
+      }));
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
   };
 
   // Get priority color
@@ -238,22 +290,35 @@ const Notices = ({ navigation }) => {
     }
   };
 
+  // Format date
+  const formatDate = dateString => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+    return date.toLocaleDateString();
+  };
+
   // Load notices on mount
   useEffect(() => {
     loadNotices();
   }, [loadNotices]);
 
-  if (loading) {
+  if (loading && notices.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StandardHeader
           navigation={navigation}
           title="Notices"
-          subtitle="Stay updated with notifications"
+          subtitle="Stay updated with all notifications"
           showBackButton
         />
         <AnimatedLoader
-          message="Loading notices..."
+          message="Loading notifications..."
           icon="bell"
           fullScreen={false}
         />
@@ -266,18 +331,11 @@ const Notices = ({ navigation }) => {
       <StandardHeader
         navigation={navigation}
         title="Notices"
-        subtitle="Stay updated with notifications"
+        subtitle="Stay updated with all notifications"
         showBackButton
       />
-
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Summary Cards Row 1 */}
+      <View style={styles.content}>
+        {/* Summary Cards */}
         <View style={styles.summaryContainer}>
           <StandardCard
             style={[styles.summaryCard, { backgroundColor: cardBackground }]}
@@ -285,29 +343,39 @@ const Notices = ({ navigation }) => {
             <View style={styles.cardHeader}>
               <MaterialCommunityIcons
                 name="bell"
-                size={24}
+                size={18}
                 color={colors.primary}
               />
               <StandardText
-                fontWeight="medium"
-                size="sm"
-                style={[styles.cardTitle, { color: textSecondary }]}
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: textSecondary,
+                    fontFamily: 'Metropolis-Medium',
+                  },
+                ]}
               >
-                Total Notices
+                Total
               </StandardText>
             </View>
             <StandardText
-              fontWeight="bold"
-              size="xl"
-              style={[styles.cardValue, { color: colors.primary }]}
+              style={[
+                styles.cardValue,
+                { color: textPrimary, fontFamily: 'Metropolis-Bold' },
+              ]}
             >
-              {totalNotices}
+              {stats.total}
             </StandardText>
             <StandardText
-              size="xs"
-              style={[styles.cardSubtext, { color: textSecondary }]}
+              style={[
+                styles.cardSubtext,
+                {
+                  color: textSecondary,
+                  fontFamily: 'Metropolis-Regular',
+                },
+              ]}
             >
-              All notifications
+              All notices
             </StandardText>
           </StandardCard>
 
@@ -317,36 +385,46 @@ const Notices = ({ navigation }) => {
             <View style={styles.cardHeader}>
               <MaterialCommunityIcons
                 name="bell-ring"
-                size={24}
+                size={18}
                 color={colors.warning}
               />
               <StandardText
-                fontWeight="medium"
-                size="sm"
-                style={[styles.cardTitle, { color: textSecondary }]}
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: textSecondary,
+                    fontFamily: 'Metropolis-Medium',
+                  },
+                ]}
               >
                 Unread
               </StandardText>
             </View>
             <StandardText
-              fontWeight="bold"
-              size="xl"
-              style={[styles.cardValue, { color: colors.warning }]}
+              style={[
+                styles.cardValue,
+                {
+                  color: colors.warning,
+                  fontFamily: 'Metropolis-Bold',
+                },
+              ]}
             >
-              {unreadNotices}
+              {stats.unread}
             </StandardText>
             <StandardText
-              size="xs"
-              style={[styles.cardSubtext, { color: textSecondary }]}
+              style={[
+                styles.cardSubtext,
+                {
+                  color: textSecondary,
+                  fontFamily: 'Metropolis-Regular',
+                },
+              ]}
             >
-              New notifications
+              Need attention
             </StandardText>
           </StandardCard>
         </View>
 
-        <Gap size="md" />
-
-        {/* Summary Cards Row 2 */}
         <View style={styles.summaryContainer}>
           <StandardCard
             style={[styles.summaryCard, { backgroundColor: cardBackground }]}
@@ -354,29 +432,42 @@ const Notices = ({ navigation }) => {
             <View style={styles.cardHeader}>
               <MaterialCommunityIcons
                 name="alert-circle"
-                size={24}
+                size={18}
                 color={colors.error}
               />
               <StandardText
-                fontWeight="medium"
-                size="sm"
-                style={[styles.cardTitle, { color: textSecondary }]}
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: textSecondary,
+                    fontFamily: 'Metropolis-Medium',
+                  },
+                ]}
               >
-                High Priority
+                Priority
               </StandardText>
             </View>
             <StandardText
-              fontWeight="bold"
-              size="xl"
-              style={[styles.cardValue, { color: colors.error }]}
+              style={[
+                styles.cardValue,
+                {
+                  color: colors.error,
+                  fontFamily: 'Metropolis-Bold',
+                },
+              ]}
             >
-              {highPriorityNotices}
+              {stats.high_priority}
             </StandardText>
             <StandardText
-              size="xs"
-              style={[styles.cardSubtext, { color: textSecondary }]}
+              style={[
+                styles.cardSubtext,
+                {
+                  color: textSecondary,
+                  fontFamily: 'Metropolis-Regular',
+                },
+              ]}
             >
-              Urgent attention
+              High priority
             </StandardText>
           </StandardCard>
 
@@ -386,303 +477,428 @@ const Notices = ({ navigation }) => {
             <View style={styles.cardHeader}>
               <MaterialCommunityIcons
                 name="clock-alert"
-                size={24}
-                color={colors.success}
+                size={18}
+                color={colors.primary}
               />
               <StandardText
-                fontWeight="medium"
-                size="sm"
-                style={[styles.cardTitle, { color: textSecondary }]}
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: textSecondary,
+                    fontFamily: 'Metropolis-Medium',
+                  },
+                ]}
               >
-                Pending Actions
+                Pending
               </StandardText>
             </View>
             <StandardText
-              fontWeight="bold"
-              size="xl"
-              style={[styles.cardValue, { color: colors.success }]}
+              style={[
+                styles.cardValue,
+                {
+                  color: colors.primary,
+                  fontFamily: 'Metropolis-Bold',
+                },
+              ]}
             >
-              {pendingActions}
+              {stats.pending}
             </StandardText>
             <StandardText
-              size="xs"
-              style={[styles.cardSubtext, { color: textSecondary }]}
+              style={[
+                styles.cardSubtext,
+                {
+                  color: textSecondary,
+                  fontFamily: 'Metropolis-Regular',
+                },
+              ]}
             >
-              Requires action
+              Actions needed
             </StandardText>
           </StandardCard>
         </View>
 
-        <Gap size="lg" />
-
         {/* Filter Section */}
-        <View style={styles.filterSection}>
-          <StandardText
-            fontWeight="bold"
-            size="sm"
-            style={[styles.filterLabel, { color: textSecondary }]}
+        <View style={[styles.filterSection, { marginTop: 20 }]}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 12,
+            }}
           >
-            Filter By Category
-          </StandardText>
-          <Gap size="sm" />
-          <ScrollView
+            <StandardText
+              style={[
+                styles.filterLabel,
+                {
+                  color: textSecondary,
+                  fontFamily: 'Metropolis-SemiBold',
+                },
+              ]}
+            >
+              Filter Notices
+            </StandardText>
+            {stats.unread > 0 && (
+              <TouchableOpacity onPress={handleMarkAllRead}>
+                <StandardText
+                  style={{
+                    color: colors.primary,
+                    fontSize: 14,
+                    fontFamily: 'Metropolis-Medium',
+                  }}
+                >
+                  Mark All Read
+                </StandardText>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={styles.filterContainer}
-          >
-            {filterOptions.map(filter => (
-              <Chip
-                key={filter.key}
-                mode="flat"
-                selected={selectedFilter === filter.key}
-                onPress={() => setSelectedFilter(filter.key)}
+            data={filterOptions}
+            keyExtractor={item => item.key}
+            contentContainerStyle={styles.filterContainer}
+            renderItem={({ item }) => (
+              <TouchableOpacity
                 style={[
                   styles.filterChip,
                   {
                     backgroundColor:
-                      selectedFilter === filter.key
+                      selectedFilter === item.key
                         ? colors.primary
                         : cardBackground,
                   },
                 ]}
-                textStyle={[
-                  styles.filterChipText,
-                  {
-                    color:
-                      selectedFilter === filter.key
-                        ? colors.white
-                        : textPrimary,
-                  },
-                ]}
-                icon={() => (
+                onPress={() => setSelectedFilter(item.key)}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <MaterialCommunityIcons
-                    name={filter.icon}
-                    size={18}
+                    name={item.icon}
+                    size={16}
                     color={
-                      selectedFilter === filter.key ? colors.white : textPrimary
+                      selectedFilter === item.key
+                        ? colors.white
+                        : colors.primary
                     }
                   />
-                )}
-                selectedColor={colors.white}
-              >
-                {filter.label} ({filterCounts[filter.key]})
-              </Chip>
-            ))}
-          </ScrollView>
+                  <StandardText
+                    style={[
+                      styles.filterChipText,
+                      {
+                        color:
+                          selectedFilter === item.key
+                            ? colors.white
+                            : textPrimary,
+                        marginLeft: 6,
+                      },
+                    ]}
+                  >
+                    {item.label}
+                  </StandardText>
+                  {filterCounts[item.key] > 0 && (
+                    <View
+                      style={{
+                        backgroundColor:
+                          selectedFilter === item.key
+                            ? 'rgba(255,255,255,0.3)'
+                            : colors.primary + '20',
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: 10,
+                        marginLeft: 6,
+                      }}
+                    >
+                      <StandardText
+                        style={{
+                          color:
+                            selectedFilter === item.key
+                              ? colors.white
+                              : colors.primary,
+                          fontSize: 11,
+                          fontFamily: 'Metropolis-Bold',
+                        }}
+                      >
+                        {filterCounts[item.key]}
+                      </StandardText>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            )}
+          />
         </View>
-
-        <Gap size="lg" />
-
-        {/* Notices List Header */}
-        <View style={styles.listHeader}>
-          <StandardText
-            fontWeight="bold"
-            size="lg"
-            style={{ color: textPrimary }}
-          >
-            Notice Records
-          </StandardText>
-          <View style={styles.countBadge}>
-            <StandardText
-              fontWeight="bold"
-              size="sm"
-              style={{ color: colors.primary }}
-            >
-              {filteredNotices.length}
-            </StandardText>
-          </View>
-        </View>
-
-        <Gap size="md" />
 
         {/* Notices List */}
-        {filteredNotices.length > 0 ? (
-          filteredNotices.map(notice => (
-            <StandardCard
+        <FlatList
+          data={filteredNotices}
+          keyExtractor={item => item.notification_id}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+          ListHeaderComponent={
+            <View style={styles.listHeader}>
+              <StandardText
+                style={[
+                  styles.filterLabel,
+                  {
+                    color: textSecondary,
+                    fontFamily: 'Metropolis-SemiBold',
+                    marginTop: 20,
+                    marginBottom: 12,
+                  },
+                ]}
+              >
+                {selectedFilter === 'all'
+                  ? 'All Notices'
+                  : selectedFilter === 'unread'
+                  ? 'Unread Notices'
+                  : `${
+                      selectedFilter.charAt(0).toUpperCase() +
+                      selectedFilter.slice(1)
+                    } Notices`}
+              </StandardText>
+              <View style={styles.countBadge}>
+                <StandardText
+                  style={{
+                    color: colors.primary,
+                    fontSize: 12,
+                    fontFamily: 'Metropolis-Bold',
+                  }}
+                >
+                  {filteredNotices.length}
+                </StandardText>
+              </View>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
               style={[
                 styles.noticeCard,
                 { backgroundColor: cardBackground },
-                !notice.isRead && styles.unreadCard,
+                !item.is_read && styles.unreadCard,
               ]}
-              key={notice.id}
+              onPress={() => handleNoticePress(item.notification_id)}
+              onLongPress={() => handleDeleteNotice(item.notification_id)}
             >
               <View style={styles.noticeHeader}>
                 <View style={styles.noticeInfo}>
                   <View style={styles.noticeTitleRow}>
-                    <MaterialCommunityIcons
-                      name={getTypeIcon(notice.type)}
-                      size={20}
-                      color={getPriorityColor(notice.priority)}
-                    />
                     <StandardText
-                      fontWeight="bold"
-                      size="lg"
-                      style={{ color: textPrimary, marginLeft: 8, flex: 1 }}
+                      style={{
+                        fontSize: 16,
+                        color: textPrimary,
+                        fontFamily: 'Metropolis-Bold',
+                        flex: 1,
+                      }}
                     >
-                      {notice.title}
+                      {item.title}
                     </StandardText>
-                    {!notice.isRead && (
+                    {!item.is_read && (
                       <View style={styles.unreadBadge}>
                         <StandardText
-                          size="xs"
-                          fontWeight="bold"
-                          style={{ color: colors.white }}
+                          style={{
+                            color: colors.white,
+                            fontSize: 10,
+                            fontFamily: 'Metropolis-Bold',
+                          }}
                         >
                           NEW
                         </StandardText>
                       </View>
                     )}
                   </View>
+
                   <StandardText
-                    size="sm"
-                    style={{ color: textSecondary, marginTop: 6 }}
+                    style={{
+                      fontSize: 14,
+                      color: textSecondary,
+                      fontFamily: 'Metropolis-Regular',
+                      marginTop: 6,
+                      lineHeight: 20,
+                    }}
                   >
-                    {notice.description}
+                    {item.description}
                   </StandardText>
 
-                  {/* Meta Information */}
                   <View style={styles.noticeMetaRow}>
+                    {item.tenant_name && (
+                      <View style={styles.noticeMeta}>
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={14}
+                          color={textSecondary}
+                        />
+                        <StandardText
+                          style={{
+                            fontSize: 12,
+                            color: textSecondary,
+                            fontFamily: 'Metropolis-Medium',
+                            marginLeft: 4,
+                          }}
+                        >
+                          {item.tenant_name}
+                        </StandardText>
+                      </View>
+                    )}
+
+                    {item.room_number && (
+                      <View style={styles.noticeMeta}>
+                        <MaterialCommunityIcons
+                          name="door"
+                          size={14}
+                          color={textSecondary}
+                        />
+                        <StandardText
+                          style={{
+                            fontSize: 12,
+                            color: textSecondary,
+                            fontFamily: 'Metropolis-Medium',
+                            marginLeft: 4,
+                          }}
+                        >
+                          Room {item.room_number}
+                        </StandardText>
+                      </View>
+                    )}
+
                     <View style={styles.noticeMeta}>
                       <MaterialCommunityIcons
-                        name="account"
-                        size={12}
+                        name="clock-outline"
+                        size={14}
                         color={textSecondary}
                       />
                       <StandardText
-                        size="xs"
-                        style={{ color: textSecondary, marginLeft: 4 }}
+                        style={{
+                          fontSize: 12,
+                          color: textSecondary,
+                          fontFamily: 'Metropolis-Medium',
+                          marginLeft: 4,
+                        }}
                       >
-                        {notice.tenantName}
-                      </StandardText>
-                    </View>
-                    <View style={styles.noticeMeta}>
-                      <MaterialCommunityIcons
-                        name="home"
-                        size={12}
-                        color={textSecondary}
-                      />
-                      <StandardText
-                        size="xs"
-                        style={{ color: textSecondary, marginLeft: 4 }}
-                      >
-                        Room {notice.roomNumber}
-                      </StandardText>
-                    </View>
-                    <View style={styles.noticeMeta}>
-                      <MaterialCommunityIcons
-                        name="calendar"
-                        size={12}
-                        color={textSecondary}
-                      />
-                      <StandardText
-                        size="xs"
-                        style={{ color: textSecondary, marginLeft: 4 }}
-                      >
-                        {new Date(notice.date).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                        })}
+                        {formatDate(item.created_at)}
                       </StandardText>
                     </View>
                   </View>
                 </View>
 
-                {/* Amount or Status */}
-                <View style={styles.noticeAmount}>
-                  {notice.amount && (
+                {item.amount && (
+                  <View style={styles.noticeAmount}>
                     <StandardText
-                      fontWeight="bold"
-                      size="xl"
-                      style={{ color: colors.primary }}
+                      style={{
+                        fontSize: 18,
+                        color: colors.primary,
+                        fontFamily: 'Metropolis-Bold',
+                      }}
                     >
-                      {notice.amount}
+                      ₹{item.amount.toLocaleString()}
                     </StandardText>
-                  )}
-                </View>
+                  </View>
+                )}
               </View>
 
-              {/* Footer with badges */}
               <View style={styles.noticeFooter}>
                 <View
                   style={[
+                    styles.typeChip,
+                    { backgroundColor: colors.primary + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={getTypeIcon(item.type)}
+                    size={14}
+                    color={colors.primary}
+                  />
+                  <StandardText
+                    style={{
+                      fontSize: 11,
+                      color: colors.primary,
+                      fontFamily: 'Metropolis-Bold',
+                      marginLeft: 4,
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {item.type}
+                  </StandardText>
+                </View>
+
+                <View
+                  style={[
                     styles.categoryChip,
-                    {
-                      backgroundColor: getPriorityColor(notice.priority) + '20',
-                    },
+                    { backgroundColor: getPriorityColor(item.priority) + '15' },
                   ]}
                 >
                   <StandardText
-                    fontWeight="bold"
-                    size="xs"
-                    style={{ color: getPriorityColor(notice.priority) }}
+                    style={{
+                      fontSize: 11,
+                      color: getPriorityColor(item.priority),
+                      fontFamily: 'Metropolis-Bold',
+                      textTransform: 'capitalize',
+                    }}
                   >
-                    {notice.priority.toUpperCase()}
+                    {item.priority}
                   </StandardText>
                 </View>
 
                 <View
                   style={[
                     styles.statusChip,
-                    { backgroundColor: getStatusColor(notice.status) + '20' },
+                    { backgroundColor: getStatusColor(item.status) + '15' },
                   ]}
                 >
                   <StandardText
-                    fontWeight="bold"
-                    size="xs"
-                    style={{ color: getStatusColor(notice.status) }}
+                    style={{
+                      fontSize: 11,
+                      color: getStatusColor(item.status),
+                      fontFamily: 'Metropolis-Bold',
+                      textTransform: 'capitalize',
+                    }}
                   >
-                    {notice.status.toUpperCase().replace('-', ' ')}
-                  </StandardText>
-                </View>
-
-                <View
-                  style={[
-                    styles.typeChip,
-                    { backgroundColor: colors.primary + '20' },
-                  ]}
-                >
-                  <StandardText
-                    fontWeight="bold"
-                    size="xs"
-                    style={{ color: colors.primary }}
-                  >
-                    {notice.type.toUpperCase()}
+                    {item.status}
                   </StandardText>
                 </View>
               </View>
-            </StandardCard>
-          ))
-        ) : (
-          <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons
-              name="bell-outline"
-              size={80}
-              color={textSecondary}
-            />
-            <StandardText
-              fontWeight="bold"
-              size="xl"
-              style={{ color: textPrimary, marginTop: 16 }}
-            >
-              No Notices Found
-            </StandardText>
-            <StandardText
-              size="md"
-              style={{
-                color: textSecondary,
-                marginTop: 8,
-                textAlign: 'center',
-              }}
-            >
-              {selectedFilter === 'all'
-                ? 'You have no notices at the moment'
-                : `No ${selectedFilter} notices found`}
-            </StandardText>
-          </View>
-        )}
-
-        <Gap size="xl" />
-      </ScrollView>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons
+                name="bell-off"
+                size={64}
+                color={textSecondary}
+              />
+              <StandardText
+                style={{
+                  fontSize: 16,
+                  color: textSecondary,
+                  fontFamily: 'Metropolis-Medium',
+                  marginTop: 16,
+                }}
+              >
+                No notifications found
+              </StandardText>
+              <StandardText
+                style={{
+                  fontSize: 14,
+                  color: textSecondary,
+                  fontFamily: 'Metropolis-Regular',
+                  marginTop: 8,
+                  textAlign: 'center',
+                }}
+              >
+                You're all caught up! No {selectedFilter} notifications at the
+                moment.
+              </StandardText>
+            </View>
+          }
+        />
+      </View>
     </View>
   );
 };
@@ -700,6 +916,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
+    marginBottom: 12,
   },
   summaryCard: {
     flex: 1,
@@ -741,10 +958,15 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     marginBottom: 8,
+    paddingRight: 20,
   },
   filterChip: {
     marginRight: 8,
     height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 3,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
@@ -818,31 +1040,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     gap: 8,
+    flexWrap: 'wrap',
   },
   categoryChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   statusChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   typeChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 48,
+    paddingHorizontal: 20,
   },
 });
 

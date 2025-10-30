@@ -1092,9 +1092,113 @@ export const getKYCLink = async (accessToken, tenantId) => {
 export const approveKYC = async (accessToken, kycId) => {
   return handleApiResponse(
     () =>
-      apiClient.post(`/kyc/${kycId}/approve`, {}, {
+      apiClient.post(
+        `/kyc/${kycId}/approve`,
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'APPROVE_KYC',
+  );
+};
+
+/**
+ * Notification Management API calls
+ */
+
+// Get all notifications for the current user
+export const getNotifications = async (accessToken, queryParams = {}) => {
+  if (__DEV__) {
+    console.log('📲 Getting notifications with params:', queryParams);
+  }
+
+  const queryString = buildQueryParams(queryParams);
+  const endpoint = `/notifications${queryString}`;
+
+  return handleApiResponse(
+    () =>
+      apiClient.get(endpoint, {
         headers: getAuthHeaders(accessToken),
       }),
-    'APPROVE_KYC',
+    'GET_NOTIFICATIONS',
+  );
+};
+
+// Get notification statistics
+export const getNotificationStats = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.get('/notifications/stats', {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_NOTIFICATION_STATS',
+  );
+};
+
+// Get a single notification by ID
+export const getNotificationById = async (accessToken, notificationId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/notifications/${notificationId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_NOTIFICATION_BY_ID',
+  );
+};
+
+// Mark notification as read
+export const markNotificationAsRead = async (accessToken, notificationId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch(
+        `/notifications/${notificationId}/read`,
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'MARK_NOTIFICATION_AS_READ',
+  );
+};
+
+// Mark all notifications as read
+export const markAllNotificationsAsRead = async accessToken => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch(
+        '/notifications/mark-all/read',
+        {},
+        {
+          headers: getAuthHeaders(accessToken),
+        },
+      ),
+    'MARK_ALL_NOTIFICATIONS_AS_READ',
+  );
+};
+
+// Update notification
+export const updateNotification = async (
+  accessToken,
+  notificationId,
+  updateData,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.patch(`/notifications/${notificationId}`, updateData, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'UPDATE_NOTIFICATION',
+  );
+};
+
+// Delete notification
+export const deleteNotification = async (accessToken, notificationId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.delete(`/notifications/${notificationId}`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'DELETE_NOTIFICATION',
   );
 };

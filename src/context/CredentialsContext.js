@@ -313,14 +313,14 @@ export const CredentialsProvider = ({ children }) => {
           console.warn('Failed to fetch owner details:', detailsError);
 
           if (isMountedRef.current) {
-            // Use stored data as fallback
+            await clearCredentialsInternal();
+
             dispatch({
-              type: ACTION_TYPES.SET_AUTHENTICATED,
-              payload: {
-                credentials: credentialsData,
-                userProfile: credentialsData,
-              },
+              type: ACTION_TYPES.SET_ERROR,
+              payload: 'Unable to connect to server. Please login again.',
             });
+
+            dispatch({ type: ACTION_TYPES.SET_UNAUTHENTICATED });
           }
         }
       } else {
@@ -332,7 +332,7 @@ export const CredentialsProvider = ({ children }) => {
         await handleAuthError('SERVER_ERROR');
       }
     }
-  }, [handleAuthError]);
+  }, [handleAuthError, clearCredentialsInternal]);
 
   // Save credentials securely
   const setCredentials = useCallback(
