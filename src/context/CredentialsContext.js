@@ -298,7 +298,7 @@ export const CredentialsProvider = ({ children }) => {
 
           if (!isMountedRef.current) return;
 
-          if (ownerDetails) {
+          if (!!ownerDetails.success && !!ownerDetails) {
             dispatch({
               type: ACTION_TYPES.SET_AUTHENTICATED,
               payload: {
