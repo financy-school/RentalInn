@@ -705,6 +705,143 @@ export const createInvoice = async (accessToken, invoiceData) => {
   );
 };
 
+// Quick invoice creation APIs
+export const createQuickMonthlyRent = async (
+  accessToken,
+  tenantId,
+  dueDate,
+  notes,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/invoices/quick/monthly-rent',
+        { tenant_id: tenantId, dueDate, notes },
+        { headers: getAuthHeaders(accessToken) },
+      ),
+    'CREATE_QUICK_MONTHLY_RENT',
+  );
+};
+
+export const createQuickMoveIn = async (
+  accessToken,
+  tenantId,
+  moveInDate,
+  notes,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/invoices/quick/move-in',
+        { tenant_id: tenantId, moveInDate, notes },
+        { headers: getAuthHeaders(accessToken) },
+      ),
+    'CREATE_QUICK_MOVE_IN',
+  );
+};
+
+export const createQuickUtilities = async (
+  accessToken,
+  tenantId,
+  dueDate,
+  notes,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/invoices/quick/utilities',
+        { tenant_id: tenantId, dueDate, notes },
+        { headers: getAuthHeaders(accessToken) },
+      ),
+    'CREATE_QUICK_UTILITIES',
+  );
+};
+
+// Get tenant payment data with suggestions
+export const getTenantPaymentData = async (accessToken, tenantId) => {
+  return handleApiResponse(
+    () =>
+      apiClient.get(`/invoices/tenant/${tenantId}/payment-data`, {
+        headers: getAuthHeaders(accessToken),
+      }),
+    'GET_TENANT_PAYMENT_DATA',
+  );
+};
+
+// Quick payment APIs
+export const createQuickFullPayment = async (
+  accessToken,
+  invoiceId,
+  paymentMethod,
+  paymentDate,
+  notes,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/invoices/payments/quick/full',
+        {
+          invoice_id: invoiceId,
+          paymentMethod,
+          paymentDate,
+          notes,
+        },
+        { headers: getAuthHeaders(accessToken) },
+      ),
+    'CREATE_QUICK_FULL_PAYMENT',
+  );
+};
+
+export const createQuickPartialPayment = async (
+  accessToken,
+  invoiceId,
+  amount,
+  paymentMethod,
+  paymentDate,
+  notes,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/invoices/payments/quick/partial',
+        {
+          invoice_id: invoiceId,
+          amount,
+          paymentMethod,
+          paymentDate,
+          notes,
+        },
+        { headers: getAuthHeaders(accessToken) },
+      ),
+    'CREATE_QUICK_PARTIAL_PAYMENT',
+  );
+};
+
+export const createQuickAdvancePayment = async (
+  accessToken,
+  tenantId,
+  amount,
+  paymentMethod,
+  paymentDate,
+  notes,
+) => {
+  return handleApiResponse(
+    () =>
+      apiClient.post(
+        '/invoices/payments/quick/advance',
+        {
+          tenant_id: tenantId,
+          amount,
+          paymentMethod,
+          paymentDate,
+          notes,
+        },
+        { headers: getAuthHeaders(accessToken) },
+      ),
+    'CREATE_QUICK_ADVANCE_PAYMENT',
+  );
+};
+
 export const recordPayment = async (accessToken, paymentData) => {
   return handleApiResponse(
     () =>

@@ -1258,6 +1258,7 @@ const TenantDetails = ({ navigation, route }) => {
             onPress={() =>
               navigation.navigate('RecordPayment', {
                 tenant_id: tenant.tenant_id,
+                tenant_name: tenant.name,
               })
             }
           >

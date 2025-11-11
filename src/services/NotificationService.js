@@ -1,5 +1,5 @@
 import messaging from '@react-native-firebase/messaging';
-import { Alert, PermissionsAndroid, Platform } from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateUserFirebaseToken } from './NetworkUtils';
 
@@ -151,15 +151,14 @@ class NotificationService {
           console.log('Foreground notification:', remoteMessage);
 
           if (remoteMessage.notification) {
-            Alert.alert(
-              remoteMessage.notification.title || 'Notification',
-              remoteMessage.notification.body || '',
-              [
-                {
-                  text: 'OK',
-                  onPress: () => console.log('Notification dismissed'),
-                },
-              ],
+            // Show toast instead of alert for better UX
+            const helpers = require('../navigation/helpers').default;
+            const { ErrorHelper } = helpers;
+            ErrorHelper.showToast(
+              remoteMessage.notification.body ||
+                remoteMessage.notification.title ||
+                'Notification received',
+              'info',
             );
           }
         },

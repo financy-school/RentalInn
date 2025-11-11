@@ -16,9 +16,9 @@ import AddRoom from '../screens/AddRoom';
 import AddProperty from '../screens/AddProperty';
 import AddTenant from '../screens/AddTenant';
 import AddTicket from '../screens/AddTicket';
-import RecordPayment from '../screens/RecordPayment';
+import RecordPaymentNew from '../screens/RecordPaymentNew';
 import RecordExpensePayment from '../screens/RecordExpensePayment';
-import AddInvoice from '../screens/AddInvoice';
+import AddInvoiceNew from '../screens/AddInvoiceNew';
 import AddExpense from '../screens/AddExpense';
 import OnboardingScreen, {
   ONBOARDING_STORAGE_KEY,
@@ -364,7 +364,7 @@ const RootStack = () => {
 
         <Stack.Screen
           name={SCREEN_NAMES.RECORD_PAYMENT}
-          component={RecordPayment}
+          component={RecordPaymentNew}
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Record Payment',
@@ -400,7 +400,7 @@ const RootStack = () => {
 
         <Stack.Screen
           name="AddInvoice"
-          component={AddInvoice}
+          component={AddInvoiceNew}
           options={{
             ...authenticatedScreenOptions,
             headerTitle: 'Add Invoice',
